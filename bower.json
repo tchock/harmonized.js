@@ -1,0 +1,40 @@
+{
+  "name": "harmonized.js",
+  "description": "Reactive Javascript Data Model",
+  "license": "MIT",
+  "version": "0.0.1",
+  "main": "./harmonized.js",
+  "authors": [
+    "Simon Jentsch <sjentsch@hyphe.me>"
+  ],
+  "keywords": [
+    "model",
+    "reactive",
+    "REST",
+    "local storage",
+    "IndexedDB",
+    "WebSQL"
+  ],
+  "homepage": "http://www.hyphe.me",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "pages",
+    "css",
+    "src",
+    "config",
+    "Gruntfile.js",
+    "app.js",
+    "index.html",
+    "karma.conf.js",
+    "npm-debug.log",
+    "package.json"
+  ],
+  "dependencies": {
+    "rxjs": "~2.5.2",
+    "lodash": "3.0.0"
+  }
+}
