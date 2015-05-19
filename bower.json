@@ -45,5 +45,8 @@
         "dist/rx.async.js"
       ]
     }
+  },
+  "devDependencies": {
+    "mock-websql": "~0.3.0"
   }
 }
