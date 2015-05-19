@@ -98,7 +98,8 @@ module.exports = function (grunt) {
                 '/bower_components',
                 connect.static('./bower_components')
               ),
-              connect.static('src')
+              connect.static('src'),
+              connect.static('examples')
             ];
           }
         }
@@ -108,7 +109,7 @@ module.exports = function (grunt) {
     // Automatically inject Bower components into the app
     wiredep: {
       app: {
-        src: ['examples/index.html'],
+        src: ['examples/templates/index.html'],
         ignorePath: /\.\.\//
       }
     },
@@ -119,7 +120,7 @@ module.exports = function (grunt) {
       },
       your_target: {
         files: {
-           'examples/index.html': 'src/examples/index.html'
+           'examples/index.html': 'examples/templates/index.html'
          }
       },
     },
