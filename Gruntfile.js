@@ -79,8 +79,7 @@ module.exports = function (grunt) {
       }
     },
 
-    copy: {
-    },
+    copy: {},
 
     connect: {
       options: {
@@ -106,19 +105,40 @@ module.exports = function (grunt) {
       }
     },
 
+    // Automatically inject Bower components into the app
+    wiredep: {
+      app: {
+        src: ['examples/index.html'],
+        ignorePath: /\.\.\//
+      }
+    },
 
+    includeSource: {
+      options: {
+        // Task-specific options go here.
+      },
+      your_target: {
+        files: {
+           'examples/index.html': 'src/examples/index.html'
+         }
+      },
+    },
 
     watch: {
+      bower: {
+        files: ['bower.json'],
+        tasks: ['wiredep', 'includeSource']
+      },
       src: {
         files: '<%= jshint.all.src %>',
-        tasks: ['jshint:all', 'concat']
+        tasks: ['jshint:all', 'jscs', 'includeSource']
       },
       livereload: {
         options: {
           livereload: '<%= connect.options.livereload %>'
         },
         files: [
-          'src/{,*/}*.html',
+          'examples/{,*/}*.html',
         ]
       }
     },
@@ -132,7 +152,7 @@ module.exports = function (grunt) {
   grunt.registerTask('dist', ['jscs', 'clean:dist', 'dist-js']);
 
   // Full release task
-  grunt.registerTask('release', 'bump and changelog', function(type) {
+  grunt.registerTask('release', 'bump and changelog', function (type) {
     grunt.task.run([
       'dist',
       'bump:' + (type || 'patch') + ':bump-only',

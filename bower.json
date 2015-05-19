@@ -36,5 +36,13 @@
   "dependencies": {
     "rxjs": "~2.5.2",
     "lodash": "3.0.0"
+  },
+  "overrides": {
+    "rxjs": {
+      "main": [
+        "dist/rx.lite.js",
+        "dist/rx.async.js"
+      ]
+    }
   }
 }
