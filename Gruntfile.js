@@ -15,7 +15,7 @@ module.exports = function (grunt) {
   // Project configuration.
   grunt.initConfig({
     jscs: {
-      src: 'src/*.js',
+      src: 'src/**/*.js',
       options: {
         config: '.jscsrc',
         preset: 'airbnb',

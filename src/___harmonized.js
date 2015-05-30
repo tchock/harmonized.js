@@ -1,3 +1,3 @@
-var Harmonized = function Harmonized(){
+var Harmonized = function Harmonized() {
 
 };

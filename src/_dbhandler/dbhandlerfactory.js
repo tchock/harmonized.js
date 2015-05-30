@@ -1,21 +1,34 @@
-Harmonized.dbHandlerFactory = function dbHandlerFactory() {
-  // Set supported db handler
-  Harmonized.setSupportedDbHandler();
-};
-
-Harmonized.setSupportedDbHandler = function setSupportedDbHandler() {
-  // Set IndexedDB if supported
-  if (window.indexedDB) {
+Harmonized.dbHandlerFactory = function dbHandlerFactory(config) {
+  // Check for db support
+  if (Harmonized.dbHandlerFactory._getIndexedDb()) {
+    // Set IndexedDB if supported
     Harmonized.dbHandlerFactory._DbHandler = Harmonized.IndexedDbHandler;
+  } else if (Harmonized.dbHandlerFactory._getWebSql()) {
     // Set WebSQL if supported
-  } else if (window.openDatabase) {
     Harmonized.dbHandlerFactory._DbHandler = Harmonized.WebSqlHandler;
-    // Set No Database if no DB support
   } else {
+    // Set no database if no DB support
     Harmonized.dbHandlerFactory._DbHandler = undefined;
   }
 };
 
-Harmonized.dbHandlerFactory.createDbHandler = function createDbHandler(options) {
-
+Harmonized.dbHandlerFactory.createDbHandler = function createDbHandler(name, options) {
+  if (!!Harmonized.dbHandlerFactory._DbHandler) {
+    return new Harmonized.dbHandlerFactory._DbHandler(name, options);
+  } else {
+    return undefined;
+  }
 };
+
+Harmonized.dbHandlerFactory._getDbStructure = function getDbStructure() {
+  // TODO extract db structure from resource definition
+  return {};
+}
+
+Harmonized.dbHandlerFactory._getIndexedDb = function getIndexedDb() {
+  return window.indexedDB && _.isFunction(Harmonized.IndexedDbHandler);
+}
+
+Harmonized.dbHandlerFactory._getWebSql = function getWebSql() {
+  return window.openDatabase && _.isFunction(Harmonized.WebSqlHandler);
+}
