@@ -1,19 +1,19 @@
 Harmonized.getWebStorage = function() {
-  return Harmonized.webStorage._storage;
+  return Harmonized.webStorage._webStorage;
 }
 
-Harmonized._storage = window.sessionStorage;
+Harmonized._webStorage = window.sessionStorage;
 
-Harmonized.webStorage.setStorage: function(storage, doClear) {
+Harmonized.setWebStorage = function(storage, doClear) {
   if (doClear) {
-    Harmonized._storage.clear();
+    Harmonized._webStorage.clear();
   }
   switch (storage) {
     case 'session':
-      Harmonized._storage = window.sessionStorage;
+      Harmonized._webStorage = window.sessionStorage;
       break;
     case 'local':
     default:
-      Harmonized._storage = window.localStorage;
+      Harmonized._webStorage = window.localStorage;
   }
 }
