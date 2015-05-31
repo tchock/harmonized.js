@@ -26,7 +26,7 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._deleteUpstream = this._upstream.filter(function(item) {
     return item.meta.action === 'delete';
   });
-  this._deleteDownstream = this._deleteDownstream.map(this.remove);
+  this._deleteDownstream = this._deleteUpstream.map(this.remove);
   this._deleteDownstream.subscribe(this.downstream);
 
   // Initially get the metadata
