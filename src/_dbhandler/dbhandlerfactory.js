@@ -25,10 +25,12 @@ Harmonized.dbHandlerFactory._getDbStructure = function getDbStructure() {
   return {};
 }
 
+/* istanbul ignore next */
 Harmonized.dbHandlerFactory._getIndexedDb = function getIndexedDb() {
   return window.indexedDB && _.isFunction(Harmonized.IndexedDbHandler);
 }
 
+/* istanbul ignore next */
 Harmonized.dbHandlerFactory._getWebSql = function getWebSql() {
   return window.openDatabase && _.isFunction(Harmonized.WebSqlHandler);
 }

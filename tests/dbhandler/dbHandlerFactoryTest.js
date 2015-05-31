@@ -11,6 +11,11 @@ describe("DB Handler Factory", function() {
   }
 
   beforeEach(function() {
+    // Create spies
+    spyOn(Harmonized, 'IndexedDbHandler').and.returnValue('IndexedDbHandler');
+  });
+
+  beforeEach(function() {
     // TODO create resource definition
   });
 
@@ -62,28 +67,17 @@ describe("DB Handler Factory", function() {
 
   it('should find the right store definitions', function() {
     var struct = Harmonized.dbHandlerFactory._getDbStructure();
+    /*
     expect(localDb.getSearchProperties('testDb', 'test').length).toEqual(0);
     expect(localDb.getSearchProperties('testDb', 'newtest').length).toEqual(1);
     expect(localDb.getSearchProperties('testDb', 'othertest').length).toEqual(2);
+    */
     // TODO check if the store definitions are right
     // TODO Check if content of search properties array is correct
   });
 
   it  ('should get server and store key names', function(){
     // TODO check for correct server and store keys
-  });
-
-  it ('should get db version', function(done){
-    // Initialized db handler factory
-    Harmonized.dbHandlerFactory();
-
-    // Initial connect
-    var handler = Harmonized.dbHandlerFactory.createDbHandler('testStore');
-    handler.connect();
-
-    // TODO add event for initialized database
-    // Check if version is set to 1
-    expect(Harmonized.dbHandlerFactory.getDbVersion()).toBe(1);
   });
 
 });
