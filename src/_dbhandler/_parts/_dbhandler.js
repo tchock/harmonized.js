@@ -18,14 +18,16 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   // Save upstream
   this._saveUpstream = this._upstream.filter(function(item) {
     return item.meta.action === 'save';
-  }).map(this.put);
-  this._saveUpstream.subscribe(this.downstream);
+  });
+  this._saveDownstream = this._saveUpstream.map(this.put);
+  this._saveDownstream.subscribe(this.downstream);
 
   // Delete upstream
   this._deleteUpstream = this._upstream.filter(function(item) {
     return item.meta.action === 'delete';
-  }).map(this.remove);
-  this._deleteUpstream.subscribe(this.downstream);
+  });
+  this._deleteDownstream = this._deleteDownstream.map(this.remove);
+  this._deleteDownstream.subscribe(this.downstream);
 
   // Initially get the metadata
   this._metaStorageName = 'harmonized_meta_' + this._storeName;
