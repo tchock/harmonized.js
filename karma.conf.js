@@ -22,6 +22,7 @@ module.exports = function(config) {
       'bower_components/rxjs/dist/rx.async.js',
       'src/**/*.js',
       'tests/_testHelper/**/*.js',
+      'tests/Harmonized/harmonizedTest.js',
       'tests/webstorage/webStorageTest.js',
       'tests/dbHandler/dbHandlerTest.js',
       'tests/dbhandler/dbHandlerFactoryTest.js'

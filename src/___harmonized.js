@@ -10,19 +10,20 @@ Harmonized.getServerKey = function() {
   // TODO implement get server key fn
 }
 
-Harmonized._createStreamItem = function(dbItem, keys) {
+Harmonized._createStreamItem = function(inputItem, keys) {
+  inputItem = _.clone(inputItem);
   var item = {
     meta: {
-      storeId: dbItem[keys.storeKey],
-      serverId: dbItem[keys.serverKey]
+      storeId: inputItem[keys.storeKey],
+      serverId: inputItem[keys.serverKey]
     }
   };
 
   // Remove the metadata from the actual data
-  delete dbItem[keys.storeKey];
-  delete dbItem[keys.serverKey];
+  delete inputItem[keys.storeKey];
+  delete inputItem[keys.serverKey];
 
-  item.data = dbItem;
+  item.data = inputItem;
 
   return item;
 }
