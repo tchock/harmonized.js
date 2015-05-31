@@ -82,9 +82,11 @@ describe('DbHandler', function() {
     var expectedOutputItem = _.clone(inputItem.data);
     expectedOutputItem._id = 123;
     expectedOutputItem.id = 321;
-
     var outputItem = dbHandler._createDbItem(inputItem);
+
     expect(outputItem).toEqual(expectedOutputItem);
+    expect(outputItem).not.toEqual(inputItem.data);
+    expect(outputItem).not.toBe(inputItem.data);
   });
 
   it('should create create a db item with one missing metadata', function() {
@@ -103,6 +105,8 @@ describe('DbHandler', function() {
 
     var outputItem = dbHandler._createDbItem(inputItem);
     expect(outputItem).toEqual(expectedOutputItem);
+    expect(outputItem).not.toEqual(inputItem.data);
+    expect(outputItem).not.toBe(inputItem.data);
   });
 
   it('should create create a db item with whole missing metadata', function() {
@@ -117,6 +121,8 @@ describe('DbHandler', function() {
 
     var outputItem = dbHandler._createDbItem(inputItem);
     expect(outputItem).toEqual(expectedOutputItem);
+    expect(outputItem).toEqual(inputItem.data);
+    expect(outputItem).not.toBe(inputItem.data);
   });
 
 });

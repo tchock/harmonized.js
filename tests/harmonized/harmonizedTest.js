@@ -40,6 +40,7 @@ describe('Harmonized', function() {
 
       expect(streamItem).toEqual(expectedStreamItem);
       expect(streamItem.data).not.toEqual(inputItem);
+      expect(streamItem.data).not.toBe(inputItem);
     });
 
     it('should create a stream item with half metadata', function() {
@@ -50,6 +51,7 @@ describe('Harmonized', function() {
 
       expect(streamItem).toEqual(expectedStreamItem);
       expect(streamItem.data).not.toEqual(inputItem);
+      expect(streamItem.data).not.toBe(inputItem);
     });
 
     it('should create a stream item with no metadata', function() {
@@ -57,6 +59,7 @@ describe('Harmonized', function() {
 
       expect(streamItem).toEqual(expectedStreamItem);
       expect(streamItem.data).toEqual(inputItem);
+      expect(streamItem.data).not.toBe(inputItem);
     });
 
   });
