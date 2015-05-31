@@ -1,9 +1,8 @@
 describe('Harmonized.webStorage', function() {
 
   beforeEach(function() {
-    spyOn(window, 'localStorage').and.returnValue(mockLocalStorage);
-    spyOn(window, 'sessionStorage').and.returnValue(mockSessionStorage);
-
+    spyOn(Harmonized, '_getLocalStorage').and.returnValue(mockLocalStorage);
+    spyOn(Harmonized, '_getSessionStorage').and.returnValue(mockSessionStorage);
     // Reset storage
     window.mockLocalStorageObj = {};
     window.mockSessionStorageObj = {};
@@ -20,22 +19,22 @@ describe('Harmonized.webStorage', function() {
 
   it('should switch to localStorage', function() {
     Harmonized.setWebStorage('local');
-    expect(Harmonized._webStorage).toEqual(localStorage);
+    expect(Harmonized._webStorage).toEqual(Harmonized._getLocalStorage());
   });
 
   it('should switch to sessionStorage', function() {
-    Harmonized._webStorage = window.localStorage;
+    Harmonized._webStorage = Harmonized._getLocalStorage();
     Harmonized.setWebStorage('session');
-    expect(Harmonized._webStorage).toEqual(sessionStorage);
+    expect(Harmonized._webStorage).toEqual(Harmonized._getSessionStorage());
   });
 
   it('should switch storage type with clearing the store', function() {
-    window.mockLocalStorageObj = {
+    window.mockSessionStorageObj = {
       'test': 123
     };
 
     Harmonized.setWebStorage('local', true);
-    expect(_.isUndefined(window.mockLocalStorageObj.test)).toBeTruthy();
+    expect(_.isUndefined(window.mockSessionStorageObj.test)).toBeTruthy();
   });
 
 });
