@@ -77,7 +77,8 @@ Harmonized.IndexedDbHandler.prototype.getAllEntries = function () {
     cursor = e.target.result;
     var cursorItem = cursor.value;
     if (cursor) {
-      _this.downstream.onNext(_this._createStreamItem(cursorItem));
+      _this.downstream.onNext(Harmonized._createStreamItem(cursorItem,
+          _this._keys));
       cursor.continue();
     }
   };

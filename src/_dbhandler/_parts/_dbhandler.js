@@ -1,7 +1,9 @@
 Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._storeName = storeName;
-  this._storeKey = Harmonized.getStoreKey(storeName);
-  this._serverKey = Harmonized.getServerKey(storeName);
+  this._keys = {
+    storeKey: Harmonized.getStoreKey(storeName),
+    serverKey: Harmonized.getServerKey(storeName)
+  }
 
   // Public streams
   this.downstream = new Rx.Subject();
@@ -42,25 +44,8 @@ Harmonized.DbHandler.prototype.setMetadata = function(key, value) {
 Harmonized.DbHandler.prototype._createDbItem = function(item) {
   // Clone data and arrange it for db
   var putItem = _.clone(item.data);
-  putItem[this.storeKey] = item.meta.storeId;
-  putItem[this.serverKey] = item.meta.serverId;
+  putItem[this._keys.storeKey] = item.meta.storeId;
+  putItem[this._keys.serverKey] = item.meta.serverId;
 
   return putItem;
-}
-
-Harmonized.DbHandler.prototype._createStreamItem = function(dbItem) {
-  var item = {
-    meta: {
-      storeId: dbItem[this.storeKey],
-      serverId: dbItem[this.serverKey]
-    }
-  };
-
-  // Remove the metadata from the actual data
-  delete dbItem[this.storeKey];
-  delete dbItem[this.serverKey];
-
-  item.data = dbItem;
-
-  return item;
 }
