@@ -3,7 +3,7 @@ describe('DbHandler', function() {
   var dbHandler;
   var explicitDbHandler = {
     _connectionStream: new Rx.Subject(),
-    connection: function() {}
+    connect: function() {}
   };
 
   beforeEach(function() {
@@ -15,7 +15,7 @@ describe('DbHandler', function() {
     spyOn(Harmonized, 'getStoreKey').and.returnValue('_id');
     spyOn(Harmonized, 'getServerKey').and.returnValue('id');
 
-    dbHandler = Harmonized.DbHandler(explicitDbHandler, 'testStore');
+    dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore');
   });
 
   it('should get empty DB metadata', function() {
@@ -31,7 +31,7 @@ describe('DbHandler', function() {
       'harmonized_meta_testStore': expectedObject
     };
 
-    dbHandler = Harmonized.DbHandler(explicitDbHandler, 'testStore');
+    dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore');
     expect(dbHandler.getMetadata()).toEqual(expectedObject);
   });
 
@@ -59,7 +59,7 @@ describe('DbHandler', function() {
       otherName: 'Max Mustermann'
     };
 
-    dbHandler = Harmonized.DbHandler(explicitDbHandler, 'testStore');
+    dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore');
     dbHandler.setMetadata('otherName', 'Max Mustermann');
     expect(dbHandler._metadata).toEqual(expectedObject);
     expect(window.mockLocalStorageObj).toEqual({

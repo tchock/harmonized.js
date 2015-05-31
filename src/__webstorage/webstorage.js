@@ -2,10 +2,12 @@ Harmonized.getWebStorage = function() {
   return Harmonized._webStorage;
 }
 
+/* istanbul ignore next */
 Harmonized._getLocalStorage = function() {
   return window.localStorage;
 }
 
+/* istanbul ignore next */
 Harmonized._getSessionStorage = function() {
   return window.sessionStorage;
 }

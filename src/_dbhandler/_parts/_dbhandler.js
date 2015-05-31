@@ -36,7 +36,7 @@ Harmonized.DbHandler.prototype.getMetadata = function () {
 
 Harmonized.DbHandler.prototype.setMetadata = function(key, value) {
   this._metadata[key] = value;
-  Harmonized.getWebStorage().addItem(this._metaStorageName, this._metadata);
+  Harmonized.getWebStorage().setItem(this._metaStorageName, this._metadata);
 };
 
 Harmonized.DbHandler.prototype._createDbItem = function(item) {
