@@ -97,7 +97,7 @@ Harmonized.IndexedDbHandler.prototype.put = function (item) {
   var putStream = new Rx.Subject();
 
   // Create singleton array with data, if data is no array
-  if (!(data instanceof Array)) {
+  if (!_.isArray(data)) {
     item = [item];
   }
 

@@ -1,4 +1,4 @@
-Harmonized.DbHandler = function(dbHandler, storeName) {
+Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._storeName = storeName;
   this._storeKey = Harmonized.getStoreKey(storeName);
   this._serverKey = Harmonized.getServerKey(storeName);
