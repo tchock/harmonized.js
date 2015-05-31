@@ -20,6 +20,8 @@ module.exports = function(config) {
       'bower_components/mock-websql/websql.js',
       'bower_components/rxjs/dist/rx.lite.js',
       'bower_components/rxjs/dist/rx.async.js',
+      'bower_components/rxjs/dist/rx.virtualtime.js',
+      'bower_components/rxjs/dist/rx.testing.js',
       'src/**/*.js',
       'tests/_testHelper/**/*.js',
       'tests/Harmonized/harmonizedTest.js',

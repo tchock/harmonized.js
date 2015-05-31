@@ -21,7 +21,26 @@ describe('DbHandler', function() {
     window.mockLocalStorageObj = {};
   });
 
-  xdescribe('streams', function() {
+  describe('streams', function() {
+
+    // Aliases
+    var TestScheduler = Rx.TestScheduler;
+    var onNext = Rx.ReactiveTest.onNext;
+    var onError = Rx.ReactiveTest.onError;
+    var subscribe = Rx.ReactiveTest.subscribe;
+    var virtualTick;
+
+    // Reactive X testing build up
+    beforeEach(function() {
+        // Add custom RxJS matchers
+        jasmine.addMatchers(streamMatchers);
+        virtualTick = 0;
+
+        spyOn(dbHandler.upstream, 'onNext').and.callFake(function(item) {
+          onNext(virtualTick, item);
+          virtualTick += 10;
+        });
+    });
 
     beforeEach(function(){
       // Add missing put and remove methods to test
@@ -38,29 +57,63 @@ describe('DbHandler', function() {
       spyOn(dbHandler, 'remove').and.callThrough();
     });
 
-    it('should filter data to be saved for saveUpstream', function() {
+    xit('should filter data to be saved for saveUpstream', function() {
+      var streamInputs = [{
+        data: {
+          name: 'Hans Wurst'
+        },
+        meta: {
+          action: 'save'
+        }
+      },
+      {
+        data: {
+          name: 'Mike Hansen'
+        },
+        meta: {
+          action: 'delete'
+        }
+      },
+      {
+        data: {
+          name: 'Wigald Boning'
+        },
+        meta: {
+          action: 'save'
+        }
+      }];
+
+      dbHandler.upstream.onNext(streamInputs[0]);
+      dbHandler.upstream.onNext(streamInputs[1]);
+      dbHandler.upstream.onNext(streamInputs[2]);
+
+      expect(dbHandler._saveUpstream.messages).toHaveEqualElements(
+        onNext(0, streamInputs[0]),
+        onNext(20, streamInputs[2])
+      );
+    });
+
+    xit('should filter data to be deleted for deleteUpstream', function() {
 
     });
 
-    it('should filter data to be deleted for deleteUpstream', function() {
+    xit('should ignore data to not be saved or deleted', function() {
 
     });
 
-    it('should ignore data to not be saved or deleted', function() {
-
-    });
-
-    it('should call the save downstream map fn and delegate to downstream',
+    xit('should call the save downstream map fn and delegate to downstream',
       function() {
-
+        expect(dbHandler.put).toHaveBeenCalled();
+        expect(dbHandler.remove).not.toHaveBeenCalled();
       });
 
-    it('should call the delete downstream map fn and delegate to downstream',
+    xit('should call the delete downstream map fn and delegate to downstream',
       function() {
-
+        expect(dbHandler.remove).toHaveBeenCalled();
+        expect(dbHandler.put).not.toHaveBeenCalled();
       });
 
-    it('should pause/resume internal upstream depending on db connection', function() {
+    xit('should pause/resume internal upstream depending on db connection', function() {
 
     });
 
