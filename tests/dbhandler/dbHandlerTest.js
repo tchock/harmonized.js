@@ -67,4 +67,56 @@ describe('DbHandler', function() {
     });
   });
 
+  it('should create create a db item with full metadata', function() {
+    var inputItem = {
+      data: {
+        firstName: 'John',
+        lastName: 'Doe'
+      },
+      meta: {
+        storeId: 123,
+        serverId: 321
+      }
+    };
+
+    var expectedOutputItem = _.clone(inputItem.data);
+    expectedOutputItem._id = 123;
+    expectedOutputItem.id = 321;
+
+    var outputItem = dbHandler._createDbItem(inputItem);
+    expect(outputItem).toEqual(expectedOutputItem);
+  });
+
+  it('should create create a db item with one missing metadata', function() {
+    var inputItem = {
+      data: {
+        firstName: 'John',
+        lastName: 'Doe'
+      },
+      meta: {
+        serverId: 321
+      }
+    };
+
+    var expectedOutputItem = _.clone(inputItem.data);
+    expectedOutputItem.id = 321;
+
+    var outputItem = dbHandler._createDbItem(inputItem);
+    expect(outputItem).toEqual(expectedOutputItem);
+  });
+
+  it('should create create a db item with whole missing metadata', function() {
+    var inputItem = {
+      data: {
+        firstName: 'John',
+        lastName: 'Doe'
+      }
+    };
+
+    var expectedOutputItem = _.clone(inputItem.data);
+
+    var outputItem = dbHandler._createDbItem(inputItem);
+    expect(outputItem).toEqual(expectedOutputItem);
+  });
+
 });

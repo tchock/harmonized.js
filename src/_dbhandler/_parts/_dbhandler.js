@@ -44,8 +44,12 @@ Harmonized.DbHandler.prototype.setMetadata = function(key, value) {
 Harmonized.DbHandler.prototype._createDbItem = function(item) {
   // Clone data and arrange it for db
   var putItem = _.clone(item.data);
-  putItem[this._keys.storeKey] = item.meta.storeId;
-  putItem[this._keys.serverKey] = item.meta.serverId;
+  if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.storeId)) {
+    putItem[this._keys.storeKey] = item.meta.storeId;
+  }
+  if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
+    putItem[this._keys.serverKey] = item.meta.serverId;
+  }
 
   return putItem;
 }
