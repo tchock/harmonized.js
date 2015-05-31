@@ -1,26 +1,30 @@
 window.mockLocalStorageObj = {}
 window.mockSessionStorageObj = {}
 
+window.mockLocalStorage = {};
+
 window.mockLocalStorage.getItem = function(key) {
-  return mockLocalStorageObj[key];
-}
+  return window.mockLocalStorageObj[key];
+};
 
 window.mockLocalStorage.setItem = function(key, value) {
-  mockLocalStorageObj[key] = value;
-}
+  window.mockLocalStorageObj[key] = value;
+};
 
 window.mockLocalStorage.clear = function() {
-  mockLocalStorageObj = {};
-}
+  window.mockLocalStorageObj = {};
+};
+
+window.mockSessionStorage = {};
 
 window.mockSessionStorage.getItem = function(key) {
-  return mockSessionStorageObj[key];
-}
+  return window.mockSessionStorageObj[key];
+};
 
 window.mockSessionStorage.setItem = function(key, value) {
-  mockSessionStorageObj[key] = value;
-}
+  window.mockSessionStorageObj[key] = value;
+};
 
 window.mockSessionStorage.clear = function() {
-  mockSessionStorageObj = {};
-}
+  window.mockSessionStorageObj = {};
+};
