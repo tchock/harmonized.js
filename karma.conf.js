@@ -18,7 +18,12 @@ module.exports = function(config) {
       'bower_components/lodash/lodash.js',
       'bower_components/sql-parser/browser/sql-parser.js',
       'bower_components/mock-websql/websql.js',
+      'bower_components/rxjs/dist/rx.lite.js',
+      'bower_components/rxjs/dist/rx.async.js',
       'src/**/*.js',
+      'tests/_testHelper/**/*.js',
+      'tests/webstorage/webStorageTest.js',
+      'tests/dbHandler/dbHandlerTest.js',
       'tests/dbhandler/dbHandlerFactoryTest.js'
       //'tests/**/*.js'
     ],
@@ -61,7 +66,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'/*, 'Firefox' /*, 'Safari'/*, 'IE'*/],
+    browsers: ['PhantomJS'],
 
 
     // Continuous Integration mode
