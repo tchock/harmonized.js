@@ -1,4 +1,4 @@
-describe('Harmonized webStorage', function(){
+describe('Harmonized.webStorage', function() {
 
   beforeEach(function() {
     spyOn(window, 'localStorage').and.returnValue(mockLocalStorage);

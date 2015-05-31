@@ -26,8 +26,8 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._deleteUpstream.subscribe(this.downstream);
 
   // Initially get the metadata
-  this._metadata = Harmonized.getWebStorage().getItem('harmonized_meta_' +
-    this._storeName) || {};
+  this._metaStorageName = 'harmonized_meta_' + this._storeName;
+  this._metadata = Harmonized.getWebStorage().getItem(this._metaStorageName) || {};
 }
 
 Harmonized.DbHandler.prototype.getMetadata = function () {
@@ -36,8 +36,7 @@ Harmonized.DbHandler.prototype.getMetadata = function () {
 
 Harmonized.DbHandler.prototype.setMetadata = function(key, value) {
   this._metadata[key] = value;
-  return Harmonized.getWebStorage().addItem('harmonized_meta_' +
-    this._storeName, this._metadata);
+  Harmonized.getWebStorage().addItem(this._metaStorageName, this._metadata);
 };
 
 Harmonized.DbHandler.prototype._createDbItem = function(item) {
