@@ -20,21 +20,21 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
     return item.meta.action === 'save';
   });
   this._saveDownstream = this._saveUpstream.map(this.put);
-  this._saveDownstream.subscribe(this.downstream);
+  this._saveSubscribe = this._saveDownstream.subscribe(this.downstream);
 
   // Delete upstream
   this._deleteUpstream = this._upstream.filter(function(item) {
     return item.meta.action === 'delete';
   });
   this._deleteDownstream = this._deleteUpstream.map(this.remove);
-  this._deleteDownstream.subscribe(this.downstream);
+  this._deleteSubscribe = this._deleteDownstream.subscribe(this.downstream);
 
   // Initially get the metadata
   this._metaStorageName = 'harmonized_meta_' + this._storeName;
   this._metadata = Harmonized.getWebStorage().getItem(this._metaStorageName) || {};
-}
+};
 
-Harmonized.DbHandler.prototype.getMetadata = function () {
+Harmonized.DbHandler.prototype.getMetadata = function() {
   return this._metadata;
 };
 

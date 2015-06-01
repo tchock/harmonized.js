@@ -1,17 +1,19 @@
 describe('DbHandler', function() {
 
   var dbHandler;
-  var explicitDbHandler = {
-    _connectionStream: new Rx.Subject(),
-    connect: function() {}
-  };
+  var explicitDbHandler;
 
   beforeEach(function() {
     // Set key mocks
     spyOn(Harmonized, 'getStoreKey').and.returnValue('_id');
     spyOn(Harmonized, 'getServerKey').and.returnValue('id');
 
-    dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore');
+    explicitDbHandler = {
+      _connectionStream: new Rx.Subject(),
+      connect: function() {}
+    }
+
+    dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore');
 
     // webStorage mock
     spyOn(Harmonized, 'getWebStorage').and.returnValue(mockLocalStorage);
@@ -28,90 +30,214 @@ describe('DbHandler', function() {
     var onNext = Rx.ReactiveTest.onNext;
     var onError = Rx.ReactiveTest.onError;
     var subscribe = Rx.ReactiveTest.subscribe;
+    var scheduler;
     var virtualTick;
+    var upstreamOutputs;
+    var downstreamOutputs;
+    var saveUpstreamOutputs;
+    var saveDownstreamOutputs;
+    var deleteUpstreamOutputs;
+    var deleteDownstreamOutputs;
+
+    var streamInputs = [{
+      data: {
+        name: 'Hans Wurst'
+      },
+      meta: {
+        action: 'save'
+      }
+    },
+    {
+      data: {
+        name: 'Mike Hansen'
+      },
+      meta: {
+        action: 'delete'
+      }
+    },
+    {
+      data: {
+        name: 'Wigald Boning'
+      },
+      meta: {
+        action: 'save'
+      }
+    }, {
+      data: {
+        name: 'Biff Tannen'
+      },
+      meta: {
+        action: 'delete'
+      }
+    }];
+
+    var ignorableInputs = [{
+      data: {
+        name: 'Marty McFly'
+      },
+      meta: {
+        action: 'befriend'
+      }
+    }, {
+      data: {
+        name: 'Till Schweiger'
+      },
+      meta: {
+        action: 'deletee'
+      }
+    }];
+
+    function scheduleData() {
+      scheduler.scheduleWithAbsolute(1, function () {
+        explicitDbHandler._connectionStream.onNext(true);
+        dbHandler.upstream.onNext(streamInputs[0]);
+      });
+
+      scheduler.scheduleWithAbsolute(10, function () {
+        dbHandler.upstream.onNext(streamInputs[1]);
+      });
+
+      scheduler.scheduleWithAbsolute(45, function () {
+        dbHandler.upstream.onNext(streamInputs[2]);
+      });
+
+      scheduler.scheduleWithAbsolute(60, function () {
+        dbHandler.upstream.onNext(streamInputs[3]);
+      });
+    }
+
+    function scheduleIgnorableData() {
+      scheduler.scheduleWithAbsolute(15, function () {
+        dbHandler.upstream.onNext(ignorableInputs[0]);
+      });
+
+      scheduler.scheduleWithAbsolute(55, function () {
+        dbHandler.upstream.onNext(ignorableInputs[1]);
+      });
+    }
 
     // Reactive X testing build up
     beforeEach(function() {
-        // Add custom RxJS matchers
-        jasmine.addMatchers(streamMatchers);
-        virtualTick = 0;
+      // Add custom RxJS matchers
+      jasmine.addMatchers(streamMatchers);
 
-        spyOn(dbHandler.upstream, 'onNext').and.callFake(function(item) {
-          onNext(virtualTick, item);
-          virtualTick += 10;
-        });
+      // Scheduler to mock the RxJS timing
+      scheduler = new Rx.TestScheduler();
+
+      // Mock the subject to let it use the scheduler
+      var originalSubject = Rx.Subject;
+      spyOn(Rx, 'Subject').and.callFake(function() {
+        return new originalSubject(scheduler.createObserver(), scheduler.createHotObservable());
+      });
+
+      // Rebuild explicitDbHandler to include mock subject
+      explicitDbHandler = {
+        _connectionStream: new Rx.Subject(),
+        connect: function() {}
+      };
+
+      // Rebuild dbHandler to include mock subject
+      dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore');
+
+      // Subscribe streams to push to respective output arrays
+      dbHandler._upstream.subscribe(function(item) {
+        upstreamOutputs.push(item);
+      });
+      dbHandler.downstream.subscribe(function(item) {
+        downstreamOutputs.push(item);
+      });
+
+      dbHandler._saveUpstream.subscribe(function(item) {
+        saveUpstreamOutputs.push(item);
+      });
+
+      dbHandler._deleteUpstream.subscribe(function(item) {
+        deleteUpstreamOutputs.push(item);
+      });
+
     });
 
-    beforeEach(function(){
-      // Add missing put and remove methods to test
-      dbHandler.put = function(item) {
-        return item;
-      };
+    beforeEach(function() {
+      // Reset stream output arrays
+      upstreamOutputs = [];
+      downstreamOutputs = [];
 
-      dbHandler.remove = function(item) {
-        return item;
-      };
+      deleteUpstreamOutputs = [];
+      deleteDownstreamOutputs = [];
+
+      saveUpstreamOutputs = [];
+      saveDownstreamOutputs = [];
 
       // spy on these methods
-      spyOn(dbHandler, 'put').and.callThrough();
-      spyOn(dbHandler, 'remove').and.callThrough();
+      spyOn(Harmonized.MockDbHandler, 'mockPut').and.callThrough();
+      spyOn(Harmonized.MockDbHandler, 'mockRemove').and.callThrough();
     });
 
-    xit('should filter data to be saved for saveUpstream', function() {
-      var streamInputs = [{
-        data: {
-          name: 'Hans Wurst'
-        },
-        meta: {
-          action: 'save'
-        }
-      },
-      {
-        data: {
-          name: 'Mike Hansen'
-        },
-        meta: {
-          action: 'delete'
-        }
-      },
-      {
-        data: {
-          name: 'Wigald Boning'
-        },
-        meta: {
-          action: 'save'
-        }
-      }];
+    it('should filter data to be saved', function() {
+      var expectedStreamOutputs = [
+        streamInputs[0],
+        streamInputs[2]
+      ];
 
-      dbHandler.upstream.onNext(streamInputs[0]);
-      dbHandler.upstream.onNext(streamInputs[1]);
-      dbHandler.upstream.onNext(streamInputs[2]);
+      // unsubscribe _deleteDownstream=>downstream;
+      dbHandler._deleteSubscribe.dispose();
 
-      expect(dbHandler._saveUpstream.messages).toHaveEqualElements(
-        onNext(0, streamInputs[0]),
-        onNext(20, streamInputs[2])
-      );
+      // Fill upstream with data
+      scheduleData();
+      scheduler.start();
+
+      // Test if the data was filtered as expected
+      expect(upstreamOutputs.length).toBe(4);
+      expect(saveUpstreamOutputs).toEqual(expectedStreamOutputs);
+
+      // check Downstream length
+      expect(downstreamOutputs.length).toBe(2);
+      expect(downstreamOutputs).toEqual(expectedStreamOutputs);
+
+      // Test if map functions were called
+      expect(Harmonized.MockDbHandler.mockPut).toHaveBeenCalled();
+      expect(Harmonized.MockDbHandler.mockRemove).not.toHaveBeenCalled();
     });
 
-    xit('should filter data to be deleted for deleteUpstream', function() {
+    it('should filter data to be deleted', function() {
+      var expectedStreamOutputs = [
+        streamInputs[1],
+        streamInputs[3]
+      ];
 
+      // unsubscribe _saveDownstream=>downstream;
+      dbHandler._saveSubscribe.dispose();
+
+      // Fill upstream with data
+      scheduleData();
+      scheduler.start();
+
+      // Test if the data was filtered as expected
+      expect(upstreamOutputs.length).toBe(4);
+      expect(deleteUpstreamOutputs).toEqual(expectedStreamOutputs);
+
+      // check Downstream length
+      expect(downstreamOutputs.length).toBe(2);
+      expect(downstreamOutputs).toEqual(expectedStreamOutputs);
+
+      // Test if map functions were called
+      expect(Harmonized.MockDbHandler.mockRemove).toHaveBeenCalled();
+      expect(Harmonized.MockDbHandler.mockPut).not.toHaveBeenCalled();
     });
 
-    xit('should ignore data to not be saved or deleted', function() {
+    it('should ignore data to not be saved or deleted', function() {
+      // Fill upstream with data
+      scheduleData();
+      scheduleIgnorableData();
+      scheduler.start();
 
+      // Check stream lengths
+      expect(upstreamOutputs.length).toBe(6);
+      expect(deleteUpstreamOutputs.length).toBe(2);
+      expect(saveUpstreamOutputs.length).toBe(2);
+      expect(downstreamOutputs.length).toBe(4);
+      expect(downstreamOutputs).toEqual(streamInputs);
     });
-
-    xit('should call the save downstream map fn and delegate to downstream',
-      function() {
-        expect(dbHandler.put).toHaveBeenCalled();
-        expect(dbHandler.remove).not.toHaveBeenCalled();
-      });
-
-    xit('should call the delete downstream map fn and delegate to downstream',
-      function() {
-        expect(dbHandler.remove).toHaveBeenCalled();
-        expect(dbHandler.put).not.toHaveBeenCalled();
-      });
 
     xit('should pause/resume internal upstream depending on db connection', function() {
 
