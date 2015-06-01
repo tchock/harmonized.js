@@ -239,8 +239,55 @@ describe('DbHandler', function() {
       expect(downstreamOutputs).toEqual(streamInputs);
     });
 
-    xit('should pause/resume internal upstream depending on db connection', function() {
+    it('should pause/resume internal upstream depending on db connection', function() {
+      // Fill upstream with data
+      scheduleData();
 
+      // Pause the internal upstream at 8ms
+      scheduler.scheduleWithAbsolute(8, function () {
+        explicitDbHandler._connectionStream.onNext(false);
+      });
+
+      // In the meantime the second stream item is put on the upstream
+      // is buffered in the internal upstream because it is paused
+
+      // Resume the internal upstream at 15ms
+      scheduler.scheduleWithAbsolute(15, function () {
+        explicitDbHandler._connectionStream.onNext(true);
+      });
+
+      // In the meantime the second (10ms) and third (45ms) item are put on the
+      // upstream and are delegated to the downstream, because the internal
+      // upstream is not paused
+
+      // Pause the internal upstream at 50ms
+      scheduler.scheduleWithAbsolute(50, function () {
+        explicitDbHandler._connectionStream.onNext(false);
+      });
+
+      // Start the scheduler to run the current setup
+      scheduler.start();
+
+      // Until now, only 3 items should be handled by the database
+      expect(upstreamOutputs.length).toBe(3);
+
+      // Stop the scheduler to add new scheduling steps
+      scheduler.stop();
+
+      // Resume the internal upstream at 65ms, all items should by now be on the
+      // public upstream
+      scheduler.scheduleWithAbsolute(65, function () {
+        explicitDbHandler._connectionStream.onNext(true);
+      });
+
+      // Start the scheduler again to flush the remaining stream items to the
+      // public downstream
+      scheduler.start();
+
+      // Now all items should be handled by the database and put on the public
+      // downstream! These items should match the input
+      expect(upstreamOutputs.length).toBe(4);
+      expect(downstreamOutputs).toEqual(streamInputs);
     });
 
   });
