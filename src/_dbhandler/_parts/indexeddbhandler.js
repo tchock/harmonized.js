@@ -46,6 +46,7 @@ Harmonized.IndexedDbHandler.connect = function () {
 Harmonized.IndexedDbHandler.closeConnection = function () {
   var dbHandler = Harmonized.IndexedDbHandler;
   var db = dbHandler._db;
+  /* istanbul ignore else */
   if (db) {
     db.close();
     dbHandler._db = null;
@@ -95,11 +96,12 @@ Harmonized.IndexedDbHandler.prototype.put = function (item) {
   var putStream = new Rx.Subject();
 
   // Create singleton array with data, if data is no array
-  if (!_.isArray(data)) {
+  if (!_.isArray(item)) {
     item = [item];
   }
 
-  var transaction = dbHandler._db.transaction([_this._storeName], 'readwrite');
+  console.log('pre transaction');
+  var transaction = dbHandler._db.transaction(_this._storeName, 'readwrite');
   transaction.onerror = putStream.onError;
   var objectStore = transaction.objectStore(_this._storeName);
   putNext();
