@@ -53,23 +53,38 @@ describe("IndexedDB Service", function() {
   });
 
   it('should connect to database, disconnect afterwards and connect again with increased version number', function() {
+    // _db should not be set!
     expect(Harmonized.IndexedDbHandler._db).toBe(null);
 
     scheduler.scheduleWithAbsolute(0, function () {
+      // Check if only the initial false is in the connection stream output
       expect(connectionStreamOutputs).toEqual([false]);
     });
 
     scheduler.scheduleWithAbsolute(1, function () {
+      // Check if storage is not jet build
       expect(indexedDBmockDbs.harmonized_db.objectStoreNames).toEqual([]);
       expect(connectionStreamOutputs).toEqual([false]);
+
+      // Check after the connection has happened (2 fake ticks)
       jasmine.clock().tick(2);
+
+      // Now the database connection is established (2nd entry === true)
       expect(connectionStreamOutputs).toEqual([false, true]);
+
+      // _db is set and version should be 1 (in indexeddb and its handler)
       expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
       expect(Harmonized.IndexedDbHandler._db.version).toBe(1);
       expect(indexedDBmockDbs.harmonized_db.version).toBe(1);
+
+      // TODO check if storage is build by now
+
+      // Test if connect() will not connect on already established connection
+      expect(Harmonized.IndexedDbHandler.connect()).toBeUndefined();
     });
 
     scheduler.scheduleWithAbsolute(10, function () {
+      // Check if the closing of connection works
       Harmonized.IndexedDbHandler.closeConnection();
       expect(Harmonized.IndexedDbHandler._db).toBe(null);
       expect(connectionStreamOutputs).toEqual([false, true, false]);
@@ -78,9 +93,14 @@ describe("IndexedDB Service", function() {
     scheduler.scheduleWithAbsolute(20, function () {
       // Version update
       Harmonized.dbVersion = 2;
+
+      // Connect again!
       Harmonized.IndexedDbHandler.connect();
       expect(connectionStreamOutputs).toEqual([false, true, false]);
       jasmine.clock().tick(2);
+
+      // Should now be connected
+      // and version should be 2 (in indexeddb and its handler)
       expect(connectionStreamOutputs).toEqual([false, true, false, true]);
       expect(Harmonized.IndexedDbHandler._db.version).toBe(2);
       expect(indexedDBmockDbs.harmonized_db.version).toBe(2);

@@ -9,6 +9,7 @@ Harmonized.IndexedDbHandler._connectionStream  = new Rx.Subject();
 // Database Object
 Harmonized.IndexedDbHandler._db = null;
 
+/* istanbul ignore next */
 Harmonized.IndexedDbHandler.getDbReference = function () {
   return window.indexedDB;
 };
