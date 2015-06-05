@@ -12,6 +12,10 @@ Harmonized.getServerKey = function() {
   // TODO implement get server key fn
 }
 
+Harmonized.getDbSchema = function() {
+  // TODO implement database schema function
+}
+
 Harmonized._createStreamItem = function(inputItem, keys) {
   inputItem = _.clone(inputItem);
   var item = {

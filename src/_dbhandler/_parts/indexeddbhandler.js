@@ -26,7 +26,6 @@ Harmonized.IndexedDbHandler.connect = function () {
 
   // Request success
   request.onsuccess = function (e) {
-    console.log('connect success');
     dbHandler._db = request.result;
     dbHandler._connectionStream.onNext(true);
   };
@@ -34,11 +33,24 @@ Harmonized.IndexedDbHandler.connect = function () {
   // DB needs upgrade
   request.onupgradeneeded = function (e) {
     var db = request.result;
+    var schema = Harmonized.getDbSchema();
+    var currentStore;
+    var newObjectStore;
     var i;
-    console.log('upgrade needed');
 
-    // TODO Remove all old objectStores
-    // TODO read store definition
+    // Remove all stores items
+    for (i = db.objectStoreNames.length-1; i >= 0; i--) {
+      currentStore = db.objectStoreNames.item(i);
+      db.deleteObjectStore(currentStore);
+    }
+
+    for (var store in schema) {
+      currentStore = schema[store];
+      var objectStore = db.createObjectStore(store, { keyPath: currentStore.storeId,
+        autoIncrement: true });
+      objectStore.createIndex('serverId', currentStore.serverId, { unique: true,
+        multiEntry: false });
+    }
   };
 
   return request;
