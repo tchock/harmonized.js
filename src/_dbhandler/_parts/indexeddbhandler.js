@@ -32,7 +32,7 @@ Harmonized.IndexedDbHandler.connect = function () {
 
   // DB needs upgrade
   request.onupgradeneeded = function (e) {
-    var db = request.result;
+    var db = e.result;
     var schema = Harmonized.getDbSchema();
     var currentStore;
     var newObjectStore;
@@ -40,7 +40,7 @@ Harmonized.IndexedDbHandler.connect = function () {
 
     // Remove all stores items
     for (i = db.objectStoreNames.length-1; i >= 0; i--) {
-      currentStore = db.objectStoreNames.item(i);
+      currentStore = db.objectStoreNames[i];
       db.deleteObjectStore(currentStore);
     }
 
@@ -63,7 +63,6 @@ Harmonized.IndexedDbHandler.closeConnection = function () {
   if (db) {
     db.close();
     dbHandler._db = null;
-    console.log('disco');
     dbHandler._connectionStream.onNext(false);
   }
 };
@@ -113,8 +112,7 @@ Harmonized.IndexedDbHandler.prototype.put = function (item) {
     item = [item];
   }
 
-  console.log('pre transaction');
-  var transaction = dbHandler._db.transaction(_this._storeName, 'readwrite');
+  var transaction = dbHandler._db.transaction([_this._storeName], 'readwrite');
   transaction.onerror = putStream.onError;
   var objectStore = transaction.objectStore(_this._storeName);
   putNext();
@@ -122,13 +120,18 @@ Harmonized.IndexedDbHandler.prototype.put = function (item) {
   function putNext(e) {
     if (!!e) {
       // Data was received
+      if (_.isUndefined(item[i].meta)) {
+        item[i].meta = {};
+      }
+
       item[i].meta.storeId = e.target.result;
       putStream.onNext(item[i]);
+      i++;
     }
 
-    if (i < data.length) {
+    if (i < item.length) {
       // Save and do next stuff
-      var put = objectStore.put(_this._createDbItem(item[i++]));
+      var put = objectStore.put(_this._createDbItem(item[i]));
       put.onsuccess = putNext;
       put.onerror = putError;
     }

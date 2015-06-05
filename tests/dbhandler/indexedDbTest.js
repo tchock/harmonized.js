@@ -26,6 +26,15 @@ describe("IndexedDB Service", function() {
     Harmonized.IndexedDbHandler._db = null;
   });
 
+  beforeEach(function() {
+    spyOn(Harmonized, 'getDbSchema').and.returnValue({
+      testStore: {
+        storeId: '_id',
+        serverId: 'id'
+      }
+    });
+  });
+
   // Reactive X testing build up
   beforeEach(function() {
     // Add custom RxJS matchers
@@ -112,37 +121,88 @@ describe("IndexedDB Service", function() {
 
 
 
-  xit('should add 3 entries to a storage', function() {
+  it('should add 3 entries to a storage', function() {
+    var putStream;
+    var putItems = [];
+
+    jasmine.clock().tick(2);
+    expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
+
+    // Add some data
+    scheduler.scheduleWithAbsolute(0, function () {
+      putStream = fillStorageWithTestData();
+      putStream.subscribe(function(item){
+        putItems.push(item);
+      });
+      jasmine.clock().tick(3);
+    });
+
+    scheduler.start();
+
+    // Check the returned stream data
+    expect(putItems.length).toBe(3);
+    expect(putItems).toEqual([
+      {meta:{storeId: 1}, data:{firstname:'Igor',lastname:'Igorson'}},
+      {meta:{storeId: 2}, data:{firstname:'Igor',lastname:'Igorson'}},
+      {meta:{storeId: 3}, data:{firstname:'Igor',lastname:'Igorov'}}
+    ]);
+
+    // Check the saved data
+    var storeData = indexedDBmockDbs.harmonized_db.objectStores[0].__data;
+    expect(storeData[1]).toEqual({firstname:'Igor',lastname:'Igorson', _id: 1});
+    expect(storeData[2]).toEqual({firstname:'Igor',lastname:'Igorson', _id: 2});
+    expect(storeData[3]).toEqual({firstname:'Igor',lastname:'Igorov', _id: 3});
+  });
+
+  xit('should get all entries from a store with 3 items', function(done) {
+    var getStream;
+    var getItems = [];
+
+    jasmine.clock().tick(2);
+    expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
+
+    // Add data to the mocked indexeddb
+    indexedDBmockDbs.harmonized_db.objectStores[0].__data = {
+      1: {firstname:'Igor',lastname:'Igorson'},
+      2: {firstname:'Igor',lastname:'Mortison'},
+      3: {firstname:'Igor',lastname:'Igorov'}
+    }
+
+    scheduler.scheduleWithAbsolute(0, function () {
+      getStream = indexedDbHandler.getAllEntries();
+      getStream.subscribe(function(item){
+        getItems.push(item);
+      });
+      jasmine.clock().tick(3);
+    });
+
+    scheduler.start();
+
+    expect(getItems).toEqual([
+      {meta:{storeId: 1}, data:{firstname:'Igor',lastname:'Igorson'}},
+      {meta:{storeId: 2}, data:{firstname:'Igor',lastname:'Mortison'}},
+      {meta:{storeId: 3}, data:{firstname:'Igor',lastname:'Igorov'}}
+    ]);
+  });
+
+  xit('should get all entries from an empty table', function(done) {
+    var getStream;
+    var getItems = [];
+
     jasmine.clock().tick(2);
     expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
 
     scheduler.scheduleWithAbsolute(0, function () {
-      var putStream = fillStorageWithTestData();
-      putStream.subscribe(function(item){
-        console.log('new put item', item);
+      getStream = indexedDbHandler.getAllEntries();
+      getStream.subscribe(function(item){
+        getItems.push(item);
       });
+      jasmine.clock().tick(3);
     });
 
     scheduler.start();
-/*
-      service.getAllEntries().then(function(data){
-        expect(data.length).toBe(3);
-        if (data.length === 3) {
-          expect(data[0]._id).toBe(1);
-          expect(data[1]._id).toBe(2);
-          expect(data[2]._id).toBe(3);
-        }
-    });
-*/
-  });
 
-  xit('should get all entries from an empty table', function(done) {
-    // No content available
-    mockIndexedDBItems = [];
-    service.getAllEntries().then(function(data){
-      expect(data).toEqual([]);
-      done();
-    });
+    expect(getItems).toEqual([]);
   });
 
   xit('should insert two new entries to the db separately', function(done){
