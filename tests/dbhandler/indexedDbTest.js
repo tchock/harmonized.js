@@ -253,30 +253,6 @@ describe("IndexedDB Service", function() {
     expect(storeData[3]).toEqual({firstname:'Igor',lastname:'Igorov', _id: 3});
   });
 
-  xit('should remove the second entry', function(done){
-    fillStorageWithTestData().then(function(){
-      service.remove(2).then(function(){
-        service.getAllEntries().then(function(data){
-          expect(data.length).toBe(2);
-          expect(data[0]._id).toBe(1);
-          expect(data[1]._id).toBe(3);
-          done();
-        });
-      });
-    });
-  });
-
-  xit('should clear the storage', function(done){
-    fillStorageWithTestData().then(function(){
-      service.clearStorage().then(function(){
-        service.getAllEntries().then(function(data){
-          expect(data.length).toBe(0);
-          done();
-        });
-      });
-    });
-  });
-
   it('should delete the database', function(){
     jasmine.clock().tick(2);
     expect(Harmonized.IndexedDbHandler._db).not.toBe(null);

@@ -101,6 +101,7 @@ Harmonized.IndexedDbHandler.prototype.put = function (item) {
   var dbHandler = Harmonized.IndexedDbHandler;
 
   // Don't do anything if the database connection is not established
+  /* istanbul ignore if */
   if (!dbHandler._db) return;
 
   var _this = this;
@@ -149,6 +150,7 @@ Harmonized.IndexedDbHandler.prototype.remove = function (item) {
   var _this = this;
 
   // Don't do anything if the database connection is not established
+  /* istanbul ignore if */
   if (!dbHandler._db) return;
 
   var removeStream = new Rx.Subject();
@@ -163,16 +165,4 @@ Harmonized.IndexedDbHandler.prototype.remove = function (item) {
   request.onerror = removeStream.onError;
 
   return removeStream;
-};
-
-Harmonized.IndexedDbHandler.prototype.clearStorage = function () {
-  var _this = this;
-  var dbHandler = Harmonized.IndexedDbHandler;
-
-  // Don't do anything if the database connection is not established
-  if (!dbHandler._db) return;
-
-  return dbHandler._db.transaction(_this._storeName, 'readwrite')
-    .objectStore(_this._storeName)
-    .clear();
 };
