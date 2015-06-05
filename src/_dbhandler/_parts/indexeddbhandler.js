@@ -1,10 +1,10 @@
 Harmonized.IndexedDbHandler = function IndexedDbHandler(storeName) {
   this._handlerType = 'IndexedDB';
-  Harmonized.DbHandler.call(this, Harmonized.IndexedDbHanddler, storeName);
+  Harmonized.DbHandler.call(this, Harmonized.IndexedDbHandler, storeName);
 }
 
 // Connection stream to pause or resume the upstream
-Harmonized.IndexedDbHandler._connectionStream = new Rx.Subject();
+Harmonized.IndexedDbHandler._connectionStream  = new Rx.Subject();
 
 // Database Object
 Harmonized.IndexedDbHandler._db = null;
@@ -20,25 +20,21 @@ Harmonized.IndexedDbHandler.connect = function () {
     return;
   }
 
-  dbHandler._connectionStream.onNext(false);
-
   var request = dbHandler.getDbReference().open('harmonized_db',
-    Harmonized.dbVersion || 1);
+    Harmonized.dbVersion);
 
   // Request success
   request.onsuccess = function (e) {
+    console.log('connect success');
     dbHandler._db = request.result;
     dbHandler._connectionStream.onNext(true);
-    dbHandler._db.onversionchange = function (e) {
-      dbHandler._db.close();
-      dbHandler._connectionStream.onNext(false);
-    };
   };
 
   // DB needs upgrade
   request.onupgradeneeded = function (e) {
     var db = request.result;
     var i;
+    console.log('upgrade needed');
 
     // TODO Remove all old objectStores
     // TODO read store definition
@@ -53,6 +49,7 @@ Harmonized.IndexedDbHandler.closeConnection = function () {
   if (db) {
     db.close();
     dbHandler._db = null;
+    console.log('disco');
     dbHandler._connectionStream.onNext(false);
   }
 };

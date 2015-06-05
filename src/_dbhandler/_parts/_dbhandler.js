@@ -13,7 +13,10 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._upstream = this.upstream.pausableBuffered(dbHandler._connectionStream);
 
   // Directly connect to the server if necessary
-  dbHandler.connect();
+  if (!dbHandler._db) {
+    dbHandler._connectionStream.onNext(false);
+    dbHandler.connect();
+  }
 
   // Save upstream
   this._saveUpstream = this._upstream.filter(function(item) {

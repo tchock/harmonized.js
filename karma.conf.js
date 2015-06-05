@@ -18,6 +18,7 @@ module.exports = function(config) {
       'bower_components/lodash/lodash.js',
       'bower_components/sql-parser/browser/sql-parser.js',
       'bower_components/mock-websql/websql.js',
+      'bower_components/indexedDBmock/dist/indexedDBmock.js',
       'bower_components/rxjs/dist/rx.lite.js',
       'bower_components/rxjs/dist/rx.async.js',
       'bower_components/rxjs/dist/rx.virtualtime.js',
@@ -27,7 +28,8 @@ module.exports = function(config) {
       'tests/Harmonized/harmonizedTest.js',
       'tests/webstorage/webStorageTest.js',
       'tests/dbHandler/dbHandlerTest.js',
-      'tests/dbhandler/dbHandlerFactoryTest.js'
+      'tests/dbhandler/dbHandlerFactoryTest.js',
+      'tests/dbHandler/indexedDbTest.js'
       //'tests/**/*.js'
     ],
 

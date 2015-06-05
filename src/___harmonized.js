@@ -2,6 +2,8 @@ var Harmonized = function Harmonized() {
 
 };
 
+Harmonized.dbVersion = 1;
+
 Harmonized.getStoreKey = function() {
   // TODO implement get store key fn
 }
