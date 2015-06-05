@@ -19,11 +19,15 @@ describe("IndexedDB Service", function() {
   });
 
   beforeEach(function() {
+    // Set key mocks
+    spyOn(Harmonized, 'getStoreKey').and.returnValue('_id');
+    spyOn(Harmonized, 'getServerKey').and.returnValue('id');
     spyOn(Harmonized.IndexedDbHandler, 'getDbReference').and.returnValue(window.indexedDBmock);
   });
 
   afterEach(function() {
     Harmonized.IndexedDbHandler._db = null;
+    delete indexedDBmockDbs.harmonized_db;
   });
 
   beforeEach(function() {
@@ -154,8 +158,7 @@ describe("IndexedDB Service", function() {
     expect(storeData[3]).toEqual({firstname:'Igor',lastname:'Igorov', _id: 3});
   });
 
-  xit('should get all entries from a store with 3 items', function(done) {
-    var getStream;
+  it('should get all entries from a store with 3 items', function() {
     var getItems = [];
 
     jasmine.clock().tick(2);
@@ -163,30 +166,31 @@ describe("IndexedDB Service", function() {
 
     // Add data to the mocked indexeddb
     indexedDBmockDbs.harmonized_db.objectStores[0].__data = {
-      1: {firstname:'Igor',lastname:'Igorson'},
-      2: {firstname:'Igor',lastname:'Mortison'},
-      3: {firstname:'Igor',lastname:'Igorov'}
+      1: {firstname:'Igor',lastname:'Igorson', _id: 1},
+      2: {firstname:'Igor',lastname:'Mortison', _id: 2},
+      3: {firstname:'Igor',lastname:'Igorov', _id: 3}
     }
 
+    indexedDBmockDbs.harmonized_db.objectStores[0].__keys = [1,2,3];
+
     scheduler.scheduleWithAbsolute(0, function () {
-      getStream = indexedDbHandler.getAllEntries();
-      getStream.subscribe(function(item){
+      indexedDbHandler.getAllEntries();
+      indexedDbHandler.downstream.subscribe(function(item){
         getItems.push(item);
       });
-      jasmine.clock().tick(3);
+      jasmine.clock().tick(20);
     });
 
     scheduler.start();
 
     expect(getItems).toEqual([
-      {meta:{storeId: 1}, data:{firstname:'Igor',lastname:'Igorson'}},
-      {meta:{storeId: 2}, data:{firstname:'Igor',lastname:'Mortison'}},
-      {meta:{storeId: 3}, data:{firstname:'Igor',lastname:'Igorov'}}
+      {meta:{storeId: 1, serverId: undefined}, data:{firstname:'Igor',lastname:'Igorson'}},
+      {meta:{storeId: 2, serverId: undefined}, data:{firstname:'Igor',lastname:'Mortison'}},
+      {meta:{storeId: 3, serverId: undefined}, data:{firstname:'Igor',lastname:'Igorov'}}
     ]);
   });
 
-  xit('should get all entries from an empty table', function(done) {
-    var getStream;
+  it('should get all entries from an empty table', function() {
     var getItems = [];
 
     jasmine.clock().tick(2);
@@ -194,7 +198,7 @@ describe("IndexedDB Service", function() {
 
     scheduler.scheduleWithAbsolute(0, function () {
       getStream = indexedDbHandler.getAllEntries();
-      getStream.subscribe(function(item){
+      indexedDbHandler.downstream.subscribe(function(item){
         getItems.push(item);
       });
       jasmine.clock().tick(3);
@@ -205,96 +209,48 @@ describe("IndexedDB Service", function() {
     expect(getItems).toEqual([]);
   });
 
-  xit('should insert two new entries to the db separately', function(done){
-    var firstExpectedInput = {firstname:'Igor',lastname:'Igorson',_id:1};
-    var secondExpectedInput = {firstname:'Igor',lastname:'Igorson',_id:2};
+  it('should remove the second entry', function() {
+    var removeStream;
+    var removeItems = [];
 
-    service.put({
-      firstname: 'Igor',
-      lastname: 'Igorson'
-    }).then(function(data){
-      expect(data).toEqual([1]);
-      service.getEntry(1).then(function(data){
-        expect(data).toEqual(firstExpectedInput);
+    jasmine.clock().tick(2);
+    expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
 
-        service.put({
-          firstname: 'Igor',
-          lastname: 'Igorson'
-        }).then(function(data){
-          expect(data).toEqual([2]);
-          service.getEntry(2).then(function(data){
-            expect(data).toEqual(secondExpectedInput);
-            done();
-          });
-        });
+    // Add data to the mocked indexeddb
+    indexedDBmockDbs.harmonized_db.objectStores[0].__data = {
+      1: {firstname:'Igor',lastname:'Igorson', _id: 1},
+      2: {firstname:'Igor',lastname:'Mortison', _id: 2},
+      3: {firstname:'Igor',lastname:'Igorov', _id: 3}
+    }
 
+    indexedDBmockDbs.harmonized_db.objectStores[0].__keys = [1,2,3];
+
+    scheduler.scheduleWithAbsolute(0, function () {
+      var removeStream = indexedDbHandler.remove({
+        meta:{storeId: 2},
+        data:{firstname:'Igor',lastname:'Mortison'}
       });
-    });
-  });
-
-  xit('should insert two new entries to the db at once', function(done){
-    var expectedInput = [
-      {firstname:'Igor',lastname:'Igorson',_id:1},
-      {firstname:'Igor',lastname:'Igorson',_id:2}];
-
-    service.put([{
-      firstname: 'Igor',
-      lastname: 'Igorson'
-    }, {
-      firstname: 'Igor',
-      lastname: 'Igorson'
-    }]).then(function(data){
-      expect(data).toEqual([1, 2]);
-      service.getAllEntries().then(function(data){
-        expect(data).toEqual(expectedInput);
-        done();
+      removeStream.subscribe(function(item){
+        removeItems.push(item);
       });
 
+      jasmine.clock().tick(2);
     });
-  });
 
-  xit('should update an existing entry', function(done) {
-    var expectedOutput = {firstname:'Vladimir',lastname:'Igorson',_id:2};
-    fillStorageWithTestData().then(function(){
-      service.put({
-        firstname: 'Vladimir',
-        lastname: 'Igorson',
-        _id: 2
-      }).then(function(data){
-        expect(data).toEqual([2]);
-        service.getEntry(2).then(function(data){
-          expect(data).toEqual(expectedOutput);
-          done();
-        });
-      });
+    scheduler.start();
+
+    // Check the downstream
+    expect(removeItems.length).toBe(1);
+    expect(removeItems[0]).toEqual({
+      meta: {deleted: true, storeId: 2},
+      data:{firstname:'Igor',lastname:'Mortison'}
     });
-  });
 
-  xit('should update two existing entries at once', function(done) {
-    var expectedOutput = [
-      {firstname:'Olga',lastname:'Igorson', _id: 1},
-      {firstname:'Dimitri',lastname:'Igorson',_id:2}
-    ];
-
-    // set the storage
-    fillStorageWithTestData().then(function(){
-      service.put([{
-        firstname: 'Olga',
-        lastname: 'Igorson',
-        _id: 1
-      }, {
-        firstname: 'Dimitri',
-        lastname: 'Igorson',
-        _id: 2
-      }]).then(function(data){
-        expect(data).toEqual([1, 2]);
-        service.getAllEntries().then(function(data){
-          expect(data[0]).toEqual(expectedOutput[0]);
-          expect(data[1]).toEqual(expectedOutput[1]);
-          done();
-        });
-      });
-    });
+    // Check the saved data
+    var storeData = indexedDBmockDbs.harmonized_db.objectStores[0].__data;
+    expect(storeData[1]).toEqual({firstname:'Igor',lastname:'Igorson', _id: 1});
+    expect(storeData[2]).toBeUndefined();
+    expect(storeData[3]).toEqual({firstname:'Igor',lastname:'Igorov', _id: 3});
   });
 
   xit('should remove the second entry', function(done){

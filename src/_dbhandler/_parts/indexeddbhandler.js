@@ -85,8 +85,8 @@ Harmonized.IndexedDbHandler.prototype.getAllEntries = function () {
   var cursor = store.openCursor();
   cursor.onsuccess = function (e) {
     cursor = e.target.result;
-    var cursorItem = cursor.value;
     if (cursor) {
+      var cursorItem = cursor.value;
       _this.downstream.onNext(Harmonized._createStreamItem(cursorItem,
           _this._keys));
       cursor.continue();
@@ -146,12 +146,13 @@ Harmonized.IndexedDbHandler.prototype.put = function (item) {
 
 Harmonized.IndexedDbHandler.prototype.remove = function (item) {
   var dbHandler = Harmonized.IndexedDbHandler;
+  var _this = this;
 
   // Don't do anything if the database connection is not established
   if (!dbHandler._db) return;
 
   var removeStream = new Rx.Subject();
-  var request = dbHandler._db.transaction(_this._storeName, 'readwrite')
+  var request = dbHandler._db.transaction([_this._storeName], 'readwrite')
     .objectStore(_this._storeName).delete(item.meta.storeId);
 
   request.onsuccess = function () {
