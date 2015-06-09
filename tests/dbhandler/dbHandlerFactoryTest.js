@@ -1,14 +1,6 @@
-describe("DB Handler Factory", function() {
+'use strict';
 
-  function getObjectSize (object) {
-    var size = 0;
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        size++;
-      }
-    }
-    return size;
-  }
+describe('DB Handler Factory', function() {
 
   beforeEach(function() {
     // Create spies
@@ -23,9 +15,9 @@ describe("DB Handler Factory", function() {
     // TODO other db configuration
   });
 
-  it('should create a IndexedDB DB Handler because IndexedbDb is supported', function(){
+  it('should create a IndexedDB DB Handler because IndexedbDb is supported', function() {
     // Creates spies to mock available indexeddb
-    spyOn(Harmonized.dbHandlerFactory, "_getIndexedDb").and.returnValue(true);
+    spyOn(Harmonized.dbHandlerFactory, '_getIndexedDb').and.returnValue(true);
 
     // Initialized db handler factory
     Harmonized.dbHandlerFactory();
@@ -36,10 +28,10 @@ describe("DB Handler Factory", function() {
     expect(handler instanceof Harmonized.IndexedDbHandler).toBeTruthy();
   });
 
-  it('should create a WebSQL DB Handler because only WebSQL is supported', function(){
+  it('should create a WebSQL DB Handler because only WebSQL is supported', function() {
     // Creates spies to mock missing indexeddb and available websql
-    spyOn(Harmonized.dbHandlerFactory, "_getIndexedDb").and.returnValue(false);
-    spyOn(Harmonized.dbHandlerFactory, "_getWebSql").and.returnValue(true);
+    spyOn(Harmonized.dbHandlerFactory, '_getIndexedDb').and.returnValue(false);
+    spyOn(Harmonized.dbHandlerFactory, '_getWebSql').and.returnValue(true);
 
     // Initialized db handler factory
     Harmonized.dbHandlerFactory();
@@ -50,10 +42,10 @@ describe("DB Handler Factory", function() {
     expect(handler instanceof Harmonized.WebSqlHandler).toBeTruthy();
   });
 
-  it('should create no DB Handler because no DB is supported', function(){
+  it('should create no DB Handler because no DB is supported', function() {
     // Creates spies to mock missing indexeddb and websql
-    spyOn(Harmonized.dbHandlerFactory, "_getIndexedDb").and.returnValue(false);
-    spyOn(Harmonized.dbHandlerFactory, "_getWebSql").and.returnValue(false);
+    spyOn(Harmonized.dbHandlerFactory, '_getIndexedDb').and.returnValue(false);
+    spyOn(Harmonized.dbHandlerFactory, '_getWebSql').and.returnValue(false);
 
     // Initialized db handler factory
     Harmonized.dbHandlerFactory();
@@ -76,7 +68,7 @@ describe("DB Handler Factory", function() {
     // TODO Check if content of search properties array is correct
   });
 
-  it  ('should get server and store key names', function(){
+  it('should get server and store key names', function() {
     // TODO check for correct server and store keys
   });
 

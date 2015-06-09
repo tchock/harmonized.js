@@ -1,3 +1,5 @@
+'use strict';
+
 describe('Harmonized', function() {
 
   describe('createStreamItem', function() {

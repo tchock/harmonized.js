@@ -1,3 +1,5 @@
+'use strict';
+
 describe('DbHandler', function() {
 
   var dbHandler;
@@ -11,7 +13,7 @@ describe('DbHandler', function() {
     explicitDbHandler = {
       _connectionStream: new Rx.Subject(),
       connect: function() {}
-    }
+    };
 
     dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore');
 
@@ -26,12 +28,7 @@ describe('DbHandler', function() {
   describe('streams', function() {
 
     // Aliases
-    var TestScheduler = Rx.TestScheduler;
-    var onNext = Rx.ReactiveTest.onNext;
-    var onError = Rx.ReactiveTest.onError;
-    var subscribe = Rx.ReactiveTest.subscribe;
     var scheduler;
-    var virtualTick;
     var upstreamOutputs;
     var downstreamOutputs;
     var saveUpstreamOutputs;
@@ -88,30 +85,30 @@ describe('DbHandler', function() {
     }];
 
     function scheduleData() {
-      scheduler.scheduleWithAbsolute(1, function () {
+      scheduler.scheduleWithAbsolute(1, function() {
         explicitDbHandler._connectionStream.onNext(true);
         dbHandler.upstream.onNext(streamInputs[0]);
       });
 
-      scheduler.scheduleWithAbsolute(10, function () {
+      scheduler.scheduleWithAbsolute(10, function() {
         dbHandler.upstream.onNext(streamInputs[1]);
       });
 
-      scheduler.scheduleWithAbsolute(45, function () {
+      scheduler.scheduleWithAbsolute(45, function() {
         dbHandler.upstream.onNext(streamInputs[2]);
       });
 
-      scheduler.scheduleWithAbsolute(60, function () {
+      scheduler.scheduleWithAbsolute(60, function() {
         dbHandler.upstream.onNext(streamInputs[3]);
       });
     }
 
     function scheduleIgnorableData() {
-      scheduler.scheduleWithAbsolute(15, function () {
+      scheduler.scheduleWithAbsolute(15, function() {
         dbHandler.upstream.onNext(ignorableInputs[0]);
       });
 
-      scheduler.scheduleWithAbsolute(55, function () {
+      scheduler.scheduleWithAbsolute(55, function() {
         dbHandler.upstream.onNext(ignorableInputs[1]);
       });
     }
@@ -125,9 +122,9 @@ describe('DbHandler', function() {
       scheduler = new Rx.TestScheduler();
 
       // Mock the subject to let it use the scheduler
-      var originalSubject = Rx.Subject;
+      var OriginalSubject = Rx.Subject;
       spyOn(Rx, 'Subject').and.callFake(function() {
-        return new originalSubject(scheduler.createObserver(), scheduler.createHotObservable());
+        return new OriginalSubject(scheduler.createObserver(), scheduler.createHotObservable());
       });
 
       // Rebuild explicitDbHandler to include mock subject
@@ -143,6 +140,7 @@ describe('DbHandler', function() {
       dbHandler._upstream.subscribe(function(item) {
         upstreamOutputs.push(item);
       });
+
       dbHandler.downstream.subscribe(function(item) {
         downstreamOutputs.push(item);
       });
@@ -244,7 +242,7 @@ describe('DbHandler', function() {
       scheduleData();
 
       // Pause the internal upstream at 8ms
-      scheduler.scheduleWithAbsolute(8, function () {
+      scheduler.scheduleWithAbsolute(8, function() {
         explicitDbHandler._connectionStream.onNext(false);
       });
 
@@ -252,7 +250,7 @@ describe('DbHandler', function() {
       // is buffered in the internal upstream because it is paused
 
       // Resume the internal upstream at 15ms
-      scheduler.scheduleWithAbsolute(15, function () {
+      scheduler.scheduleWithAbsolute(15, function() {
         explicitDbHandler._connectionStream.onNext(true);
       });
 
@@ -261,7 +259,7 @@ describe('DbHandler', function() {
       // upstream is not paused
 
       // Pause the internal upstream at 50ms
-      scheduler.scheduleWithAbsolute(50, function () {
+      scheduler.scheduleWithAbsolute(50, function() {
         explicitDbHandler._connectionStream.onNext(false);
       });
 
@@ -276,7 +274,7 @@ describe('DbHandler', function() {
 
       // Resume the internal upstream at 65ms, all items should by now be on the
       // public upstream
-      scheduler.scheduleWithAbsolute(65, function () {
+      scheduler.scheduleWithAbsolute(65, function() {
         explicitDbHandler._connectionStream.onNext(true);
       });
 
@@ -303,7 +301,7 @@ describe('DbHandler', function() {
       };
 
       window.mockLocalStorageObj = {
-        'harmonized_meta_testStore': expectedObject
+        harmonizedMeta_testStore: expectedObject
       };
 
       dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore');
@@ -320,14 +318,14 @@ describe('DbHandler', function() {
       dbHandler.setMetadata('name', 'John Doe');
       expect(dbHandler._metadata).toEqual(expectedObject);
       expect(window.mockLocalStorageObj).toEqual({
-        'harmonized_meta_testStore': expectedObject
+        harmonizedMeta_testStore: expectedObject
       });
     });
 
     it('should add to already existing DB metadata', function() {
       window.mockLocalStorageObj = {
-        'harmonized_meta_testStore': {
-          'name': 'John Doe'
+        harmonizedMeta_testStore: {
+          name: 'John Doe'
         }
       };
 
@@ -340,7 +338,7 @@ describe('DbHandler', function() {
       dbHandler.setMetadata('otherName', 'Max Mustermann');
       expect(dbHandler._metadata).toEqual(expectedObject);
       expect(window.mockLocalStorageObj).toEqual({
-        'harmonized_meta_testStore': expectedObject
+        harmonizedMeta_testStore: expectedObject
       });
     });
 

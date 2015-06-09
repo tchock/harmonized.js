@@ -23,7 +23,7 @@ Harmonized.IndexedDbHandler.connect = function() {
     return;
   }
 
-  var request = dbHandler.getDbReference().open('harmonized_db',
+  var request = dbHandler.getDbReference().open('harmonizedDb',
     Harmonized.dbVersion);
 
   // Request success
@@ -75,7 +75,7 @@ Harmonized.IndexedDbHandler.closeConnection = function() {
 Harmonized.IndexedDbHandler.deleteDb = function() {
   Harmonized.IndexedDbHandler.closeConnection();
   return Harmonized.IndexedDbHandler.getDbReference().deleteDatabase(
-    'harmonized_db');
+    'harmonizedDb');
 };
 
 Harmonized.IndexedDbHandler.prototype = Object.create(Harmonized.

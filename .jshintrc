@@ -11,7 +11,13 @@
     "Pikaday":      false,
     "module":       false,
     "forge":        false,
-    "Harmonized":   false
+    "Harmonized":   false,
+    "describe":     false,
+    "it":           false,
+    "beforeEach":   false,
+    "afterEach":    false,
+    "spyOn":        false,
+    "expect":       false
   },
 
   "camelcase": true,

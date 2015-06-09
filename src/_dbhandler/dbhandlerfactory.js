@@ -14,7 +14,7 @@ Harmonized.dbHandlerFactory = function dbHandlerFactory() {
   }
 };
 
-Harmonized.dbHandlerFactory.createDbHandler = function (name, options) {
+Harmonized.dbHandlerFactory.createDbHandler = function(name, options) {
   if (!!Harmonized.dbHandlerFactory._DbHandler) {
     return new Harmonized.dbHandlerFactory._DbHandler(name, options);
   } else {

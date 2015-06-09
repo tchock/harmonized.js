@@ -1,12 +1,15 @@
-describe("IndexedDB Service", function() {
+'use strict';
+
+describe('IndexedDB Service', function() {
 
   var indexedDbHandler;
   var connectionStreamOutputs;
+  var scheduler;
 
-  function fillStorageWithTestData () {
-    return indexedDbHandler.put([{data:{firstname:'Igor',lastname:'Igorson'}},
-      {data:{firstname:'Igor',lastname:'Igorson'}},
-      {data:{firstname:'Igor',lastname:'Igorov'}}]
+  function fillStorageWithTestData() {
+    return indexedDbHandler.put([{data:{firstname:'Igor', lastname:'Igorson'}},
+      {data:{firstname:'Igor', lastname:'Igorson'}},
+      {data:{firstname:'Igor', lastname:'Igorov'}}]
     );
   }
 
@@ -27,7 +30,7 @@ describe("IndexedDB Service", function() {
 
   afterEach(function() {
     Harmonized.IndexedDbHandler._db = null;
-    delete indexedDBmockDbs.harmonized_db;
+    delete indexedDBmockDbs.harmonizedDb;
   });
 
   beforeEach(function() {
@@ -48,9 +51,9 @@ describe("IndexedDB Service", function() {
     scheduler = new Rx.TestScheduler();
 
     // Mock the subject to let it use the scheduler
-    var originalSubject = Rx.Subject;
+    var OriginalSubject = Rx.Subject;
     spyOn(Rx, 'Subject').and.callFake(function() {
-      return new originalSubject(scheduler.createObserver(), scheduler.createHotObservable());
+      return new OriginalSubject(scheduler.createObserver(), scheduler.createHotObservable());
     });
 
     Harmonized.IndexedDbHandler._connectionStream = new Rx.Subject();
@@ -69,14 +72,14 @@ describe("IndexedDB Service", function() {
     // _db should not be set!
     expect(Harmonized.IndexedDbHandler._db).toBe(null);
 
-    scheduler.scheduleWithAbsolute(0, function () {
+    scheduler.scheduleWithAbsolute(0, function() {
       // Check if only the initial false is in the connection stream output
       expect(connectionStreamOutputs).toEqual([false]);
     });
 
-    scheduler.scheduleWithAbsolute(1, function () {
+    scheduler.scheduleWithAbsolute(1, function() {
       // Check if storage is not jet build
-      expect(indexedDBmockDbs.harmonized_db.objectStoreNames).toEqual([]);
+      expect(indexedDBmockDbs.harmonizedDb.objectStoreNames).toEqual([]);
       expect(connectionStreamOutputs).toEqual([false]);
 
       // Check after the connection has happened (2 fake ticks)
@@ -88,7 +91,7 @@ describe("IndexedDB Service", function() {
       // _db is set and version should be 1 (in indexeddb and its handler)
       expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
       expect(Harmonized.IndexedDbHandler._db.version).toBe(1);
-      expect(indexedDBmockDbs.harmonized_db.version).toBe(1);
+      expect(indexedDBmockDbs.harmonizedDb.version).toBe(1);
 
       // TODO check if storage is build by now
 
@@ -96,14 +99,14 @@ describe("IndexedDB Service", function() {
       expect(Harmonized.IndexedDbHandler.connect()).toBeUndefined();
     });
 
-    scheduler.scheduleWithAbsolute(10, function () {
+    scheduler.scheduleWithAbsolute(10, function() {
       // Check if the closing of connection works
       Harmonized.IndexedDbHandler.closeConnection();
       expect(Harmonized.IndexedDbHandler._db).toBe(null);
       expect(connectionStreamOutputs).toEqual([false, true, false]);
     });
 
-    scheduler.scheduleWithAbsolute(20, function () {
+    scheduler.scheduleWithAbsolute(20, function() {
       // Version update
       Harmonized.dbVersion = 2;
 
@@ -116,14 +119,12 @@ describe("IndexedDB Service", function() {
       // and version should be 2 (in indexeddb and its handler)
       expect(connectionStreamOutputs).toEqual([false, true, false, true]);
       expect(Harmonized.IndexedDbHandler._db.version).toBe(2);
-      expect(indexedDBmockDbs.harmonized_db.version).toBe(2);
+      expect(indexedDBmockDbs.harmonizedDb.version).toBe(2);
     });
 
     // Start the scheduler to run the current setup
     scheduler.start();
   });
-
-
 
   it('should add 3 entries to a storage', function() {
     var putStream;
@@ -133,11 +134,12 @@ describe("IndexedDB Service", function() {
     expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
 
     // Add some data
-    scheduler.scheduleWithAbsolute(0, function () {
+    scheduler.scheduleWithAbsolute(0, function() {
       putStream = fillStorageWithTestData();
-      putStream.subscribe(function(item){
+      putStream.subscribe(function(item) {
         putItems.push(item);
       });
+
       jasmine.clock().tick(3);
     });
 
@@ -146,16 +148,16 @@ describe("IndexedDB Service", function() {
     // Check the returned stream data
     expect(putItems.length).toBe(3);
     expect(putItems).toEqual([
-      {meta:{storeId: 1}, data:{firstname:'Igor',lastname:'Igorson'}},
-      {meta:{storeId: 2}, data:{firstname:'Igor',lastname:'Igorson'}},
-      {meta:{storeId: 3}, data:{firstname:'Igor',lastname:'Igorov'}}
+      {meta:{storeId: 1}, data:{firstname:'Igor', lastname:'Igorson'}},
+      {meta:{storeId: 2}, data:{firstname:'Igor', lastname:'Igorson'}},
+      {meta:{storeId: 3}, data:{firstname:'Igor', lastname:'Igorov'}}
     ]);
 
     // Check the saved data
-    var storeData = indexedDBmockDbs.harmonized_db.objectStores[0].__data;
-    expect(storeData[1]).toEqual({firstname:'Igor',lastname:'Igorson', _id: 1});
-    expect(storeData[2]).toEqual({firstname:'Igor',lastname:'Igorson', _id: 2});
-    expect(storeData[3]).toEqual({firstname:'Igor',lastname:'Igorov', _id: 3});
+    var storeData = indexedDBmockDbs.harmonizedDb.objectStores[0].__data;
+    expect(storeData[1]).toEqual({firstname:'Igor', lastname:'Igorson', _id: 1});
+    expect(storeData[2]).toEqual({firstname:'Igor', lastname:'Igorson', _id: 2});
+    expect(storeData[3]).toEqual({firstname:'Igor', lastname:'Igorov', _id: 3});
   });
 
   it('should get all entries from a store with 3 items', function() {
@@ -165,42 +167,45 @@ describe("IndexedDB Service", function() {
     expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
 
     // Add data to the mocked indexeddb
-    indexedDBmockDbs.harmonized_db.objectStores[0].__data = {
-      1: {firstname:'Igor',lastname:'Igorson', _id: 1},
-      2: {firstname:'Igor',lastname:'Mortison', _id: 2},
-      3: {firstname:'Igor',lastname:'Igorov', _id: 3}
+    indexedDBmockDbs.harmonizedDb.objectStores[0].__data = {
+      1: {firstname:'Igor', lastname:'Igorson', _id: 1},
+      2: {firstname:'Igor', lastname:'Mortison', _id: 2},
+      3: {firstname:'Igor', lastname:'Igorov', _id: 3}
     }
 
-    indexedDBmockDbs.harmonized_db.objectStores[0].__keys = [1,2,3];
+    indexedDBmockDbs.harmonizedDb.objectStores[0].__keys = [1, 2, 3];
 
-    scheduler.scheduleWithAbsolute(0, function () {
+    scheduler.scheduleWithAbsolute(0, function() {
       indexedDbHandler.getAllEntries();
-      indexedDbHandler.downstream.subscribe(function(item){
+      indexedDbHandler.downstream.subscribe(function(item) {
         getItems.push(item);
       });
+
       jasmine.clock().tick(20);
     });
 
     scheduler.start();
 
     expect(getItems).toEqual([
-      {meta:{storeId: 1, serverId: undefined}, data:{firstname:'Igor',lastname:'Igorson'}},
-      {meta:{storeId: 2, serverId: undefined}, data:{firstname:'Igor',lastname:'Mortison'}},
-      {meta:{storeId: 3, serverId: undefined}, data:{firstname:'Igor',lastname:'Igorov'}}
+      {meta:{storeId: 1, serverId: undefined}, data:{firstname:'Igor', lastname:'Igorson'}},
+      {meta:{storeId: 2, serverId: undefined}, data:{firstname:'Igor', lastname:'Mortison'}},
+      {meta:{storeId: 3, serverId: undefined}, data:{firstname:'Igor', lastname:'Igorov'}}
     ]);
   });
 
   it('should get all entries from an empty table', function() {
+    var getStream;
     var getItems = [];
 
     jasmine.clock().tick(2);
     expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
 
-    scheduler.scheduleWithAbsolute(0, function () {
+    scheduler.scheduleWithAbsolute(0, function() {
       getStream = indexedDbHandler.getAllEntries();
-      indexedDbHandler.downstream.subscribe(function(item){
+      indexedDbHandler.downstream.subscribe(function(item) {
         getItems.push(item);
       });
+
       jasmine.clock().tick(3);
     });
 
@@ -217,20 +222,21 @@ describe("IndexedDB Service", function() {
     expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
 
     // Add data to the mocked indexeddb
-    indexedDBmockDbs.harmonized_db.objectStores[0].__data = {
-      1: {firstname:'Igor',lastname:'Igorson', _id: 1},
-      2: {firstname:'Igor',lastname:'Mortison', _id: 2},
-      3: {firstname:'Igor',lastname:'Igorov', _id: 3}
-    }
+    indexedDBmockDbs.harmonizedDb.objectStores[0].__data = {
+      1: {firstname:'Igor', lastname:'Igorson', _id: 1},
+      2: {firstname:'Igor', lastname:'Mortison', _id: 2},
+      3: {firstname:'Igor', lastname:'Igorov', _id: 3}
+    };
 
-    indexedDBmockDbs.harmonized_db.objectStores[0].__keys = [1,2,3];
+    indexedDBmockDbs.harmonizedDb.objectStores[0].__keys = [1, 2, 3];
 
-    scheduler.scheduleWithAbsolute(0, function () {
-      var removeStream = indexedDbHandler.remove({
+    scheduler.scheduleWithAbsolute(0, function() {
+      removeStream = indexedDbHandler.remove({
         meta:{storeId: 2},
-        data:{firstname:'Igor',lastname:'Mortison'}
+        data:{firstname:'Igor', lastname:'Mortison'}
       });
-      removeStream.subscribe(function(item){
+
+      removeStream.subscribe(function(item) {
         removeItems.push(item);
       });
 
@@ -243,29 +249,29 @@ describe("IndexedDB Service", function() {
     expect(removeItems.length).toBe(1);
     expect(removeItems[0]).toEqual({
       meta: {deleted: true, storeId: 2},
-      data:{firstname:'Igor',lastname:'Mortison'}
+      data:{firstname:'Igor', lastname:'Mortison'}
     });
 
     // Check the saved data
-    var storeData = indexedDBmockDbs.harmonized_db.objectStores[0].__data;
-    expect(storeData[1]).toEqual({firstname:'Igor',lastname:'Igorson', _id: 1});
+    var storeData = indexedDBmockDbs.harmonizedDb.objectStores[0].__data;
+    expect(storeData[1]).toEqual({firstname:'Igor', lastname:'Igorson', _id: 1});
     expect(storeData[2]).toBeUndefined();
-    expect(storeData[3]).toEqual({firstname:'Igor',lastname:'Igorov', _id: 3});
+    expect(storeData[3]).toEqual({firstname:'Igor', lastname:'Igorov', _id: 3});
   });
 
-  it('should delete the database', function(){
+  it('should delete the database', function() {
     jasmine.clock().tick(2);
     expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
 
-    scheduler.scheduleWithAbsolute(0, function () {
+    scheduler.scheduleWithAbsolute(0, function() {
       Harmonized.IndexedDbHandler.deleteDb();
-      expect(indexedDBmockDbs.harmonized_db).toBeUndefined();
+      expect(indexedDBmockDbs.harmonizedDb).toBeUndefined();
     });
 
-    scheduler.scheduleWithAbsolute(1, function () {
+    scheduler.scheduleWithAbsolute(1, function() {
       jasmine.clock().tick(2);
       expect(connectionStreamOutputs).toEqual([false, true, false]);
-      expect(indexedDBmockDbs.harmonized_db).toBeUndefined();
+      expect(indexedDBmockDbs.harmonizedDb).toBeUndefined();
     });
 
     scheduler.start();

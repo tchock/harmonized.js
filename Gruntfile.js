@@ -1,4 +1,4 @@
-module.exports = function (grunt) {
+module.exports = function(grunt) {
   'use strict';
 
   // Force use of Unix newlines
@@ -10,8 +10,6 @@ module.exports = function (grunt) {
   // Time how long tasks take. Can help when optimizing build times
   require('time-grunt')(grunt);
 
-  var pkg = require('./package.json');
-
   // Project configuration.
   grunt.initConfig({
     jscs: {
@@ -19,7 +17,7 @@ module.exports = function (grunt) {
       options: {
         config: '.jscsrc',
         preset: 'airbnb',
-        requireCurlyBraces: ["if"]
+        requireCurlyBraces: ['if']
       }
     },
     changelog: {
@@ -41,7 +39,7 @@ module.exports = function (grunt) {
         tagMessage: 'Version %VERSION%',
         push: true,
         pushTo: 'origin',
-        prereleaseName: 'alpha',
+        prereleaseName: 'alpha'
       }
     },
     jshint: {
@@ -52,7 +50,7 @@ module.exports = function (grunt) {
         src: [
           'src/{,*/}*.js'
         ]
-      },
+      }
     },
 
     clean: {
@@ -84,6 +82,7 @@ module.exports = function (grunt) {
     connect: {
       options: {
         port: 9000,
+
         // Change this to '0.0.0.0' to access the server from outside.
         hostname: '0.0.0.0',
         livereload: 35729
@@ -91,7 +90,7 @@ module.exports = function (grunt) {
       livereload: {
         options: {
           open: true,
-          middleware: function (connect) {
+          middleware: function(connect) {
             return [
               connect.static('.tmp'),
               connect().use(
@@ -118,11 +117,11 @@ module.exports = function (grunt) {
       options: {
         // Task-specific options go here.
       },
-      your_target: {
+      target: {
         files: {
            'examples/index.html': 'examples/templates/index.html'
          }
-      },
+      }
     },
 
     watch: {
@@ -139,10 +138,10 @@ module.exports = function (grunt) {
           livereload: '<%= connect.options.livereload %>'
         },
         files: [
-          'examples/{,*/}*.html',
+          'examples/{,*/}*.html'
         ]
       }
-    },
+    }
 
   });
 
@@ -153,7 +152,7 @@ module.exports = function (grunt) {
   grunt.registerTask('dist', ['jscs', 'clean:dist', 'dist-js']);
 
   // Full release task
-  grunt.registerTask('release', 'bump and changelog', function (type) {
+  grunt.registerTask('release', 'bump and changelog', function(type) {
     grunt.task.run([
       'dist',
       'bump:' + (type || 'patch') + ':bump-only',

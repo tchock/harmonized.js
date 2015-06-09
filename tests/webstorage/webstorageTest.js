@@ -1,14 +1,17 @@
+'use strict';
+
 describe('Harmonized.webStorage', function() {
 
   beforeEach(function() {
     spyOn(Harmonized, '_getLocalStorage').and.returnValue(mockLocalStorage);
     spyOn(Harmonized, '_getSessionStorage').and.returnValue(mockSessionStorage);
+
     // Reset storage
     window.mockLocalStorageObj = {};
     window.mockSessionStorageObj = {};
   });
 
-  it('should start with sessionStorage as default', function(){
+  it('should start with sessionStorage as default', function() {
     expect(Harmonized._webStorage).toEqual(sessionStorage);
   });
 
@@ -30,7 +33,7 @@ describe('Harmonized.webStorage', function() {
 
   it('should switch storage type with clearing the store', function() {
     window.mockSessionStorageObj = {
-      'test': 123
+      test: 123
     };
 
     Harmonized.setWebStorage('local', true);

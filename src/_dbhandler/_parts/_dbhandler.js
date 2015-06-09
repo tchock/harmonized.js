@@ -1,3 +1,5 @@
+'use strict';
+
 Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._storeName = storeName;
   this._keys = {
@@ -35,7 +37,7 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._deleteSubscribe = this._deleteDownstream.subscribe(this.downstream);
 
   // Initially get the metadata
-  this._metaStorageName = 'harmonized_meta_' + this._storeName;
+  this._metaStorageName = 'harmonizedMeta_' + this._storeName;
   this._metadata = Harmonized.getWebStorage().getItem(this._metaStorageName) || {};
 };
 
