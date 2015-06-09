@@ -23,14 +23,14 @@ Harmonized.dbHandlerFactory.createDbHandler = function createDbHandler(name, opt
 Harmonized.dbHandlerFactory._getDbStructure = function getDbStructure() {
   // TODO extract db structure from resource definition
   return {};
-}
+};
 
 /* istanbul ignore next */
 Harmonized.dbHandlerFactory._getIndexedDb = function getIndexedDb() {
   return window.indexedDB && _.isFunction(Harmonized.IndexedDbHandler);
-}
+};
 
 /* istanbul ignore next */
 Harmonized.dbHandlerFactory._getWebSql = function getWebSql() {
   return window.openDatabase && _.isFunction(Harmonized.WebSqlHandler);
-}
+};

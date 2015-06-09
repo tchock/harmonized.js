@@ -57,4 +57,4 @@ Harmonized.DbHandler.prototype._createDbItem = function(item) {
   }
 
   return putItem;
-}
+};
