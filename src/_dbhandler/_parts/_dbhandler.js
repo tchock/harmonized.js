@@ -22,6 +22,7 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._saveUpstream = this._upstream.filter(function(item) {
     return item.meta.action === 'save';
   });
+
   this._saveDownstream = this._saveUpstream.map(this.put);
   this._saveSubscribe = this._saveDownstream.subscribe(this.downstream);
 
@@ -29,6 +30,7 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._deleteUpstream = this._upstream.filter(function(item) {
     return item.meta.action === 'delete';
   });
+
   this._deleteDownstream = this._deleteUpstream.map(this.remove);
   this._deleteSubscribe = this._deleteDownstream.subscribe(this.downstream);
 
@@ -52,6 +54,7 @@ Harmonized.DbHandler.prototype._createDbItem = function(item) {
   if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.storeId)) {
     putItem[this._keys.storeKey] = item.meta.storeId;
   }
+
   if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
     putItem[this._keys.serverKey] = item.meta.serverId;
   }

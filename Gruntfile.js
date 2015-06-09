@@ -50,7 +50,7 @@ module.exports = function (grunt) {
       },
       all: {
         src: [
-          'src/js/{,*/}*.js'
+          'src/{,*/}*.js'
         ]
       },
     },

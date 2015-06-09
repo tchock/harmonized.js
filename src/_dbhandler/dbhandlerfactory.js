@@ -1,4 +1,6 @@
-Harmonized.dbHandlerFactory = function dbHandlerFactory(config) {
+'use strict';
+
+Harmonized.dbHandlerFactory = function dbHandlerFactory() {
   // Check for db support
   if (Harmonized.dbHandlerFactory._getIndexedDb()) {
     // Set IndexedDB if supported
@@ -12,7 +14,7 @@ Harmonized.dbHandlerFactory = function dbHandlerFactory(config) {
   }
 };
 
-Harmonized.dbHandlerFactory.createDbHandler = function createDbHandler(name, options) {
+Harmonized.dbHandlerFactory.createDbHandler = function (name, options) {
   if (!!Harmonized.dbHandlerFactory._DbHandler) {
     return new Harmonized.dbHandlerFactory._DbHandler(name, options);
   } else {

@@ -1,4 +1,6 @@
-var Harmonized = function Harmonized() {
+'use strict';
+
+var Harmonized = function Harmonized() { // jshint ignore:line
 
 };
 
@@ -6,15 +8,15 @@ Harmonized.dbVersion = 1;
 
 Harmonized.getStoreKey = function() {
   // TODO implement get store key fn
-}
+};
 
 Harmonized.getServerKey = function() {
   // TODO implement get server key fn
-}
+};
 
 Harmonized.getDbSchema = function() {
   // TODO implement database schema function
-}
+};
 
 Harmonized._createStreamItem = function(inputItem, keys) {
   inputItem = _.clone(inputItem);
@@ -32,4 +34,4 @@ Harmonized._createStreamItem = function(inputItem, keys) {
   item.data = inputItem;
 
   return item;
-}
+};
