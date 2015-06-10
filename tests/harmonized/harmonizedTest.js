@@ -2,7 +2,81 @@
 
 describe('Harmonized', function() {
 
-  describe('createStreamItem', function() {
+  describe('DB schema', function() {
+    beforeEach(function() {
+      Harmonized._dbSchema = {
+        cars: {
+          storeKey: 'storeId',
+          serverKey: 'serverId'
+        },
+        passengers: {
+          storeKey: 'anotherStoreId',
+          serverKey: 'foreignId'
+        }
+      };
+    });
+
+    it('should get the whole DB schema', function() {
+      expect(Harmonized.getDbSchema()).toEqual(Harmonized._dbSchema);
+    });
+
+    it('should get a single DB schema entry', function() {
+      expect(Harmonized.getDbSchema('passengers')).toEqual({
+        storeKey: 'anotherStoreId',
+        serverKey: 'foreignId'
+      });
+    });
+
+    it('should set the DB schema', function() {
+      Harmonized._dbSchema = {};
+
+      var modelSchema = {
+        planes: {
+          storeName: 'flugzeuge',
+          storeKey: 'localId',
+          serverKey: 'uid',
+          route: 'aeroplanes',
+          subModels: {
+            chemtrails: {
+              sourceModel: 'chemtrails',
+              subModels: {
+                conspiracyTheorists: {
+                  serverKey: 'nsaId',
+                  sourceModel: 'tinfoilHats'
+                }
+              }
+            }
+          }
+        },
+        chemtrails: {
+          storeKey: 'storeId'
+        }
+      };
+
+      Harmonized._setDbSchema(modelSchema);
+
+      expect(Harmonized._dbSchema).toEqual({
+        flugzeuge: {
+          storeKey: 'localId',
+          serverKey: 'uid'
+        },
+        'flugzeuge_chemtrails': {
+          storeKey: '_id',
+          serverKey: 'id'
+        },
+        'flugzeuge_chemtrails_conspiracyTheorists': {
+          storeKey: '_id',
+          serverKey: 'nsaId'
+        },
+        chemtrails: {
+          storeKey: 'storeId',
+          serverKey: 'id'
+        }
+      });
+    });
+  });
+
+  describe('createStreamItem function', function() {
     var inputItem;
     var expectedStreamItem;
     var keys;
