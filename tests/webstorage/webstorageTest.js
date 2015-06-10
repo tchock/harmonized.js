@@ -31,6 +31,12 @@ describe('Harmonized.webStorage', function() {
     expect(Harmonized._webStorage).toEqual(Harmonized._getSessionStorage());
   });
 
+  it('should switch to sessionStorage with default parameter', function() {
+    Harmonized._webStorage = Harmonized._getLocalStorage();
+    Harmonized.setWebStorage();
+    expect(Harmonized._webStorage).toEqual(Harmonized._getSessionStorage());
+  });
+
   it('should switch storage type with clearing the store', function() {
     window.mockSessionStorageObj = {
       test: 123

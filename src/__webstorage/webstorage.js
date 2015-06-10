@@ -29,6 +29,6 @@ Harmonized.setWebStorage = function(storage, doClear) {
       Harmonized._webStorage = Harmonized._getLocalStorage();
       break;
     default:
-      Harmonized._webStorage = Harmonized._getLocalStorage();
+      Harmonized._webStorage = Harmonized._getSessionStorage();
   }
 };
