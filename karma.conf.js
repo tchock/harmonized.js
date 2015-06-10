@@ -15,6 +15,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'bower_components/jasmine-expect/dist/jasmine-matchers.js',
+      'bower_components/jasmine-object-matchers/dist/jasmine-object-matchers.js',
       'bower_components/lodash/lodash.js',
       'bower_components/sql-parser/browser/sql-parser.js',
       'bower_components/mock-websql/websql.js',
