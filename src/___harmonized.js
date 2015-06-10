@@ -27,9 +27,12 @@ Harmonized.getServerKey = function() {
 };
 
 Harmonized.setModelSchema = function setModelSchema(schema) {
-
   Harmonized._setModelSchema(schema);
   Harmonized._modelSchema = schema;
+};
+
+Harmonized.getModelSchema = function getModelSchema() {
+  return Harmonized._modelSchema;
 };
 
 Harmonized._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {

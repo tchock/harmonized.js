@@ -128,6 +128,11 @@ describe('Harmonized', function() {
       });
     });
 
+    it('should get the model schema', function() {
+      Harmonized._modelSchema = inputSchema;
+      expect(Harmonized.getModelSchema()).toEqual(inputSchema);
+    });
+
     it('should get the DB schema', function() {
       Harmonized._modelSchema = inputSchema;
       var dbSchema = Harmonized.getDbSchema();
