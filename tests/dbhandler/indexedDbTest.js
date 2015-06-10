@@ -4,6 +4,7 @@ describe('IndexedDB Service', function() {
 
   var indexedDbHandler;
   var connectionStreamOutputs;
+  var connectionStreamErrors;
   var scheduler;
 
   function fillStorageWithTestData() {
@@ -45,6 +46,7 @@ describe('IndexedDB Service', function() {
 
   afterEach(function() {
     Harmonized.IndexedDbHandler._db = null;
+    Harmonized.IndexedDbHandler._isConnecting = false;
     delete indexedDBmockDbs.harmonizedDb;
   });
 
@@ -75,9 +77,15 @@ describe('IndexedDB Service', function() {
 
     // Subscribe connection stream to get the streams output
     connectionStreamOutputs = [];
-    Harmonized.IndexedDbHandler._connectionStream.subscribe(function(item) {
-      connectionStreamOutputs.push(item);
-    });
+    connectionStreamErrors = [];
+    Harmonized.IndexedDbHandler._connectionStream.subscribe(
+      function(item) {
+        connectionStreamOutputs.push(item);
+      },
+
+      function(error) {
+        connectionStreamErrors.push(error);
+      });
 
     // Rebuild dbHandler to include mock subject
     indexedDbHandler = new Harmonized.IndexedDbHandler('testStore');
@@ -98,7 +106,10 @@ describe('IndexedDB Service', function() {
       expect(connectionStreamOutputs).toEqual([false]);
 
       // Check after the connection has happened (2 fake ticks)
+      // Also check if _isConnecting is set correctly
+      expect(Harmonized.IndexedDbHandler._isConnecting).toBeTruthy();
       jasmine.clock().tick(2);
+      expect(Harmonized.IndexedDbHandler._isConnecting).toBeFalsy();
 
       // Now the database connection is established (2nd entry === true)
       expect(connectionStreamOutputs).toEqual([false, true]);
@@ -112,6 +123,7 @@ describe('IndexedDB Service', function() {
 
       // Test if connect() will not connect on already established connection
       expect(Harmonized.IndexedDbHandler.connect()).toBeUndefined();
+      expect(Harmonized.IndexedDbHandler._isConnecting).toBeFalsy();
     });
 
     scheduler.scheduleWithAbsolute(10, function() {
@@ -128,13 +140,42 @@ describe('IndexedDB Service', function() {
       // Connect again!
       Harmonized.IndexedDbHandler.connect();
       expect(connectionStreamOutputs).toEqual([false, true, false]);
+      expect(Harmonized.IndexedDbHandler._isConnecting).toBeTruthy();
       jasmine.clock().tick(2);
+      expect(Harmonized.IndexedDbHandler._isConnecting).toBeFalsy();
 
       // Should now be connected
       // and version should be 2 (in indexeddb and its handler)
       expect(connectionStreamOutputs).toEqual([false, true, false, true]);
       expect(Harmonized.IndexedDbHandler._db.version).toBe(2);
       expect(indexedDBmockDbs.harmonizedDb.version).toBe(2);
+    });
+
+    // Start the scheduler to run the current setup
+    scheduler.start();
+  });
+
+  it('should fail at a second connection with lower db version number', function() {
+    // _db should not be set!
+    Harmonized.IndexedDbHandler._isConnecting = false;
+    indexedDbHandler = new Harmonized.IndexedDbHandler('testStore');
+    expect(Harmonized.IndexedDbHandler._db).toBe(null);
+    Harmonized.dbVersion = 2;
+
+    scheduler.scheduleWithAbsolute(1, function() {
+      expect(Harmonized.IndexedDbHandler._isConnecting).toBeTruthy();
+      jasmine.clock().tick(2);
+      expect(Harmonized.IndexedDbHandler._db.version).toBe(2);
+      Harmonized.IndexedDbHandler.closeConnection();
+    });
+
+    scheduler.scheduleWithAbsolute(10, function() {
+      Harmonized.dbVersion = 1;
+      indexedDbHandler = new Harmonized.IndexedDbHandler('testStore');
+      jasmine.clock().tick(2);
+
+      expect(connectionStreamErrors.length).toBe(1);
+      expect(connectionStreamErrors[0].message).toEqual('VersionError');
     });
 
     // Start the scheduler to run the current setup

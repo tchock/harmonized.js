@@ -10,6 +10,7 @@ Harmonized.IndexedDbHandler._connectionStream = new Rx.Subject();
 
 // Database Object
 Harmonized.IndexedDbHandler._db = null;
+Harmonized.IndexedDbHandler._isConnecting = false;
 
 /* istanbul ignore next */
 Harmonized.IndexedDbHandler.getDbReference = function() {
@@ -18,18 +19,26 @@ Harmonized.IndexedDbHandler.getDbReference = function() {
 
 Harmonized.IndexedDbHandler.connect = function() {
   var dbHandler = Harmonized.IndexedDbHandler;
-  if (dbHandler._db !== null) {
+  if (dbHandler._db !== null || dbHandler._isConnecting) {
     // DB connection is already established
+    dbHandler._isConnecting = false;
     return;
   }
 
+  dbHandler._isConnecting = true;
   var request = dbHandler.getDbReference().open('harmonizedDb',
     Harmonized.dbVersion);
 
   // Request success
   request.onsuccess = function() {
     dbHandler._db = request.result;
+    dbHandler._isConnecting = false;
     dbHandler._connectionStream.onNext(true);
+  };
+
+  request.onerror = function(e) {
+    dbHandler._connectionStream.onError(new Error(e.error.name));
+    dbHandler._isConnecting = false;
   };
 
   // DB needs upgrade
@@ -112,6 +121,10 @@ Harmonized.IndexedDbHandler.prototype.put = function(item) {
     return;
   }
 
+  var _this = this;
+  var i = 0;
+  var putStream = new Rx.Subject();
+
   function putNext(e) {
     if (!!e) {
       // Data was received
@@ -126,19 +139,19 @@ Harmonized.IndexedDbHandler.prototype.put = function(item) {
 
     if (i < item.length) {
       // Save and do next stuff
-      var put = objectStore.put(_this._createDbItem(item[i]));
+      var dbItem = _this._createDbItem(item[i]);
+      var put = objectStore.put(dbItem);
       put.onsuccess = putNext;
       put.onerror = putError;
+    } else {
+      putStream.onCompleted();
     }
   }
 
   function putError() {
+    i++;
     putNext();
   }
-
-  var _this = this;
-  var i = 0;
-  var putStream = new Rx.Subject();
 
   // Create singleton array with data, if data is no array
   if (!_.isArray(item)) {
@@ -146,7 +159,10 @@ Harmonized.IndexedDbHandler.prototype.put = function(item) {
   }
 
   var transaction = dbHandler._db.transaction([_this._storeName], 'readwrite');
-  transaction.onerror = putStream.onError;
+  transaction.onerror = function(e) {
+    putStream.onError(new Error(e.error.name));
+  };
+
   var objectStore = transaction.objectStore(_this._storeName);
   putNext();
 

@@ -5,7 +5,7 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._keys = {
     storeKey: Harmonized.getStoreKey(storeName),
     serverKey: Harmonized.getServerKey(storeName)
-  }
+  };
 
   // Public streams
   this.downstream = new Rx.Subject();
@@ -15,7 +15,7 @@ Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
   this._upstream = this.upstream.pausableBuffered(dbHandler._connectionStream);
 
   // Directly connect to the server if necessary
-  if (!dbHandler._db) {
+  if (!dbHandler._db && dbHandler._isConnecting === false) {
     dbHandler._connectionStream.onNext(false);
     dbHandler.connect();
   }

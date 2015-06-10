@@ -5,6 +5,15 @@ describe('DbHandler', function() {
   var dbHandler;
   var explicitDbHandler;
 
+  // Mock time
+  beforeEach(function() {
+    jasmine.clock().install();
+  });
+
+  afterEach(function() {
+    jasmine.clock().uninstall();
+  });
+
   beforeEach(function() {
     // Set key mocks
     spyOn(Harmonized, 'getStoreKey').and.returnValue('_id');
@@ -12,8 +21,18 @@ describe('DbHandler', function() {
 
     explicitDbHandler = {
       _connectionStream: new Rx.Subject(),
-      connect: function() {}
+      connect: function() {
+        explicitDbHandler._isConnecting = true;
+        setTimeout(function() {
+          explicitDbHandler._db = {};
+          explicitDbHandler._isConnecting = false;
+        }, 10);
+      },
+
+      _isConnecting: false
     };
+
+    spyOn(explicitDbHandler, 'connect').and.callThrough();
 
     dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore');
 
@@ -23,6 +42,21 @@ describe('DbHandler', function() {
 
   afterEach(function() {
     window.mockLocalStorageObj = {};
+  });
+
+  it('should not call the connect function twice', function() {
+    expect(explicitDbHandler._isConnecting).toBeTruthy();
+    var secondDbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'secondStore');
+    expect(explicitDbHandler.connect.calls.count()).toEqual(1);
+    jasmine.clock().tick(9);
+    expect(explicitDbHandler._isConnecting).toBeTruthy();
+    jasmine.clock().tick(1);
+    expect(explicitDbHandler._isConnecting).toBeFalsy();
+
+    // Check after established Connection
+    var thirdDbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'thirdStore');
+    jasmine.clock().tick(10);
+    expect(explicitDbHandler.connect.calls.count()).toEqual(1);
   });
 
   describe('streams', function() {
