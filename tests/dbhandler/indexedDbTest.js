@@ -7,10 +7,25 @@ describe('IndexedDB Service', function() {
   var scheduler;
 
   function fillStorageWithTestData() {
-    return indexedDbHandler.put([{data:{firstname:'Igor', lastname:'Igorson'}},
-      {data:{firstname:'Igor', lastname:'Igorson'}},
-      {data:{firstname:'Igor', lastname:'Igorov'}}]
-    );
+    return indexedDbHandler.put([{
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorson'
+      }
+    }, {
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorson'
+      }
+    }, {
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorov'
+      },
+      meta: {
+        test: true
+      }
+    }]);
   }
 
   beforeEach(function() {
@@ -147,17 +162,161 @@ describe('IndexedDB Service', function() {
 
     // Check the returned stream data
     expect(putItems.length).toBe(3);
-    expect(putItems).toEqual([
-      {meta:{storeId: 1}, data:{firstname:'Igor', lastname:'Igorson'}},
-      {meta:{storeId: 2}, data:{firstname:'Igor', lastname:'Igorson'}},
-      {meta:{storeId: 3}, data:{firstname:'Igor', lastname:'Igorov'}}
-    ]);
+    expect(putItems).toEqual([{
+      meta: {
+        storeId: 1
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorson'
+      }
+    }, {
+      meta: {
+        storeId: 2
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorson'
+      }
+    }, {
+      meta: {
+        storeId: 3,
+        test: true
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorov'
+      }
+    }]);
 
     // Check the saved data
     var storeData = indexedDBmockDbs.harmonizedDb.objectStores[0].__data;
-    expect(storeData[1]).toEqual({firstname:'Igor', lastname:'Igorson', _id: 1});
-    expect(storeData[2]).toEqual({firstname:'Igor', lastname:'Igorson', _id: 2});
-    expect(storeData[3]).toEqual({firstname:'Igor', lastname:'Igorov', _id: 3});
+    expect(storeData[1]).toEqual({
+      firstname: 'Igor',
+      lastname: 'Igorson',
+      _id: 1
+    });
+    expect(storeData[2]).toEqual({
+      firstname: 'Igor',
+      lastname: 'Igorson',
+      _id: 2
+    });
+    expect(storeData[3]).toEqual({
+      firstname: 'Igor',
+      lastname: 'Igorov',
+      _id: 3
+    });
+  });
+
+  it('should add a single entry to the database', function() {
+    var putStream;
+    var putItems = [];
+
+    jasmine.clock().tick(2);
+    expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
+
+    // Add some data
+    scheduler.scheduleWithAbsolute(0, function() {
+      putStream = indexedDbHandler.put({
+        data: {
+          firstname: 'Stanislav',
+          lastname: 'Schewadnaze'
+        }
+      });
+      putStream.subscribe(function(item) {
+        putItems.push(item);
+      });
+
+      jasmine.clock().tick(3);
+    });
+
+    scheduler.start();
+
+    // Check the returned stream data
+    expect(putItems.length).toBe(1);
+    expect(putItems).toEqual([{
+      meta: {
+        storeId: 1
+      },
+      data: {
+        firstname: 'Stanislav',
+        lastname: 'Schewadnaze'
+      }
+    }]);
+
+    // Check the saved data
+    var storeData = indexedDBmockDbs.harmonizedDb.objectStores[0].__data;
+    expect(storeData[1]).toEqual({
+      firstname: 'Stanislav',
+      lastname: 'Schewadnaze',
+      _id: 1
+    });
+  });
+
+  it('should fail at inserting data', function() {
+    var putStream;
+    var putItems = [];
+
+    jasmine.clock().tick(2);
+    expect(Harmonized.IndexedDbHandler._db).not.toBe(null);
+
+    // Add some data
+    scheduler.scheduleWithAbsolute(0, function() {
+      expect(function() {
+        putStream = indexedDbHandler.put([{
+          data: {
+            firstname: 'Igor',
+            lastname: 'Igorson'
+          },
+          meta: {
+            serverId: 123
+          }
+        }, {
+          data: {
+            firstname: 'Eduard',
+            lastname: 'Schewadnaze'
+          },
+          meta: {
+            serverId: 123
+          }
+        }, {
+          data: {
+            firstname: 'Igor',
+            lastname: 'Igorov'
+          }
+        }]);
+
+        putStream.subscribe(function(item) {
+          putItems.push(item);
+        });
+
+        jasmine.clock().tick(3);
+      }).toThrow(new Error('ConstraintError'));
+    });
+
+    scheduler.start();
+
+    // Check the returned stream data
+    expect(putItems.length).toBe(1);
+    expect(putItems).toEqual([{
+      meta: {
+        storeId: 1,
+        serverId: 123
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorson'
+      }
+    }]);
+
+    // Check the saved data
+    var storeData = indexedDBmockDbs.harmonizedDb.objectStores[0].__data;
+    expect(storeData[1]).toEqual({
+      firstname: 'Igor',
+      lastname: 'Igorson',
+      _id: 1,
+      id: 123
+    });
   });
 
   it('should get all entries from a store with 3 items', function() {
@@ -168,9 +327,21 @@ describe('IndexedDB Service', function() {
 
     // Add data to the mocked indexeddb
     indexedDBmockDbs.harmonizedDb.objectStores[0].__data = {
-      1: {firstname:'Igor', lastname:'Igorson', _id: 1},
-      2: {firstname:'Igor', lastname:'Mortison', _id: 2},
-      3: {firstname:'Igor', lastname:'Igorov', _id: 3}
+      1: {
+        firstname: 'Igor',
+        lastname: 'Igorson',
+        _id: 1
+      },
+      2: {
+        firstname: 'Igor',
+        lastname: 'Mortison',
+        _id: 2
+      },
+      3: {
+        firstname: 'Igor',
+        lastname: 'Igorov',
+        _id: 3
+      }
     }
 
     indexedDBmockDbs.harmonizedDb.objectStores[0].__keys = [1, 2, 3];
@@ -186,11 +357,34 @@ describe('IndexedDB Service', function() {
 
     scheduler.start();
 
-    expect(getItems).toEqual([
-      {meta:{storeId: 1, serverId: undefined}, data:{firstname:'Igor', lastname:'Igorson'}},
-      {meta:{storeId: 2, serverId: undefined}, data:{firstname:'Igor', lastname:'Mortison'}},
-      {meta:{storeId: 3, serverId: undefined}, data:{firstname:'Igor', lastname:'Igorov'}}
-    ]);
+    expect(getItems).toEqual([{
+      meta: {
+        storeId: 1,
+        serverId: undefined
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorson'
+      }
+    }, {
+      meta: {
+        storeId: 2,
+        serverId: undefined
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Mortison'
+      }
+    }, {
+      meta: {
+        storeId: 3,
+        serverId: undefined
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Igorov'
+      }
+    }]);
   });
 
   it('should get all entries from an empty table', function() {
@@ -223,17 +417,34 @@ describe('IndexedDB Service', function() {
 
     // Add data to the mocked indexeddb
     indexedDBmockDbs.harmonizedDb.objectStores[0].__data = {
-      1: {firstname:'Igor', lastname:'Igorson', _id: 1},
-      2: {firstname:'Igor', lastname:'Mortison', _id: 2},
-      3: {firstname:'Igor', lastname:'Igorov', _id: 3}
+      1: {
+        firstname: 'Igor',
+        lastname: 'Igorson',
+        _id: 1
+      },
+      2: {
+        firstname: 'Igor',
+        lastname: 'Mortison',
+        _id: 2
+      },
+      3: {
+        firstname: 'Igor',
+        lastname: 'Igorov',
+        _id: 3
+      }
     };
 
     indexedDBmockDbs.harmonizedDb.objectStores[0].__keys = [1, 2, 3];
 
     scheduler.scheduleWithAbsolute(0, function() {
       removeStream = indexedDbHandler.remove({
-        meta:{storeId: 2},
-        data:{firstname:'Igor', lastname:'Mortison'}
+        meta: {
+          storeId: 2
+        },
+        data: {
+          firstname: 'Igor',
+          lastname: 'Mortison'
+        }
       });
 
       removeStream.subscribe(function(item) {
@@ -248,15 +459,29 @@ describe('IndexedDB Service', function() {
     // Check the downstream
     expect(removeItems.length).toBe(1);
     expect(removeItems[0]).toEqual({
-      meta: {deleted: true, storeId: 2},
-      data:{firstname:'Igor', lastname:'Mortison'}
+      meta: {
+        deleted: true,
+        storeId: 2
+      },
+      data: {
+        firstname: 'Igor',
+        lastname: 'Mortison'
+      }
     });
 
     // Check the saved data
     var storeData = indexedDBmockDbs.harmonizedDb.objectStores[0].__data;
-    expect(storeData[1]).toEqual({firstname:'Igor', lastname:'Igorson', _id: 1});
+    expect(storeData[1]).toEqual({
+      firstname: 'Igor',
+      lastname: 'Igorson',
+      _id: 1
+    });
     expect(storeData[2]).toBeUndefined();
-    expect(storeData[3]).toEqual({firstname:'Igor', lastname:'Igorov', _id: 3});
+    expect(storeData[3]).toEqual({
+      firstname: 'Igor',
+      lastname: 'Igorov',
+      _id: 3
+    });
   });
 
   it('should delete the database', function() {
