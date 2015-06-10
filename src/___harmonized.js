@@ -5,15 +5,16 @@ var Harmonized = function Harmonized() { // jshint ignore:line
 };
 
 Harmonized._config = {
-  defaultServerKey: 'id',
-  defaultStoreKey: '_id',
+  defaultKeys: {
+    serverKey: 'id',
+    storeKey: '_id'
+  },
   baseUrl: null,
   dbName: 'harmonizedDb',
   sendModifiedSince: false
 };
 
 Harmonized._resourceSchema = {};
-Harmonized._dbSchema = {};
 
 Harmonized.dbVersion = 1;
 
@@ -26,43 +27,67 @@ Harmonized.getServerKey = function() {
 };
 
 Harmonized.setModelSchema = function setModelSchema(schema) {
-  // TODO validate the schema
+
+  Harmonized._setModelSchema(schema);
   Harmonized._modelSchema = schema;
-  Harmonized._dbSchema = {};
-  Harmonized._setDbSchema(schema);
 };
 
-Harmonized._setDbSchema = function setDbSchema(modelSchema, storeNamePrefix) {
-  var newDbSchemaItem;
-  var storeName;
+Harmonized._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {
+  var subModels;
+  var currentModel;
+  var keys;
+
+  for (var item in schema) {
+    currentModel = schema[item];
+    if (!_.isObject(currentModel.keys)) {
+      currentModel.keys = Harmonized._config.defaultKeys;
+    } else {
+      keys = currentModel.keys;
+
+      if (_.isUndefined(keys.serverKey)) {
+        keys.serverKey = Harmonized._config.defaultKeys.serverKey;
+      }
+
+      if (_.isUndefined(keys.storeKey)) {
+        keys.storeKey = Harmonized._config.defaultKeys.storeKey;
+      }
+    }
+
+    if (_.isUndefined(currentModel.storeName)) {
+      if (!_.isString(storeNamePrefix)) {
+        storeNamePrefix = '';
+      }
+
+      currentModel.storeName = storeNamePrefix + item;
+    }
+
+    subModels = currentModel.subModels;
+    if (_.isObject(subModels)) {
+      Harmonized._setModelSchema(subModels, currentModel.storeName + '_');
+    }
+  }
+};
+
+Harmonized.getDbSchema = function getDbSchema() {
+  var output = {};
+
+  Harmonized._getDbSchema(Harmonized._modelSchema, output);
+
+  return output;
+};
+
+Harmonized._getDbSchema = function(modelSchema, output) {
+  var currentModel;
   var subModels;
 
   for (var schemaItem in modelSchema) {
-    newDbSchemaItem = {};
-    newDbSchemaItem.serverKey = modelSchema[schemaItem].serverKey ||
-      Harmonized._config.defaultServerKey;
-    newDbSchemaItem.storeKey = modelSchema[schemaItem].storeKey ||
-      Harmonized._config.defaultStoreKey;
-
-    storeName = modelSchema[schemaItem].storeName || schemaItem;
-    if (_.isString(storeNamePrefix)) {
-      storeName = storeNamePrefix + '_' + storeName;
-    }
-
-    Harmonized._dbSchema[storeName] = newDbSchemaItem;
+    currentModel = modelSchema[schemaItem];
+    output[currentModel.storeName] = currentModel.keys;
     subModels = modelSchema[schemaItem].subModels;
     if (_.isObject(subModels)) {
-      Harmonized._setDbSchema(subModels, storeName);
+      Harmonized._getDbSchema(subModels, output);
     }
   }
-};
-
-Harmonized.getDbSchema = function(store) {
-  if (_.isUndefined(store)) {
-    return Harmonized._dbSchema;
-  }
-
-  return Harmonized._dbSchema[store];
 };
 
 Harmonized._createStreamItem = function(inputItem, keys) {

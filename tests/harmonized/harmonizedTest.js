@@ -2,46 +2,35 @@
 
 describe('Harmonized', function() {
 
-  describe('DB schema', function() {
+  describe('schemas', function() {
+
+    var inputSchema;
+
     beforeEach(function() {
-      Harmonized._dbSchema = {
-        cars: {
-          storeKey: 'storeId',
-          serverKey: 'serverId'
-        },
-        passengers: {
-          storeKey: 'anotherStoreId',
-          serverKey: 'foreignId'
-        }
-      };
-    });
 
-    it('should get the whole DB schema', function() {
-      expect(Harmonized.getDbSchema()).toEqual(Harmonized._dbSchema);
-    });
-
-    it('should get a single DB schema entry', function() {
-      expect(Harmonized.getDbSchema('passengers')).toEqual({
-        storeKey: 'anotherStoreId',
-        serverKey: 'foreignId'
-      });
-    });
-
-    it('should set the DB schema', function() {
-      Harmonized._dbSchema = {};
-
-      var modelSchema = {
+      inputSchema = {
         planes: {
           storeName: 'flugzeuge',
-          storeKey: 'localId',
-          serverKey: 'uid',
+          keys: {
+            storeKey: 'localId',
+            serverKey: 'uid'
+          },
           route: 'aeroplanes',
           subModels: {
             chemtrails: {
+              storeName: 'flugzeuge_chemtrails',
+              keys: {
+                serverKey: 'chemId',
+                storeKey: 'local_id'
+              },
               sourceModel: 'chemtrails',
               subModels: {
                 conspiracyTheorists: {
-                  serverKey: 'nsaId',
+                  storeName: 'theorists',
+                  keys: {
+                    serverKey: 'nsaId',
+                    storeKey: '__id'
+                  },
                   sourceModel: 'tinfoilHats'
                 }
               }
@@ -49,28 +38,120 @@ describe('Harmonized', function() {
           }
         },
         chemtrails: {
-          storeKey: 'storeId'
+          keys: {
+            storeKey: 'storeId',
+            serverKey: 'chemid'
+          },
+          storeName: 'chemicalTrails',
+          subModels: {
+            conspiracists: {
+              keys: {
+                storeKey: 'storeId',
+                serverKey: 'conid'
+              },
+              storeName: 'politicians'
+            }
+          }
         }
       };
+    });
 
-      Harmonized._setDbSchema(modelSchema);
+    it('should set the model schema', function() {
+      // Delete from inputSchema to test behavoir for default values
+      delete inputSchema.planes.subModels.chemtrails.keys;
+      delete inputSchema.planes.subModels.chemtrails.subModels.conspiracyTheorists.keys.storeKey;
+      delete inputSchema.chemtrails.keys.serverKey;
+      delete inputSchema.chemtrails.subModels.conspiracists.keys.storeKey;
+      delete inputSchema.chemtrails.subModels.conspiracists.keys.serverKey;
+      delete inputSchema.planes.subModels.chemtrails.storeName;
+      delete inputSchema.planes.subModels.chemtrails.subModels.conspiracyTheorists.storeName;
+      delete inputSchema.chemtrails.storeName;
 
-      expect(Harmonized._dbSchema).toEqual({
+      Harmonized.setModelSchema(inputSchema);
+
+      expect(Harmonized._modelSchema.planes).toBeObject();
+      expect(Harmonized._modelSchema.planes).toContainValues({
+        storeName: 'flugzeuge',
+        route: 'aeroplanes'
+      });
+
+      expect(Harmonized._modelSchema.planes.keys).toBeObject();
+      expect(Harmonized._modelSchema.planes.keys).toContainValues({
+        storeKey: 'localId',
+        serverKey: 'uid'
+      });
+
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails).toBeObject();
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails).toContainValues({
+        storeName: 'flugzeuge_chemtrails',
+        sourceModel: 'chemtrails'
+      });
+
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails.keys).toBeObject();
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails.keys).toContainValues({
+        serverKey: 'id',
+        storeKey: '_id'
+      });
+
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails.subModels.conspiracyTheorists).toBeObject();
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails.subModels.conspiracyTheorists).toContainValues({
+        storeName: 'flugzeuge_chemtrails_conspiracyTheorists',
+        sourceModel: 'tinfoilHats'
+      });
+
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails.subModels.conspiracyTheorists.keys).toBeObject();
+      expect(Harmonized._modelSchema.planes.subModels.chemtrails.subModels.conspiracyTheorists.keys).toContainValues({
+        serverKey: 'nsaId',
+        storeKey: '_id'
+      });
+
+      expect(Harmonized._modelSchema.chemtrails).toBeObject();
+      expect(Harmonized._modelSchema.chemtrails).toContainValues({
+        storeName: 'chemtrails',
+      });
+
+      expect(Harmonized._modelSchema.chemtrails.keys).toBeObject();
+      expect(Harmonized._modelSchema.chemtrails.keys).toContainValues({
+        storeKey: 'storeId',
+        serverKey: 'id'
+      });
+
+      expect(Harmonized._modelSchema.chemtrails.subModels.conspiracists).toBeObject();
+      expect(Harmonized._modelSchema.chemtrails.subModels.conspiracists).toContainValues({
+        storeName: 'politicians'
+      });
+
+      expect(Harmonized._modelSchema.chemtrails.subModels.conspiracists.keys).toBeObject();
+      expect(Harmonized._modelSchema.chemtrails.subModels.conspiracists.keys).toContainValues({
+        storeKey: '_id',
+        serverKey: 'id'
+      });
+    });
+
+    it('should get the DB schema', function() {
+      Harmonized._modelSchema = inputSchema;
+      var dbSchema = Harmonized.getDbSchema();
+
+      expect(dbSchema).toEqual({
         flugzeuge: {
           storeKey: 'localId',
           serverKey: 'uid'
         },
         'flugzeuge_chemtrails': {
-          storeKey: '_id',
-          serverKey: 'id'
+          storeKey: 'local_id',
+          serverKey: 'chemId'
         },
-        'flugzeuge_chemtrails_conspiracyTheorists': {
-          storeKey: '_id',
+        'theorists': {
+          storeKey: '__id',
           serverKey: 'nsaId'
         },
-        chemtrails: {
+        chemicalTrails: {
           storeKey: 'storeId',
-          serverKey: 'id'
+          serverKey: 'chemid'
+        },
+        politicians: {
+          storeKey: 'storeId',
+          serverKey: 'conid'
         }
       });
     });
