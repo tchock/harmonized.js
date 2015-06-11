@@ -114,17 +114,17 @@ Harmonized.IndexedDbHandler.prototype.getAllEntries = function() {
 
 Harmonized.IndexedDbHandler.prototype.put = function(item) {
   var dbHandler = Harmonized.IndexedDbHandler;
+  var putStream = new Rx.Subject();
 
   // Don't do anything if the database connection is not established
-  /* istanbul ignore if */
   if (!dbHandler._db) {
-    return;
+    putStream.onError(new Error('no database connection established'));
+    putStream.onCompleted();
+    return putStream;
   }
 
   var _this = this;
   var i = 0;
-  var putStream = new Rx.Subject();
-
   function putNext(e) {
     if (!!e) {
       // Data was received
@@ -173,19 +173,22 @@ Harmonized.IndexedDbHandler.prototype.remove = function(item) {
   var dbHandler = Harmonized.IndexedDbHandler;
   var _this = this;
 
+  var removeStream = new Rx.Subject();
+
   // Don't do anything if the database connection is not established
-  /* istanbul ignore if */
   if (!dbHandler._db) {
-    return;
+    removeStream.onError(new Error('no database connection established'));
+    removeStream.onCompleted();
+    return removeStream;
   }
 
-  var removeStream = new Rx.Subject();
   var request = dbHandler._db.transaction([_this._storeName], 'readwrite')
     .objectStore(_this._storeName).delete(item.meta.storeId);
 
   request.onsuccess = function() {
     item.meta.deleted = true;
     removeStream.onNext(item);
+    removeStream.onCompleted();
   };
 
   request.onerror = removeStream.onError;

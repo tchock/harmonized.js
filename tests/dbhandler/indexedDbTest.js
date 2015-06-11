@@ -296,7 +296,7 @@ describe('IndexedDB Service', function() {
     });
   });
 
-  it('should fail at inserting data', function() {
+  it('should fail at inserting data because of the same serverId', function() {
     var putStream;
     var putItems = [];
 
@@ -360,6 +360,44 @@ describe('IndexedDB Service', function() {
       _id: 1,
       id: 123
     });
+  });
+
+  it('should fail at inserting data because missing db connetion', function() {
+    var putStream;
+    var putItems = [];
+    var putErrors = [];
+
+    // Add some data
+    scheduler.scheduleWithAbsolute(0, function() {
+      expect(Harmonized.IndexedDbHandler._db).toBe(null);
+
+      putStream = indexedDbHandler.put([{
+        data: {
+          firstname: 'Igor',
+          lastname: 'Igorson'
+        },
+        meta: {
+          serverId: 123
+        }
+      }]);
+
+      putStream.subscribe(
+        function(item) {
+          putItems.push(item);
+        },
+
+        function(error) {
+          putErrors.push(error);
+        });
+
+      jasmine.clock().tick(3);
+    });
+
+    scheduler.start();
+
+    expect(putItems).toBeEmptyArray();
+    expect(putErrors).toBeArrayOfSize(1);
+    expect(putErrors[0].message).toEqual('no database connection established');
   });
 
   it('should get all entries from a store with 3 items', function() {
@@ -525,6 +563,45 @@ describe('IndexedDB Service', function() {
       lastname: 'Igorov',
       _id: 3
     });
+  });
+
+  it('should fail at removing data because missing db connetion', function() {
+    var removeStream;
+    var removeItems = [];
+    var removeErrors = [];
+
+    // Add some data
+    scheduler.scheduleWithAbsolute(0, function() {
+      expect(Harmonized.IndexedDbHandler._db).toBe(null);
+
+      removeStream = indexedDbHandler.remove([{
+        data: {
+          firstname: 'Igor',
+          lastname: 'Igorson'
+        },
+        meta: {
+          _id: 1,
+          serverId: 123
+        }
+      }]);
+
+      removeStream.subscribe(
+        function(item) {
+          removeItems.push(item);
+        },
+
+        function(error) {
+          removeErrors.push(error);
+        });
+
+      jasmine.clock().tick(3);
+    });
+
+    scheduler.start();
+
+    expect(removeItems).toBeEmptyArray();
+    expect(removeErrors).toBeArrayOfSize(1);
+    expect(removeErrors[0].message).toEqual('no database connection established');
   });
 
   it('should delete the database', function() {
