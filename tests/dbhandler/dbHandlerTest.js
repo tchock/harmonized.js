@@ -5,6 +5,11 @@ describe('DbHandler', function() {
   var dbHandler;
   var explicitDbHandler;
 
+  var keys = {
+    storeKey: '_id',
+    serverKey: 'id'
+  };
+
   // Mock time
   beforeEach(function() {
     jasmine.clock().install();
@@ -15,10 +20,6 @@ describe('DbHandler', function() {
   });
 
   beforeEach(function() {
-    // Set key mocks
-    spyOn(Harmonized, 'getStoreKey').and.returnValue('_id');
-    spyOn(Harmonized, 'getServerKey').and.returnValue('id');
-
     explicitDbHandler = {
       _connectionStream: new Rx.Subject(),
       connect: function() {
@@ -34,7 +35,7 @@ describe('DbHandler', function() {
 
     spyOn(explicitDbHandler, 'connect').and.callThrough();
 
-    dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore');
+    dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore', keys);
 
     // webStorage mock
     spyOn(Harmonized, 'getWebStorage').and.returnValue(mockLocalStorage);
@@ -46,7 +47,7 @@ describe('DbHandler', function() {
 
   it('should not call the connect function twice', function() {
     expect(explicitDbHandler._isConnecting).toBeTruthy();
-    var secondDbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'secondStore');
+    var secondDbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'secondStore', keys);
     expect(explicitDbHandler.connect.calls.count()).toEqual(1);
     jasmine.clock().tick(9);
     expect(explicitDbHandler._isConnecting).toBeTruthy();
@@ -54,7 +55,7 @@ describe('DbHandler', function() {
     expect(explicitDbHandler._isConnecting).toBeFalsy();
 
     // Check after established Connection
-    var thirdDbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'thirdStore');
+    var thirdDbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'thirdStore', keys);
     jasmine.clock().tick(10);
     expect(explicitDbHandler.connect.calls.count()).toEqual(1);
   });
@@ -168,7 +169,7 @@ describe('DbHandler', function() {
       };
 
       // Rebuild dbHandler to include mock subject
-      dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore');
+      dbHandler = new Harmonized.MockDbHandler(explicitDbHandler, 'testStore', keys);
 
       // Subscribe streams to push to respective output arrays
       dbHandler._upstream.subscribe(function(item) {
@@ -338,7 +339,7 @@ describe('DbHandler', function() {
         harmonizedMeta_testStore: expectedObject
       };
 
-      dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore');
+      dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore', keys);
       expect(dbHandler.getMetadata()).toEqual(expectedObject);
     });
 
@@ -368,7 +369,7 @@ describe('DbHandler', function() {
         otherName: 'Max Mustermann'
       };
 
-      dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore');
+      dbHandler = new Harmonized.DbHandler(explicitDbHandler, 'testStore', keys);
       dbHandler.setMetadata('otherName', 'Max Mustermann');
       expect(dbHandler._metadata).toEqual(expectedObject);
       expect(window.mockLocalStorageObj).toEqual({

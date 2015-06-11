@@ -1,8 +1,8 @@
 'use strict';
 
-Harmonized.IndexedDbHandler = function IndexedDbHandler(storeName) {
+Harmonized.IndexedDbHandler = function IndexedDbHandler(storeName, keys) {
   this._handlerType = 'IndexedDB';
-  Harmonized.DbHandler.call(this, Harmonized.IndexedDbHandler, storeName);
+  Harmonized.DbHandler.call(this, Harmonized.IndexedDbHandler, storeName, keys);
 };
 
 // Connection stream to pause or resume the upstream

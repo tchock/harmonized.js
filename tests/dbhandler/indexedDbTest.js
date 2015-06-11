@@ -7,6 +7,11 @@ describe('IndexedDB Service', function() {
   var connectionStreamErrors;
   var scheduler;
 
+  var keys = {
+    storeKey: '_id',
+    serverKey: 'id'
+  };
+
   function fillStorageWithTestData() {
     return indexedDbHandler.put([{
       data: {
@@ -38,9 +43,6 @@ describe('IndexedDB Service', function() {
   });
 
   beforeEach(function() {
-    // Set key mocks
-    spyOn(Harmonized, 'getStoreKey').and.returnValue('_id');
-    spyOn(Harmonized, 'getServerKey').and.returnValue('id');
     spyOn(Harmonized.IndexedDbHandler, 'getDbReference').and.returnValue(window.indexedDBmock);
   });
 
@@ -88,7 +90,7 @@ describe('IndexedDB Service', function() {
       });
 
     // Rebuild dbHandler to include mock subject
-    indexedDbHandler = new Harmonized.IndexedDbHandler('testStore');
+    indexedDbHandler = new Harmonized.IndexedDbHandler('testStore', keys);
   });
 
   it('should connect to database, disconnect afterwards and connect again with increased version number', function() {
@@ -158,7 +160,7 @@ describe('IndexedDB Service', function() {
   it('should fail at a second connection with lower db version number', function() {
     // _db should not be set!
     Harmonized.IndexedDbHandler._isConnecting = false;
-    indexedDbHandler = new Harmonized.IndexedDbHandler('testStore');
+    indexedDbHandler = new Harmonized.IndexedDbHandler('testStore', keys);
     expect(Harmonized.IndexedDbHandler._db).toBe(null);
     Harmonized.dbVersion = 2;
 
@@ -171,7 +173,7 @@ describe('IndexedDB Service', function() {
 
     scheduler.scheduleWithAbsolute(10, function() {
       Harmonized.dbVersion = 1;
-      indexedDbHandler = new Harmonized.IndexedDbHandler('testStore');
+      indexedDbHandler = new Harmonized.IndexedDbHandler('testStore', keys);
       jasmine.clock().tick(2);
 
       expect(connectionStreamErrors.length).toBe(1);

@@ -1,11 +1,8 @@
 'use strict';
 
-Harmonized.DbHandler = function DbHandler(dbHandler, storeName) {
+Harmonized.DbHandler = function DbHandler(dbHandler, storeName, keys) {
   this._storeName = storeName;
-  this._keys = {
-    storeKey: Harmonized.getStoreKey(storeName),
-    serverKey: Harmonized.getServerKey(storeName)
-  };
+  this._keys = keys;
 
   // Public streams
   this.downstream = new Rx.Subject();

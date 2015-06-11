@@ -1,8 +1,6 @@
 'use strict';
 
-var Harmonized = function Harmonized() { // jshint ignore:line
-
-};
+var Harmonized = {}; // jshint ignore:line
 
 Harmonized._config = {
   defaultKeys: {
@@ -17,14 +15,6 @@ Harmonized._config = {
 Harmonized._resourceSchema = {};
 
 Harmonized.dbVersion = 1;
-
-Harmonized.getStoreKey = function() {
-  // TODO implement get store key fn
-};
-
-Harmonized.getServerKey = function() {
-  // TODO implement get server key fn
-};
 
 Harmonized.setModelSchema = function setModelSchema(schema) {
   Harmonized._setModelSchema(schema);
