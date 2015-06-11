@@ -29,10 +29,18 @@ Harmonized.dbHandlerFactory._getDbStructure = function getDbStructure() {
 
 /* istanbul ignore next */
 Harmonized.dbHandlerFactory._getIndexedDb = function getIndexedDb() {
-  return window.indexedDB && _.isFunction(Harmonized.IndexedDbHandler);
+  if (window.indexedDB && _.isFunction(Harmonized.IndexedDbHandler)) {
+    return window.indexedDb;
+  }
+
+  return null;
 };
 
 /* istanbul ignore next */
 Harmonized.dbHandlerFactory._getWebSql = function getWebSql() {
-  return window.openDatabase && _.isFunction(Harmonized.WebSqlHandler);
+  if (window.openDatabase && _.isFunction(Harmonized.WebSqlHandler)) {
+    return window.openDatabase;
+  }
+
+  return null;
 };
