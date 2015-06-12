@@ -27,12 +27,7 @@ module.exports = function(config) {
       'bower_components/rxjs/dist/rx.testing.js',
       'src/**/*.js',
       'tests/_testHelper/**/*.js',
-      'tests/Harmonized/harmonizedTest.js',
-      'tests/webstorage/webStorageTest.js',
-      'tests/dbHandler/dbHandlerTest.js',
-      'tests/dbhandler/dbHandlerFactoryTest.js',
-      'tests/dbHandler/indexedDbTest.js'
-      //'tests/**/*.js'
+      'tests/**/*.js'
     ],
 
 

@@ -14,7 +14,7 @@ Harmonized._config = {
 
 Harmonized._resourceSchema = {};
 Harmonized._httpFunction = function() {
-  throw new Error('No http function was added!');
+  throw new Error('No http function was added');
 };
 
 Harmonized.dbVersion = 1;

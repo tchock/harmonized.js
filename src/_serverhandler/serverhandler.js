@@ -1,8 +1,9 @@
 'use strict';
 
-Harmonized.ServerHandler = function(baseUrl, resourcePath) {
+Harmonized.ServerHandler = function(baseUrl, resourcePath, options) {
   this._baseUrl = baseUrl;
   this._resourcePath = resourcePath;
+  this._options = options;
 
   // Public streams
   this.upStream = new Rx.Subject();
@@ -17,27 +18,38 @@ Harmonized.ServerHandler = function(baseUrl, resourcePath) {
   // TODO implement last modified
   this._lastModified = 0;
 
-  // TODO add handling for different protocols (HTTP/socket)
-  // Implement check if sockethandler is there and try to connect to the socket
-  // (if config includes socket config). If connection was established, change
-  // the protocol to 'websocket'.
-  this._protocol = 'http';
+  // Connection stuff
+  this._connectionStream = new Rx.Subject();
+  this._connected = false;
+  this._protocol = null;
+  var useProtocol;
+  if (options.protocol === 'websocket') {
+    useProtocol = 'websocket';
+  } else {
+    useProtocol = 'http';
+  }
+
+  this._setProtocol(useProtocol);
 };
 
-Harmonized.ServerHandler.prototype._changeProtocol = function(protocol) {
+Harmonized.ServerHandler.prototype._setProtocol = function setProtocol(protocol) {
   // TODO implement protocol
+  // * Check if the new protocol is available
+  // * Call the disconnect method of old protocol
+  // * Call the connect method of new protocol
 };
 
-Harmonized.ServerHandler.prototype.fetch = function() {
+Harmonized.ServerHandler.prototype.fetch = function fetch() {
   // TODO implement fetch
+  // If 'http' protocol is active, call the httpHandler.fetch() function.
+  // If 'websocket' protocol is active, call the socketHandler.fetch() function.
 };
 
-Harmonized.ServerHandler.prototype.pushAll = function() {
+Harmonized.ServerHandler.prototype.pushAll = function pushAll() {
   // TODO implement pushAll
-
   // Has to push all items of the _unpushedList to the server resource
 };
 
-Harmonized.ServerHandler.prototype._createServerItem = function(item) {
+Harmonized.ServerHandler.prototype._createServerItem = function createServerItem(item) {
   // TODO implement _createServerItem
 };
