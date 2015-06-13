@@ -21,7 +21,6 @@ describe('ServerHandler', function() {
     spyOn(ServerHandler.httpHandler, 'connect').and.stub();
     spyOn(ServerHandler.httpHandler, 'disconnect').and.stub();
     spyOn(ServerHandler.httpHandler, 'fetch').and.stub();
-    spyOn(ServerHandler.httpHandler, 'push').and.stub();
     spyOn(ServerHandler.socketHandler, 'connect').and.stub();
     spyOn(ServerHandler.socketHandler, 'disconnect').and.stub();
 
@@ -31,7 +30,7 @@ describe('ServerHandler', function() {
 
   describe('connection', function() {
 
-    xit('should set connection state to true', function() {
+    it('should set connection state to true', function() {
       spyOn(sh, 'pushAll').and.stub();
       expect(sh._connected).toBeFalsy();
       expect(sh.pushAll).not.toHaveBeenCalled();
@@ -40,12 +39,12 @@ describe('ServerHandler', function() {
       expect(sh.pushAll).toHaveBeenCalled();
     });
 
-    xit('should set connection state to false', function() {
+    it('should set connection state to false', function() {
       sh._connected = true;
       spyOn(sh, 'pushAll').and.stub();
       expect(sh._connected).toBeTruthy();
       expect(sh.pushAll).not.toHaveBeenCalled();
-      sh.setConnectionState(true);
+      sh.setConnectionState(false);
       expect(sh._connected).toBeFalsy();
       expect(sh.pushAll).not.toHaveBeenCalled();
     });
@@ -54,9 +53,11 @@ describe('ServerHandler', function() {
 
   describe('streams', function() {
 
-    xit('should push items to a not connected stream and put them to the unpushedList', function() {
+    it('should push items to a not connected stream and put them to the unpushedList', function() {
       sh._connected = false;
       var pushList = [];
+
+      spyOn(ServerHandler.httpHandler, 'push').and.stub();
 
       sh.upStream.subscribe(function(item) {
         pushList.push(item);
@@ -102,17 +103,15 @@ describe('ServerHandler', function() {
 
       scheduler.start();
 
-      expect(sh._unpushedList).toHaveMember(152);
-      expect(sh._unpushedList).toHaveMember(415);
-      expect(sh._unpushedList).toHaveMember(387);
-      expect(sh._unpushedList).toHaveMember(18);
+      expect(sh._unpushedList).toContainKeys([152, 415, 387, 18]);
 
       expect(ServerHandler.httpHandler.push).not.toHaveBeenCalled();
     });
 
-    xit('should push items to a connected stream and call the push method of the implementation', function() {
-      sh._connected = false;
+    it('should push items to a connected stream and call the push method of the implementation', function() {
+      sh._connected = true;
       var pushList = [];
+      sh._protocol = ServerHandler.httpHandler;
 
       spyOn(ServerHandler.httpHandler, 'push').and.callFake(function(item, handler) {
         pushList.push(item);
@@ -158,10 +157,7 @@ describe('ServerHandler', function() {
 
       scheduler.start();
 
-      expect(sh._unpushedList).not.toHaveMember(152);
-      expect(sh._unpushedList).not.toHaveMember(415);
-      expect(sh._unpushedList).not.toHaveMember(387);
-      expect(sh._unpushedList).not.toHaveMember(18);
+      expect(sh._unpushedList).not.toContainKeys([152, 415, 387, 18]);
 
       expect(ServerHandler.httpHandler.push.calls.count()).toBe(4);
       expect(pushList[0].meta.rtId).toBe(152);
@@ -170,7 +166,7 @@ describe('ServerHandler', function() {
       expect(pushList[3].meta.rtId).toBe(18);
     });
 
-    xit('should set the connection state through the global stream', function() {
+    it('should set the connection state through the global stream', function() {
       var stateList = [];
       var connectionState = false;
 

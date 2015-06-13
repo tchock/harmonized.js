@@ -13,7 +13,7 @@ Harmonized.ServerHandler = function(baseUrl, resourcePath, options) {
     if (!_this._connected) {
       _this._unpushedList[item.meta.rtId] = item;
     } else {
-      _this.protocol.push(item, _this);
+      _this._protocol.push(item, _this);
     }
   });
 
@@ -72,8 +72,12 @@ Harmonized.ServerHandler.prototype.pushAll = function pushAll() {
 };
 
 Harmonized.ServerHandler.prototype.setConnectionState = function setConnectionState(state) {
-  // TODO implement setConnectionState
-  // Set online/offline state and call pushAll if state === true
+  if (state) {
+    this._connected = true;
+    this.pushAll();
+  } else {
+    this._connected = false;
+  }
 };
 
 Harmonized.ServerHandler.prototype._createServerItem = function createServerItem(item) {
