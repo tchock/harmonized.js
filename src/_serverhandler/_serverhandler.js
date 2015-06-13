@@ -62,7 +62,7 @@ Harmonized.ServerHandler.prototype._setProtocol = function setProtocol(protocol)
     if (_this._protocol !== null) {
       _this._protocol.disconnect();
     }
-    
+
     _this._protocol = newProtocol;
     _this._protocol.connect();
   }
@@ -75,14 +75,14 @@ Harmonized.ServerHandler.prototype._setProtocol = function setProtocol(protocol)
 };
 
 Harmonized.ServerHandler.prototype.fetch = function fetch() {
-  // TODO implement fetch
-  // If 'http' protocol is active, call the httpHandler.fetch() function.
-  // If 'websocket' protocol is active, call the socketHandler.fetch() function.
+  this._protocol.fetch();
 };
 
 Harmonized.ServerHandler.prototype.pushAll = function pushAll() {
-  // TODO implement pushAll
-  // Has to push all items of the _unpushedList to the server resource
+  for (var item in this._unpushedList) {
+    this.upStream.onNext(this._unpushedList[item]);
+    delete this._unpushedList[item];
+  }
 };
 
 Harmonized.ServerHandler.prototype.setConnectionState = function setConnectionState(state) {
@@ -95,5 +95,12 @@ Harmonized.ServerHandler.prototype.setConnectionState = function setConnectionSt
 };
 
 Harmonized.ServerHandler.prototype._createServerItem = function createServerItem(item) {
-  // TODO implement _createServerItem
+  // Clone data and arrange it for db
+  var serverItem = _.clone(item.data);
+
+  if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
+    serverItem[this._options.serverKey] = item.meta.serverId;
+  }
+
+  return serverItem;
 };

@@ -25,7 +25,9 @@ describe('ServerHandler', function() {
     spyOn(ServerHandler.socketHandler, 'disconnect').and.stub();
 
     ServerHandler.connectionStream = new Rx.Subject();
-    sh = new ServerHandler('http://api.hyphe.me/', 'rest/resource/', {});
+    sh = new ServerHandler('http://api.hyphe.me/', 'rest/resource/', {
+      serverKey: 'id'
+    });
   });
 
   describe('connection', function() {
@@ -302,28 +304,43 @@ describe('ServerHandler', function() {
 
   describe('data', function() {
 
-    xit('should be fetched by the protocolHandler', function() {
+    it('should be fetched by the protocolHandler', function() {
       sh._protocol = ServerHandler.httpHandler;
       expect(ServerHandler.httpHandler.fetch.calls.count()).toBe(0);
       sh.fetch();
       expect(ServerHandler.httpHandler.fetch.calls.count()).toBe(1);
     });
 
-    xit('should be pushed by pushAll function', function() {
+    it('should be pushed by pushAll function', function() {
       var pushList = [];
-
+      sh._connected = true;
       sh._unpushedList = {
         123: {
-          firstName: 'Hans',
-          lastName: 'Wurst'
+          data: {
+            firstName: 'Hans',
+            lastName: 'Wurst'
+          },
+          meta: {
+            rtId: 123
+          }
         },
         315: {
-          firstName: 'Peter',
-          lastName: 'Silie'
+          data: {
+            firstName: 'Peter',
+            lastName: 'Silie'
+          },
+          meta: {
+            rtId: 315
+          }
         },
         483: {
-          firstName: 'Kurt',
-          lastName: 'Zehose'
+          data: {
+            firstName: 'Kurt',
+            lastName: 'Zehose'
+          },
+          meta: {
+            rtId: 483
+          }
         }
       };
 
@@ -338,15 +355,15 @@ describe('ServerHandler', function() {
       scheduler.start();
 
       expect(pushList).toBeArrayOfSize(3);
-      expect(pushList[0].firstName).toBe('Hans');
-      expect(pushList[1].firstName).toBe('Peter');
-      expect(pushList[2].firstName).toBe('Kurt');
+      expect(pushList[0].data.firstName).toBe('Hans');
+      expect(pushList[1].data.firstName).toBe('Peter');
+      expect(pushList[2].data.firstName).toBe('Kurt');
 
-      expect(sh._unpushedList).toBeEmptyObject();
+      expect(sh._unpushedList).toEqual({});
 
     });
 
-    xit('should create create a server item with full metadata', function() {
+    it('should create create a server item with full metadata', function() {
       var inputItem = {
         data: {
           firstName: 'John',
@@ -367,7 +384,7 @@ describe('ServerHandler', function() {
       expect(outputItem).not.toBe(inputItem.data);
     });
 
-    xit('should create create a server item with one missing metadata', function() {
+    it('should create create a server item with one missing metadata', function() {
       var inputItem = {
         data: {
           firstName: 'John',
@@ -387,7 +404,7 @@ describe('ServerHandler', function() {
       expect(outputItem).not.toBe(inputItem.data);
     });
 
-    xit('should create create a server item with whole missing metadata', function() {
+    it('should create create a server item with whole missing metadata', function() {
       var inputItem = {
         data: {
           firstName: 'John',
