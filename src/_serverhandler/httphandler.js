@@ -1,17 +1,26 @@
+'use strict';
+
 Harmonized.ServerHandler.httpHandler = {
   connect: function(serverHandler) {
-    // TODO implement http connect
-    // Wire with streams
+    serverHandler.setConnectionState(true);
   },
 
   disconnect: function(serverHandler) {
-    // TODO implement http disconnect
-    // Remove connection with streams
+    serverHandler.setConnectionState(false);
   },
 
   fetch: function(serverHandler) {
-    // TODO implement http fetch
-    // fetch everything
+    var httpOptions = {};
+    if (Harmonized._config.sendModifiedSince && serverHandler._lastModified != null) {
+      httpOptions.headers = {
+        'If-Modified-Since': serverHandler._lastModified
+      };
+    }
+
+    httpOptions.url = serverHandler._baseUrl + serverHandler._resourcePath;
+    httpOptions.method = 'GET';
+
+    Harmonized._httpFunction(httpOptions);
   },
 
   push: function(item, serverHandler) {

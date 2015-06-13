@@ -2,66 +2,64 @@
 
 describe('HTTP handler', function() {
 
-  describe('connect function', function() {
-    var scheduler;
+  var scheduler;
 
-    beforeEach(function() {
-      // Scheduler to mock the RxJS timing
-      scheduler = new Rx.TestScheduler();
+  beforeEach(function() {
+    // Scheduler to mock the RxJS timing
+    scheduler = new Rx.TestScheduler();
 
-      // Mock the subject to let it use the scheduler
-      var OriginalSubject = Rx.Subject;
-      spyOn(Rx, 'Subject').and.callFake(function() {
-        return new OriginalSubject(scheduler.createObserver(), scheduler.createHotObservable());
-      });
+    // Mock the subject to let it use the scheduler
+    var OriginalSubject = Rx.Subject;
+    spyOn(Rx, 'Subject').and.callFake(function() {
+      return new OriginalSubject(scheduler.createObserver(), scheduler.createHotObservable());
     });
+  });
 
-    xit('should wire the streams correctly', function() {
-      var streamWired = false;
+  describe('connect function', function() {
 
+    it('should set the connection state to true', function() {
       var sh = {
         downStream: new Rx.Subject(),
-        _downStreamSubscribe: null
+        _downStreamSubscribe: null,
+        _connected: false,
+        setConnectionState: function(state) {
+          sh._connected = state;
+        }
       };
-
-      sh.downStream.subscribe(function(item) {
-        streamWired = true;
-      });
 
       scheduler.scheduleWithAbsolute(5, function() {
         Harmonized.ServerHandler.httpHandler.connect(sh);
       });
 
+      expect(sh._connected).toBeFalsy();
+
       scheduler.start();
 
-      expect(streamWired).toBeTruthy();
-      expect(sh._downStreamSubscribe instanceof Disposable).toBeTruthy();
+      expect(sh._connected).toBeTruthy();
     });
 
   });
 
   describe('disconnect function', function() {
 
-    xit('should remove the stream connection correctly', function() {
+    it('should remove the stream connection correctly', function() {
       var sh = {
-        downStream: new Rx.Subject()
+        downStream: new Rx.Subject(),
+        _connected: true,
+        setConnectionState: function(state) {
+          sh._connected = state;
+        }
       };
-
-      sh._downStreamSubscribe = sh.downStream.subscribe(function() {});
-
-      var downStreamSubscribe = sh._downStreamSubscribe;
-
-      spyOn(sh._downStreamSubscribe, 'dispose').and.stub();
 
       scheduler.scheduleWithAbsolute(5, function() {
         Harmonized.ServerHandler.httpHandler.disconnect(sh);
       });
 
+      expect(sh._connected).toBeTruthy();
+
       scheduler.start();
 
-      expect(streamWired).toBeTruthy();
-      expect(downStreamSubscribe.dispose).toHaveBeenCalled();
-      expect(sh._downStreamSubscribe).toBe(null);
+      expect(sh._connected).toBeFalsy();
     });
 
   });
@@ -73,7 +71,7 @@ describe('HTTP handler', function() {
     beforeEach(function() {
       receivedOptions = null;
 
-      spyOn(Harmonized, 'httpFunction').and.callFake(function(options) {
+      spyOn(Harmonized, '_httpFunction').and.callFake(function(options) {
         receivedOptions = options;
       });
 
@@ -85,7 +83,7 @@ describe('HTTP handler', function() {
       };
     });
 
-    xit('should fetch all data', function() {
+    it('should fetch all data', function() {
       Harmonized.ServerHandler.httpHandler.fetch(sh);
 
       expect(receivedOptions).toEqual({
@@ -94,7 +92,7 @@ describe('HTTP handler', function() {
       });
     });
 
-    xit('should fetch data with "modified-since header"', function() {
+    it('should fetch data with "modified-since header"', function() {
       Harmonized._config.sendModifiedSince = true;
       sh._lastModified = 1234;
 
@@ -109,7 +107,7 @@ describe('HTTP handler', function() {
       });
     });
 
-    xit('should fetch all data with missing last-modified info but activated sendLastModified in config', function() {
+    it('should fetch all data with missing last-modified info but activated sendLastModified in config', function() {
       Harmonized._config.sendModifiedSince = true;
       sh._lastModified = undefined;
 
