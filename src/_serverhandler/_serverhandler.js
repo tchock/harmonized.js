@@ -54,10 +54,24 @@ Harmonized.ServerHandler = function(baseUrl, resourcePath, options) {
 Harmonized.ServerHandler.connectionStream = new Rx.Subject();
 
 Harmonized.ServerHandler.prototype._setProtocol = function setProtocol(protocol) {
-  // TODO implement protocol
-  // * Check if the new protocol is available
-  // * Call the disconnect method of old protocol
-  // * Call the connect method of new protocol
+  var _this = this;
+  var httpHandler = Harmonized.ServerHandler.httpHandler;
+  var socketHandler = Harmonized.ServerHandler.socketHandler;
+
+  function setTheProtocol(newProtocol) {
+    if (_this._protocol !== null) {
+      _this._protocol.disconnect();
+    }
+    
+    _this._protocol = newProtocol;
+    _this._protocol.connect();
+  }
+
+  if (protocol === 'http' && this._protocol !== httpHandler) {
+    setTheProtocol(httpHandler);
+  } else if (protocol === 'websocket' && this._protocol !== socketHandler) {
+    setTheProtocol(socketHandler);
+  }
 };
 
 Harmonized.ServerHandler.prototype.fetch = function fetch() {

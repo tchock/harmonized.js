@@ -198,7 +198,7 @@ describe('ServerHandler', function() {
       expect(connectionState).toBeTruthy();
     });
 
-    xit('should set the connection state through the connection stream of the handler instance', function() {
+    it('should set the connection state through the connection stream of the handler instance', function() {
       var stateList = [];
       var connectionState = false;
 
@@ -234,68 +234,68 @@ describe('ServerHandler', function() {
 
   describe('protocol', function() {
 
-    xit('should be set to http on handler creation', function() {
+    it('should be set to http on handler creation', function() {
       expect(ServerHandler.prototype._setProtocol).toHaveBeenCalled();
       expect(ServerHandler.httpHandler.connect).toHaveBeenCalled();
-      expect(ServerHandler._protocol).toBe(ServerHandler.httpHandler);
+      expect(sh._protocol).toBe(ServerHandler.httpHandler);
     });
 
-    xit('should be set to websocket on handler creation', function() {
+    it('should be set to websocket on handler creation', function() {
       sh = new ServerHandler('http://api.hyphe.me/', 'rest/resource/', {
         protocol: 'websocket'
       });
       expect(ServerHandler.prototype._setProtocol).toHaveBeenCalled();
       expect(ServerHandler.socketHandler.connect).toHaveBeenCalled();
-      expect(ServerHandler._protocol).toBe(ServerHandler.socketHandler);
+      expect(sh._protocol).toBe(ServerHandler.socketHandler);
     });
 
-    xit('should be set to http from http', function() {
+    it('should be set to http from http', function() {
       sh._protocol = ServerHandler.httpHandler;
       expect(ServerHandler.httpHandler.connect.calls.count()).toBe(1);
       expect(ServerHandler.httpHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler._protocol).toBe(ServerHandler.httpHandler);
+      expect(sh._protocol).toBe(ServerHandler.httpHandler);
 
       sh._setProtocol('http');
 
       expect(ServerHandler.httpHandler.connect.calls.count()).toBe(1);
       expect(ServerHandler.httpHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler.websocketHandler.connect.calls.count()).toBe(0);
-      expect(ServerHandler.websocketHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler._protocol).toBe(ServerHandler.httpHandler);
+      expect(ServerHandler.socketHandler.connect.calls.count()).toBe(0);
+      expect(ServerHandler.socketHandler.disconnect.calls.count()).toBe(0);
+      expect(sh._protocol).toBe(ServerHandler.httpHandler);
     });
 
-    xit('should be set to websocket from http', function() {
+    it('should be set to websocket from http', function() {
       sh._protocol = ServerHandler.httpHandler;
       expect(ServerHandler.httpHandler.connect.calls.count()).toBe(1);
       expect(ServerHandler.httpHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler.websocketHandler.connect.calls.count()).toBe(0);
-      expect(ServerHandler.websocketHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler._protocol).toBe(ServerHandler.httpHandler);
+      expect(ServerHandler.socketHandler.connect.calls.count()).toBe(0);
+      expect(ServerHandler.socketHandler.disconnect.calls.count()).toBe(0);
+      expect(sh._protocol).toBe(ServerHandler.httpHandler);
 
       sh._setProtocol('websocket');
 
       expect(ServerHandler.httpHandler.connect.calls.count()).toBe(1);
       expect(ServerHandler.httpHandler.disconnect.calls.count()).toBe(1);
-      expect(ServerHandler.websocketHandler.connect.calls.count()).toBe(1);
-      expect(ServerHandler.websocketHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler._protocol).toBe(ServerHandler.socketHandler);
+      expect(ServerHandler.socketHandler.connect.calls.count()).toBe(1);
+      expect(ServerHandler.socketHandler.disconnect.calls.count()).toBe(0);
+      expect(sh._protocol).toBe(ServerHandler.socketHandler);
     });
 
-    xit('should be set to http from websocket', function() {
+    it('should be set to http from websocket', function() {
       sh._protocol = ServerHandler.socketHandler;
-      expect(ServerHandler.httpHandler.connect.calls.count()).toBe(0);
+      expect(ServerHandler.httpHandler.connect.calls.count()).toBe(1);
       expect(ServerHandler.httpHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler.websocketHandler.connect.calls.count()).toBe(1);
-      expect(ServerHandler.websocketHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler._protocol).toBe(ServerHandler.socketHandler);
+      expect(ServerHandler.socketHandler.connect.calls.count()).toBe(0);
+      expect(ServerHandler.socketHandler.disconnect.calls.count()).toBe(0);
+      expect(sh._protocol).toBe(ServerHandler.socketHandler);
 
       sh._setProtocol('http');
 
-      expect(ServerHandler.httpHandler.connect.calls.count()).toBe(1);
+      expect(ServerHandler.httpHandler.connect.calls.count()).toBe(2);
       expect(ServerHandler.httpHandler.disconnect.calls.count()).toBe(0);
-      expect(ServerHandler.websocketHandler.connect.calls.count()).toBe(1);
-      expect(ServerHandler.websocketHandler.disconnect.calls.count()).toBe(1);
-      expect(ServerHandler._protocol).toBe(ServerHandler.httpHandler);
+      expect(ServerHandler.socketHandler.connect.calls.count()).toBe(0);
+      expect(ServerHandler.socketHandler.disconnect.calls.count()).toBe(1);
+      expect(sh._protocol).toBe(ServerHandler.httpHandler);
     });
 
   });
