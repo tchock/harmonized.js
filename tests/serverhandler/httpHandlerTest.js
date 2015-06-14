@@ -184,7 +184,8 @@ describe('HTTP handler', function() {
         downStream: new Rx.Subject(),
         _baseUrl: 'http://www.hyphe.me/',
         _resourcePath: 'test/resource/',
-        _options: {}
+        _options: {},
+        _unpushedList: {}
       };
     });
 
@@ -447,7 +448,6 @@ describe('HTTP handler', function() {
 
       expect(returnedItem).toBe(null);
       expect(returnedError.status).toBe(500);
-
       expect(sh._unpushedList[12]).toEqual(postItem);
     });
 

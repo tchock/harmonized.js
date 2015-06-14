@@ -50,6 +50,9 @@ Harmonized.ServerHandler.httpHandler = {
     Harmonized._httpFunction(httpOptions).then(function(returnItem) {
       item.data = returnItem;
       serverHandler.downStream.onNext(item);
+    }).catch(function(error) {
+      serverHandler._unpushedList[item.meta.rtId] = item;
+      serverHandler.downStream.onError(error);
     });
   }
 };
