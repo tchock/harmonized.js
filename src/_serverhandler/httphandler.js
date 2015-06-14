@@ -24,7 +24,33 @@ Harmonized.ServerHandler.httpHandler = {
   },
 
   push: function(item, serverHandler) {
-    // TODO implement http push
-    // push a single item to the serverHandler
+    var httpOptions = {};
+
+    console.log(serverHandler._options);
+    if (_.isObject(serverHandler._options.params)) {
+      httpOptions.params = serverHandler._options.params;
+    }
+
+    httpOptions.url = serverHandler._baseUrl + serverHandler._resourcePath;
+
+    if (item.meta.action === 'delete') {
+      httpOptions.method = 'DELETE';
+      httpOptions.url = httpOptions.url + item.meta.serverId + '/';
+    }
+
+    if (item.meta.action === 'save') {
+      httpOptions.data = item.data;
+      if (_.isUndefined(item.meta.serverId)) {
+        httpOptions.method = 'POST';
+      } else {
+        httpOptions.method = 'PUT';
+        httpOptions.url = httpOptions.url + item.meta.serverId + '/';
+      }
+    }
+
+    Harmonized._httpFunction(httpOptions).then(function(returnItem) {
+      item.data = returnItem;
+      serverHandler.downStream.onNext(item);
+    });
   }
 };

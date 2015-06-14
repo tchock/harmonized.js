@@ -200,10 +200,11 @@ describe('HTTP handler', function() {
         }
       };
 
-      postItem = {
+      deleteItem = {
         meta: {
           action: 'delete',
           rtId: 12,
+          serverId: 4103,
           storeId: 11
         },
         data: {
@@ -212,7 +213,7 @@ describe('HTTP handler', function() {
       };
     });
 
-    xit('should POST an item', function() {
+    it('should POST an item', function() {
       var returnedItem = null;
 
       sh.downStream.subscribe(function(item) {
@@ -220,7 +221,7 @@ describe('HTTP handler', function() {
       });
 
       scheduler.scheduleWithAbsolute(5, function() {
-        Harmonized.ServerHandler.httpHandler.push(sh, postItem);
+        Harmonized.ServerHandler.httpHandler.push(postItem, sh);
         expect(returnedItem).toBeNull();
         jasmine.clock().tick(10);
       });
@@ -241,7 +242,7 @@ describe('HTTP handler', function() {
       });
     });
 
-    xit('should POST an item with parameters', function() {
+    it('should POST an item with parameters', function() {
       sh._options.params = {
         openPodBayDoor: false,
         iCantDoThatDave: true
@@ -254,7 +255,7 @@ describe('HTTP handler', function() {
       });
 
       scheduler.scheduleWithAbsolute(5, function() {
-        Harmonized.ServerHandler.httpHandler.push(sh, postItem);
+        Harmonized.ServerHandler.httpHandler.push(postItem, sh);
         expect(returnedItem).toBeNull();
         jasmine.clock().tick(10);
       });
@@ -279,7 +280,7 @@ describe('HTTP handler', function() {
       });
     });
 
-    xit('should PUT an item', function() {
+    it('should PUT an item', function() {
       var returnedItem = null;
 
       sh.downStream.subscribe(function(item) {
@@ -287,7 +288,7 @@ describe('HTTP handler', function() {
       });
 
       scheduler.scheduleWithAbsolute(5, function() {
-        Harmonized.ServerHandler.httpHandler.push(sh, putItem);
+        Harmonized.ServerHandler.httpHandler.push(putItem, sh);
         expect(returnedItem).toBeNull();
         jasmine.clock().tick(10);
       });
@@ -308,7 +309,7 @@ describe('HTTP handler', function() {
       });
     });
 
-    xit('should PUT an item with parameter', function() {
+    it('should PUT an item with parameter', function() {
       sh._options.params = {
         openPodBayDoor: false,
         iCantDoThatDave: true
@@ -321,7 +322,7 @@ describe('HTTP handler', function() {
       });
 
       scheduler.scheduleWithAbsolute(5, function() {
-        Harmonized.ServerHandler.httpHandler.push(sh, putItem);
+        Harmonized.ServerHandler.httpHandler.push(putItem, sh);
         expect(returnedItem).toBeNull();
         jasmine.clock().tick(10);
       });
@@ -340,15 +341,13 @@ describe('HTTP handler', function() {
         }
       });
 
-      expect(returnedItem).toEqual(postItem.data);
-
       expect(returnedItem).toEqual({
         meta: putItem.meta,
         data: putItem.data
       });
     });
 
-    xit('should DELETE an item', function() {
+    it('should DELETE an item', function() {
       var returnedItem = null;
 
       sh.downStream.subscribe(function(item) {
@@ -356,7 +355,7 @@ describe('HTTP handler', function() {
       });
 
       scheduler.scheduleWithAbsolute(5, function() {
-        Harmonized.ServerHandler.httpHandler.push(sh, deleteItem);
+        Harmonized.ServerHandler.httpHandler.push(deleteItem, sh);
         expect(returnedItem).toBeNull();
         jasmine.clock().tick(10);
       });
@@ -374,7 +373,7 @@ describe('HTTP handler', function() {
       });
     });
 
-    xit('should DELETE an item with parameter', function() {
+    it('should DELETE an item with parameter', function() {
       sh._options.params = {
         openPodBayDoor: false,
         iCantDoThatDave: true
@@ -387,14 +386,12 @@ describe('HTTP handler', function() {
       });
 
       scheduler.scheduleWithAbsolute(5, function() {
-        Harmonized.ServerHandler.httpHandler.push(sh, deleteItem);
+        Harmonized.ServerHandler.httpHandler.push(deleteItem, sh);
         expect(returnedItem).toBeNull();
         jasmine.clock().tick(10);
       });
 
       scheduler.start();
-
-      Harmonized.ServerHandler.httpHandler.push(sh, deleteItem);
 
       expect(receivedOptions).toEqual({
         method: 'DELETE',

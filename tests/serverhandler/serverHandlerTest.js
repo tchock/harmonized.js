@@ -312,6 +312,8 @@ describe('ServerHandler', function() {
     });
 
     it('should be pushed by pushAll function', function() {
+      spyOn(ServerHandler.httpHandler, 'push').and.stub();
+
       var pushList = [];
       sh._connected = true;
       sh._unpushedList = {
