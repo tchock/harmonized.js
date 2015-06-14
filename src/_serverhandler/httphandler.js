@@ -26,7 +26,6 @@ Harmonized.ServerHandler.httpHandler = {
   push: function(item, serverHandler) {
     var httpOptions = {};
 
-    console.log(serverHandler._options);
     if (_.isObject(serverHandler._options.params)) {
       httpOptions.params = serverHandler._options.params;
     }

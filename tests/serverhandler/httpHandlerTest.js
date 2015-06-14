@@ -145,6 +145,12 @@ describe('HTTP handler', function() {
         var returnedPromise = {
           then: function(fn) {
             returnedPromise.thenFn = fn;
+            return returnedPromise;
+          },
+
+          catch: function(fn) {
+            returnedPromise.catchFn = fn;
+            return returnedPromise;
           }
         };
         var returnedData = {};
@@ -162,7 +168,13 @@ describe('HTTP handler', function() {
         }
 
         setTimeout(function() {
-          returnedPromise.thenFn(returnedData);
+          if (_.isObject(options.params) && options.params.shouldFail === true) {
+            returnedPromise.catchFn({
+              status: 500
+            });
+          } else {
+            returnedPromise.thenFn(returnedData);
+          }
         }, 10);
 
         return returnedPromise;
@@ -408,8 +420,35 @@ describe('HTTP handler', function() {
       });
     });
 
-    xit('should fail and add item to the unpushedList', function() {
+    it('should fail and add item to the unpushedList', function() {
+      sh._options.params = {
+        shouldFail: true
+      };
 
+      var returnedItem = null;
+      var returnedError = null;
+
+      sh.downStream.subscribe(
+        function(item) {
+          returnedItem = item;
+        },
+
+        function(error) {
+          returnedError = error;
+        });
+
+      scheduler.scheduleWithAbsolute(5, function() {
+        Harmonized.ServerHandler.httpHandler.push(postItem, sh);
+        expect(returnedItem).toBeNull();
+        jasmine.clock().tick(10);
+      });
+
+      scheduler.start();
+
+      expect(returnedItem).toBe(null);
+      expect(returnedError.status).toBe(500);
+
+      expect(sh._unpushedList[12]).toEqual(postItem);
     });
 
   });
