@@ -1,6 +1,6 @@
 'use strict';
 
-describe('ServerHandler', function() {
+xdescribe('ServerHandler', function() {
   var ServerHandler = Harmonized.ServerHandler;
   var sh;
   var scheduler;

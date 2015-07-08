@@ -1,6 +1,6 @@
 'use strict';
 
-describe('Harmonized.webStorage', function() {
+xdescribe('Harmonized.webStorage', function() {
 
   beforeEach(function() {
     spyOn(Harmonized, '_getLocalStorage').and.returnValue(mockLocalStorage);

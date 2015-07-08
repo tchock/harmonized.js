@@ -1,6 +1,6 @@
 'use strict';
 
-describe('Harmonized', function() {
+xdescribe('Harmonized', function() {
 
   it('should throw an error when calling the unchanged _httpFunction', function() {
     expect(Harmonized._httpFunction).toThrow(new Error('No http function was added'));

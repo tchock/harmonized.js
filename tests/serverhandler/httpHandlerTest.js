@@ -1,6 +1,6 @@
 'use strict';
 
-describe('HTTP handler', function() {
+xdescribe('HTTP handler', function() {
 
   var scheduler;
 

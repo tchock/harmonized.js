@@ -1,3 +1,5 @@
+'use strict';
+
 function areElementsEqual(actual, expected, comparer) {
     var i, isOk = true;
     comparer || (comparer = Rx.internals.isEqual);

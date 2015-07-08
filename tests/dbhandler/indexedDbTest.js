@@ -1,6 +1,6 @@
 'use strict';
 
-describe('IndexedDB Service', function() {
+xdescribe('IndexedDB Service', function() {
 
   var indexedDbHandler;
   var connectionStreamOutputs;

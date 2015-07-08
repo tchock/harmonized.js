@@ -45,6 +45,9 @@
         "dist/rx.lite.js",
         "dist/rx.async.js"
       ]
+    },
+    "sinon": {
+      "js": "index.js"
     }
   },
   "devDependencies": {
@@ -54,5 +57,7 @@
     "indexedDBmock": "kristofdegrave/indexedDBmock#9f98b87ed59b46a191c01a05181a2d06d02a4ad9",
     "jasmine-expect": "~1.22.3",
     "requirejs": "~2.1.18",
+    "squire": "~0.2.0",
+    "sinon": "http://sinonjs.org/releases/sinon-1.9.0.js"
   }
 }
