@@ -15,8 +15,6 @@ require.config({
   paths: {
     'Squire': '../bower_components/squire/src/Squire',
     'sinon': '../bower_components/sinon/index',
-    'jasmineMatchers': '../bower_components/jasmine-expect/dist/jasmine-matchers',
-    'jasmineObjectMatchers': '../bower_components/jasmine-object-matchers/dist/jasmine-object-matchers',
     'lodash': '../bower_components/lodash/lodash',
     'sqlParser': '../bower_components/sql-parser/browser/sql-parser',
     'WebSqlMock': '../bower_components/mock-websql/websql',
@@ -37,9 +35,15 @@ require.config({
     'sinon': {
       exports: 'sinon'
     },
-    'rx': {
-      exports: 'Rx'
-    }
+    'indexedDBmock': {
+      exports: 'indexedDBmock',
+      init: function() {
+        return {
+          mock: this.indexedDBmock,
+          mockDbs: this.indexedDBmockDbs
+        };
+      }
+    },
   },
 });
 

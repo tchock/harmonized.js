@@ -1,6 +1,6 @@
 'use strict';
 
-define('ServerHandler/httpHandler', ['harmonized/config'], function(config) {
+define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData) {
   return {
     connect: function(serverHandler) {
       serverHandler.setConnectionState(true);
@@ -12,7 +12,7 @@ define('ServerHandler/httpHandler', ['harmonized/config'], function(config) {
 
     fetch: function(serverHandler) {
       var httpOptions = {};
-      if (Harmonized._config.sendModifiedSince &&
+      if (harmonizedData._config.sendModifiedSince &&
         serverHandler._lastModified != null) {
         httpOptions.headers = {
           'If-Modified-Since': serverHandler._lastModified
@@ -22,7 +22,7 @@ define('ServerHandler/httpHandler', ['harmonized/config'], function(config) {
       httpOptions.url = serverHandler._baseUrl + serverHandler._resourcePath;
       httpOptions.method = 'GET';
 
-      config.httpFunction(httpOptions);
+      harmonizedData._httpFunction(httpOptions);
     },
 
     push: function(item, serverHandler) {
@@ -49,7 +49,7 @@ define('ServerHandler/httpHandler', ['harmonized/config'], function(config) {
         }
       }
 
-      Harmonized._httpFunction(httpOptions).then(function(returnItem) {
+      harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
         item.data = returnItem;
         serverHandler.downStream.onNext(item);
       }).catch(function(error) {

@@ -2,43 +2,37 @@
 
 define('mockWebStorage', function() {
 
-  var mockLocalStorageObj = {}
-  var mockSessionStorageObj = {}
-
-  var mockLocalStorage = {};
-
-  mockLocalStorage.getItem = function(key) {
-    return mockLocalStorageObj[key];
-  };
-
-  mockLocalStorage.setItem = function(key, value) {
-    mockLocalStorageObj[key] = value;
-  };
-
-  mockLocalStorage.clear = function() {
-    mockLocalStorageObj = {};
-  };
-
-  var mockSessionStorage = {};
-
-  mockSessionStorage.getItem = function(key) {
-    return mockSessionStorageObj[key];
-  };
-
-  mockSessionStorage.setItem = function(key, value) {
-    mockSessionStorageObj[key] = value;
-  };
-
-  mockSessionStorage.clear = function() {
-    mockSessionStorageObj = {};
-  };
-
-  console.log('whooookjbn kjbhjlb j');
-  return {
-    localStorage: mockLocalStorage,
-    sessionStorage: mockSessionStorage,
-    localStorageContent: mockLocalStorageObj,
-    sessionStorageContent: mockSessionStorageObj
+  var mockWebStorage = {
+    localStorage: {},
+    sessionStorage: {},
+    localStorageContent: {},
+    sessionStorageContent: {}
   }
+
+  mockWebStorage.localStorage.getItem = function(key) {
+    return mockWebStorage.localStorageContent[key];
+  };
+
+  mockWebStorage.localStorage.setItem = function(key, value) {
+    mockWebStorage.localStorageContent[key] = value;
+  };
+
+  mockWebStorage.localStorage.clear = function() {
+    mockWebStorage.localStorageContent = {};
+  };
+
+  mockWebStorage.sessionStorage.getItem = function(key) {
+    return mockWebStorage.sessionStorageContent[key];
+  };
+
+  mockWebStorage.sessionStorage.setItem = function(key, value) {
+    mockWebStorage.sessionStorageContent[key] = value;
+  };
+
+  mockWebStorage.sessionStorage.clear = function() {
+    mockWebStorage.sessionStorageContent = {};
+  };
+
+  return mockWebStorage;
 
 });

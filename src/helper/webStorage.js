@@ -1,10 +1,6 @@
 'use strict';
 
-console.log('webstorage geladen');
-
 define('helper/webStorage', function() {
-  console.log('storage initialisiert');
-
   var webStore = {};
 
   webStore.getWebStorage = function() {
@@ -25,6 +21,7 @@ define('helper/webStorage', function() {
 
   webStore.setWebStorage = function(storage, doClear) {
     if (doClear) {
+      console.log(webStore._webStorage);
       webStore._webStorage.clear();
     }
 

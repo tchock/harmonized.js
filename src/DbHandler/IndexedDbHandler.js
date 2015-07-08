@@ -1,9 +1,6 @@
 'use strict';
 
-console.log('Indexed DB loaded');
-
-define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler'], function(DbHandler) {
-  console.log('blub');
+define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData'], function(DbHandler, harmonizedData) {
   var IndexedDbHandler = function IndexedDbHandler(storeName, keys) {
     this._handlerType = 'IndexedDB';
     DbHandler.call(this, IndexedDbHandler,
@@ -32,7 +29,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler'], function(DbHandl
 
     dbHandler._isConnecting = true;
     var request = dbHandler.getDbReference().open('harmonizedDb',
-      Harmonized.dbVersion);
+      harmonizedData.dbVersion);
 
     // Request success
     request.onsuccess = function() {
@@ -49,7 +46,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler'], function(DbHandl
     // DB needs upgrade
     request.onupgradeneeded = function(e) {
       var db = e.result;
-      var schema = Harmonized.getDbSchema();
+      var schema = harmonizedData.getDbSchema();
       var currentStore;
       var i;
 
@@ -107,7 +104,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler'], function(DbHandl
       cursor = e.target.result;
       if (cursor) {
         var cursorItem = cursor.value;
-        _this.downstream.onNext(Harmonized._createStreamItem(cursorItem,
+        _this.downstream.onNext(harmonizedData._createStreamItem(cursorItem,
           _this._keys));
         cursor.continue();
       }

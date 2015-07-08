@@ -1,6 +1,6 @@
 'use strict';
 
-define('ServerHandler/socketHandler', ['harmonized/config'], function(config) {
+define('ServerHandler/socketHandler', ['harmonizedData'], function(harmonizedData) {
   return {
     connect: function(serverHandler) {
       // TODO implement http connect

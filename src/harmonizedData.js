@@ -1,8 +1,10 @@
 'use strict';
 
-var Harmonized = {}; // jshint ignore:line
+define('harmonizedData', function() {
 
-Harmonized._config = {
+var data = {}; // jshint ignore:line
+
+data._config = {
   defaultKeys: {
     serverKey: 'id',
     storeKey: '_id'
@@ -12,23 +14,23 @@ Harmonized._config = {
   sendModifiedSince: false
 };
 
-Harmonized._resourceSchema = {};
-Harmonized._httpFunction = function() {
+data._resourceSchema = {};
+data._httpFunction = function() {
   throw new Error('No http function was added');
 };
 
-Harmonized.dbVersion = 1;
+data.dbVersion = 1;
 
-Harmonized.setModelSchema = function setModelSchema(schema) {
-  Harmonized._setModelSchema(schema);
-  Harmonized._modelSchema = schema;
+data.setModelSchema = function setModelSchema(schema) {
+  data._setModelSchema(schema);
+  data._modelSchema = schema;
 };
 
-Harmonized.getModelSchema = function getModelSchema() {
-  return Harmonized._modelSchema;
+data.getModelSchema = function getModelSchema() {
+  return data._modelSchema;
 };
 
-Harmonized._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {
+data._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {
   var subModels;
   var currentModel;
   var keys;
@@ -36,16 +38,16 @@ Harmonized._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {
   for (var item in schema) {
     currentModel = schema[item];
     if (!_.isObject(currentModel.keys)) {
-      currentModel.keys = Harmonized._config.defaultKeys;
+      currentModel.keys = data._config.defaultKeys;
     } else {
       keys = currentModel.keys;
 
       if (_.isUndefined(keys.serverKey)) {
-        keys.serverKey = Harmonized._config.defaultKeys.serverKey;
+        keys.serverKey = data._config.defaultKeys.serverKey;
       }
 
       if (_.isUndefined(keys.storeKey)) {
-        keys.storeKey = Harmonized._config.defaultKeys.storeKey;
+        keys.storeKey = data._config.defaultKeys.storeKey;
       }
     }
 
@@ -59,20 +61,20 @@ Harmonized._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {
 
     subModels = currentModel.subModels;
     if (_.isObject(subModels)) {
-      Harmonized._setModelSchema(subModels, currentModel.storeName + '_');
+      data._setModelSchema(subModels, currentModel.storeName + '_');
     }
   }
 };
 
-Harmonized.getDbSchema = function getDbSchema() {
+data.getDbSchema = function getDbSchema() {
   var output = {};
 
-  Harmonized._getDbSchema(Harmonized._modelSchema, output);
+  data._getDbSchema(data._modelSchema, output);
 
   return output;
 };
 
-Harmonized._getDbSchema = function(modelSchema, output) {
+data._getDbSchema = function(modelSchema, output) {
   var currentModel;
   var subModels;
 
@@ -81,12 +83,12 @@ Harmonized._getDbSchema = function(modelSchema, output) {
     output[currentModel.storeName] = currentModel.keys;
     subModels = modelSchema[schemaItem].subModels;
     if (_.isObject(subModels)) {
-      Harmonized._getDbSchema(subModels, output);
+      data._getDbSchema(subModels, output);
     }
   }
 };
 
-Harmonized._createStreamItem = function(inputItem, keys) {
+data._createStreamItem = function(inputItem, keys) {
   inputItem = _.clone(inputItem);
   var item = {
     meta: {
@@ -103,3 +105,7 @@ Harmonized._createStreamItem = function(inputItem, keys) {
 
   return item;
 };
+
+  return data;
+
+});

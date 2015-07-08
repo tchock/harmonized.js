@@ -1,49 +1,59 @@
 'use strict';
 
-xdescribe('Harmonized.webStorage', function() {
+define(['helper/webStorage', 'harmonizedData', 'mockWebStorage', 'lodash'],
+  function(webStore, harmonizedData, mockWebStorage, _) {
 
-  beforeEach(function() {
-    spyOn(Harmonized, '_getLocalStorage').and.returnValue(mockLocalStorage);
-    spyOn(Harmonized, '_getSessionStorage').and.returnValue(mockSessionStorage);
+  describe('Harmonized.webStorage', function() {
 
-    // Reset storage
-    window.mockLocalStorageObj = {};
-    window.mockSessionStorageObj = {};
+    beforeEach(function() {
+      spyOn(webStore, '_getLocalStorage').and.returnValue(mockWebStorage.localStorage);
+      spyOn(webStore, '_getSessionStorage').and.returnValue(mockWebStorage.sessionStorage);
+
+      // Reset storage
+      mockWebStorage.localStorageContent = {};
+      mockWebStorage.sessionStorageContent = {};
+    });
+
+    afterEach(function() {
+      mockWebStorage.localStorageContent = {};
+      mockWebStorage.sessionStorageContent = {};
+    });
+
+    it('should start with sessionStorage as default', function() {
+      expect(webStore._webStorage).toEqual(sessionStorage);
+    });
+
+    it('should get the web storage', function() {
+      webStore._webStorage = 'abc';
+      expect(webStore.getWebStorage()).toBe('abc');
+    });
+
+    it('should switch to localStorage', function() {
+      webStore.setWebStorage('local');
+      expect(webStore._webStorage).toEqual(webStore._getLocalStorage());
+    });
+
+    it('should switch to sessionStorage', function() {
+      webStore._webStorage = webStore._getLocalStorage();
+      webStore.setWebStorage('session');
+      expect(webStore._webStorage).toEqual(webStore._getSessionStorage());
+    });
+
+    it('should switch to sessionStorage with default parameter', function() {
+      webStore._webStorage = webStore._getLocalStorage();
+      webStore.setWebStorage();
+      expect(webStore._webStorage).toEqual(webStore._getSessionStorage());
+    });
+
+    it('should switch storage type with clearing the store', function() {
+      mockWebStorage.sessionStorageContent = {
+        test: 123
+      };
+      webStore._webStorage = webStore._getSessionStorage();
+
+      webStore.setWebStorage('local', true);
+      expect(_.isUndefined(mockWebStorage.sessionStorage.test)).toBeTruthy();
+    });
+
   });
-
-  it('should start with sessionStorage as default', function() {
-    expect(Harmonized._webStorage).toEqual(sessionStorage);
-  });
-
-  it('should get the web storage', function() {
-    Harmonized._webStorage = 'abc';
-    expect(Harmonized.getWebStorage()).toBe('abc');
-  });
-
-  it('should switch to localStorage', function() {
-    Harmonized.setWebStorage('local');
-    expect(Harmonized._webStorage).toEqual(Harmonized._getLocalStorage());
-  });
-
-  it('should switch to sessionStorage', function() {
-    Harmonized._webStorage = Harmonized._getLocalStorage();
-    Harmonized.setWebStorage('session');
-    expect(Harmonized._webStorage).toEqual(Harmonized._getSessionStorage());
-  });
-
-  it('should switch to sessionStorage with default parameter', function() {
-    Harmonized._webStorage = Harmonized._getLocalStorage();
-    Harmonized.setWebStorage();
-    expect(Harmonized._webStorage).toEqual(Harmonized._getSessionStorage());
-  });
-
-  it('should switch storage type with clearing the store', function() {
-    window.mockSessionStorageObj = {
-      test: 123
-    };
-
-    Harmonized.setWebStorage('local', true);
-    expect(_.isUndefined(window.mockSessionStorageObj.test)).toBeTruthy();
-  });
-
 });

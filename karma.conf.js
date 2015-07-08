@@ -15,8 +15,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      {pattern: 'bower_components/jasmine-expect/dist/jasmine-matchers.js', included: false},
-      {pattern: 'bower_components/jasmine-object-matchers/dist/jasmine-object-matchers.js', included: false},
+      {pattern: 'bower_components/jasmine-expect/dist/jasmine-matchers.js', included: true},
+      {pattern: 'bower_components/jasmine-object-matchers/dist/jasmine-object-matchers.js', included: true},
       {pattern: 'bower_components/lodash/lodash.js', included: false},
       {pattern: 'bower_components/sinon/index.js', included: false},
       {pattern: 'bower_components/sql-parser/browser/sql-parser.js', included: false},
@@ -52,7 +52,7 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress'],
+    reporters: ['spec', 'coverage'],
 
 
     // web server port
@@ -74,7 +74,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS', 'Chrome'],
+    browsers: ['PhantomJS'/*, 'Chrome'*/],
 
 
     // Continuous Integration mode
