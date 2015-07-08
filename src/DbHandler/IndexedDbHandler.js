@@ -1,6 +1,12 @@
 'use strict';
 
 define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData'], function(DbHandler, harmonizedData) {
+
+  /**
+   * The IndexedDbHandler constructor
+   * @param {string} storeName The name of the store of the created handler
+   * @param {Object} keys      The store and server keys
+   */
   var IndexedDbHandler = function IndexedDbHandler(storeName, keys) {
     this._handlerType = 'IndexedDB';
     DbHandler.call(this, IndexedDbHandler,
@@ -15,10 +21,21 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData']
   IndexedDbHandler._isConnecting = false;
 
   /* istanbul ignore next */
+
+  /**
+   * Get the window.indexedDb object
+   *
+   * This function exists to make it possible to spy on the local storage
+   * @return {IDBFactory} The indexedDb object
+   */
   IndexedDbHandler.getDbReference = function() {
     return window.indexedDB;
   };
 
+  /**
+   * Connect to the indexeddb handler
+   * @return {IDBRequest} The indexedDb request object of the connection
+   */
   IndexedDbHandler.connect = function() {
     var dbHandler = IndexedDbHandler;
     if (dbHandler._db !== null || dbHandler._isConnecting) {
@@ -72,6 +89,9 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData']
     return request;
   };
 
+  /**
+   * Closes the connection to the indexedDb database
+   */
   IndexedDbHandler.closeConnection = function() {
     var dbHandler = IndexedDbHandler;
     var db = dbHandler._db;
@@ -83,15 +103,21 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData']
     }
   };
 
+  /**
+   * Deletes the database
+   * @return {IDBRequest} The indexedDB request for the database deletion
+   */
   IndexedDbHandler.deleteDb = function() {
     IndexedDbHandler.closeConnection();
     return IndexedDbHandler.getDbReference().deleteDatabase(
       'harmonizedDb');
   };
 
-  IndexedDbHandler.prototype = Object.create(DbHandler
-    .prototype);
+  IndexedDbHandler.prototype = Object.create(DbHandler.prototype);
 
+  /**
+   * Get all entries from the database and put it in the downstream
+   */
   IndexedDbHandler.prototype.getAllEntries = function() {
     var _this = this;
 
@@ -114,6 +140,11 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData']
     cursor.onerror = _this.downstream.onError;
   };
 
+  /**
+   * Write an item to the database
+   * @param  {Object} item  Item that has to be written to the database
+   * @return {Rx.Subject}   The stream where the returned item will be put in
+   */
   IndexedDbHandler.prototype.put = function(item) {
     var dbHandler = IndexedDbHandler;
     var putStream = new Rx.Subject();
@@ -173,6 +204,11 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData']
     return putStream;
   };
 
+  /**
+   * Remove an item from the database
+   * @param  {Object} item  Item to remove from the database. Needs serverID!
+   * @return {Rx.Subject}   The stream where the removed item will be put in
+   */
   IndexedDbHandler.prototype.remove = function(item) {
     var dbHandler = IndexedDbHandler;
     var _this = this;

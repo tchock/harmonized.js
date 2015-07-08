@@ -4,6 +4,13 @@ define('ServerHandler', ['ServerHandler/httpHandler',
     'ServerHandler/socketHandler'
   ],
   function(httpHandler, socketHandler) {
+
+    /**
+     * ServerHandler constructor
+     * @param  {string} baseUrl      The base url
+     * @param  {string} resourcePath The resource path on the base url
+     * @param  {Object} options      The options for the server handler
+     */
     var ServerHandler = function(baseUrl, resourcePath, options) {
       var _this = this;
 
@@ -57,6 +64,10 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
     ServerHandler.connectionStream = new Rx.Subject();
 
+    /**
+     * Sets the protocol to HTTP or WebSocket
+     * @param {httpHandler|socketHandler} protocol The protocol to set
+     */
     ServerHandler.prototype._setProtocol = function setProtocol(protocol) {
       var _this = this;
 
@@ -77,10 +88,16 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       }
     };
 
+    /**
+     * Fetches the data from the server
+     */
     ServerHandler.prototype.fetch = function fetch() {
       this._protocol.fetch(this);
     };
 
+    /**
+     * Pushes all unpushed data to the server
+     */
     ServerHandler.prototype.pushAll = function pushAll() {
       for (var item in this._unpushedList) {
         this.upStream.onNext(this._unpushedList[item]);
@@ -88,6 +105,10 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       }
     };
 
+    /**
+     * Sets the connection online/offline
+     * @param {boolean} state The connection state that should be set
+     */
     ServerHandler.prototype.setConnectionState = function setConnectionState(
       state) {
       if (state) {
@@ -98,6 +119,11 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       }
     };
 
+    /**
+     * Creates a server item in the form to send to the server
+     * @param  {Object} item Item that has to be transformed to server server structure
+     * @return {Object}      The item in the structure the server accepts
+     */
     ServerHandler.prototype._createServerItem = function createServerItem(
       item) {
       // Clone data and arrange it for db

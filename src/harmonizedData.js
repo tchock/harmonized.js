@@ -15,21 +15,39 @@ data._config = {
 };
 
 data._resourceSchema = {};
+
+/**
+ * The HTTP function where the hook is stored (e.g. jQuery $.ajax or angular $http)
+ * @return {Promise} The promise of the http request
+ */
 data._httpFunction = function() {
   throw new Error('No http function was added');
 };
 
 data.dbVersion = 1;
 
+/**
+ * Sets the model schema
+ * @param {Object} schema The schema to set
+ */
 data.setModelSchema = function setModelSchema(schema) {
   data._setModelSchema(schema);
   data._modelSchema = schema;
 };
 
+/**
+ * Gets the model schema
+ * @return {Object} The model schema
+ */
 data.getModelSchema = function getModelSchema() {
   return data._modelSchema;
 };
 
+/**
+ * Internal function to set the model schema
+ * @param {Object} schema             The model schema
+ * @param {string} [storeNamePrefix]  The prefix for the store
+ */
 data._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {
   var subModels;
   var currentModel;
@@ -66,6 +84,10 @@ data._setModelSchema = function _setModelSchema(schema, storeNamePrefix) {
   }
 };
 
+/**
+ * Gets the database schema
+ * @return {Object} The database schema
+ */
 data.getDbSchema = function getDbSchema() {
   var output = {};
 
@@ -74,6 +96,11 @@ data.getDbSchema = function getDbSchema() {
   return output;
 };
 
+/**
+ * Internal function to get the database schema
+ * @param  {Object} modelSchema The model schema
+ * @param  {Object} output      The database schema
+ */
 data._getDbSchema = function(modelSchema, output) {
   var currentModel;
   var subModels;
@@ -88,6 +115,12 @@ data._getDbSchema = function(modelSchema, output) {
   }
 };
 
+/**
+ * Creates a stream item to send through the streams
+ * @param  {Object} inputItem Item to create a stream item from
+ * @param  {Object} keys      The store and server key
+ * @return {Object}           The stream item
+ */
 data._createStreamItem = function(inputItem, keys) {
   inputItem = _.clone(inputItem);
   var item = {

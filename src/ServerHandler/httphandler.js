@@ -2,14 +2,27 @@
 
 define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData) {
   return {
+
+    /**
+     * Sets connection state to true
+     * @param  {ServerHandler} serverHandler ServerHandler to set connection on
+     */
     connect: function(serverHandler) {
       serverHandler.setConnectionState(true);
     },
 
+    /**
+     * Sets connection state to false
+     * @param  {ServerHandler} serverHandler ServerHandler to set connection on
+     */
     disconnect: function(serverHandler) {
       serverHandler.setConnectionState(false);
     },
 
+    /**
+     * Fetches data from the server via HTTP
+     * @param  {ServerHandler} serverHandler ServerHandler to set last modified
+     */
     fetch: function(serverHandler) {
       var httpOptions = {};
       if (harmonizedData._config.sendModifiedSince &&
@@ -25,6 +38,11 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
       harmonizedData._httpFunction(httpOptions);
     },
 
+    /**
+     * Push item to the HTTP server
+     * @param  {object} item                  item to push
+     * @param  {ServerHandler} serverHandler  ServerHandler for individual options
+     */
     push: function(item, serverHandler) {
       var httpOptions = {};
 

@@ -2,6 +2,10 @@
 define('dbHandlerFactory', ['DbHandler/IndexedDbHandler',
   'DbHandler/WebSqlHandler'
 ], function(IndexedDbHandler, WebSqlHandler) {
+
+  /**
+   * Initiates the dbHandlerFactory
+   */
   var dbHandlerFactory = function dbHandlerFactory() {
     // Check for db support
     if (dbHandlerFactory._getIndexedDb()) {
@@ -16,6 +20,12 @@ define('dbHandlerFactory', ['DbHandler/IndexedDbHandler',
     }
   };
 
+  /**
+   * Creates a database handler for a specified resource
+   * @param  {string} name                        Name of the resource
+   * @param  {Object} options                     Options for the db handler
+   * @return {IndexedDbHandler|WebSqlHandler}  created db handler or undefined (if no db support)
+   */
   dbHandlerFactory.createDbHandler = function(name, options) {
     if (!!dbHandlerFactory._DbHandler) {
       return new dbHandlerFactory._DbHandler(name, options);
@@ -24,12 +34,21 @@ define('dbHandlerFactory', ['DbHandler/IndexedDbHandler',
     }
   };
 
+  /**
+   * Gets the database structure
+   * @return {Object} the database structure
+   */
   dbHandlerFactory._getDbStructure = function getDbStructure() {
     // TODO extract db structure from resource definition
     return {};
   };
 
   /* istanbul ignore next */
+
+  /**
+   * Get the indexedDb object if browser implementation or IndexedDbHandler exist
+   * @return {IDBFactory} The indexedDB implementation
+   */
   dbHandlerFactory._getIndexedDb = function getIndexedDb() {
     if (window.indexedDB && _.isFunction(IndexedDbHandler)) {
       return window.indexedDb;
@@ -39,6 +58,11 @@ define('dbHandlerFactory', ['DbHandler/IndexedDbHandler',
   };
 
   /* istanbul ignore next */
+
+  /**
+   * Get the Web SQL object if browser implementation or WebSqlHandler exist
+   * @return {Function} The openDatabase function for WebSQL
+   */
   dbHandlerFactory._getWebSql = function getWebSql() {
     if (window.openDatabase && _.isFunction(WebSqlHandler)) {
       return window.openDatabase;
