@@ -12,6 +12,27 @@ module.exports = function(grunt) {
 
   // Project configuration.
   grunt.initConfig({
+    requirejs: {
+      compile: {
+        options: {
+          appDir: "src/",
+          baseUrl: ".",
+          dir: "/",
+          optimize: 'uglify',
+          mainConfigFile:'./requrejs-conf.js',
+          modules:[
+            {
+              name:'MyModule'
+            }
+          ],
+          logLevel: 0,
+          findNestedDependencies: true,
+          fileExclusionRegExp: /^\./,
+          inlineText: true
+        }
+      }
+    },
+
     jscs: {
       src: 'src/**/*.js',
       options: {
@@ -61,7 +82,7 @@ module.exports = function(grunt) {
     concat: {
       build: {
         src: [
-          'src/js/*.js'
+          'src/**/*.js'
         ],
         dest: 'harmonized.js'
       }

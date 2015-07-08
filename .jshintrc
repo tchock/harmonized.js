@@ -4,6 +4,7 @@
   "node": true,
 
   "globals": {
+    "define":       false,
     "Rx":           false,
     "angular":      false,
     "_":            false,

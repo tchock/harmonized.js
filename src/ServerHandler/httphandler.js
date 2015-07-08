@@ -1,7 +1,6 @@
 'use strict';
 
-define('ServerHandler/httpHandler', ['harmonized/config'], function(
-  config) {
+define('ServerHandler/httpHandler', ['harmonized/config'], function(config) {
   return {
     connect: function(serverHandler) {
       serverHandler.setConnectionState(true);
