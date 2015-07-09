@@ -31,10 +31,13 @@
     "karma-phantomjs-launcher": "0.1.2",
     "karma-requirejs": "^0.2.2",
     "karma-safari-launcher": "^0.1.1",
-    "karma-spec-reporter": "0.0.16",
+    "karma-spec-reporter": "0.0.19",
     "load-grunt-tasks": "~3.1.0",
     "requirejs": "^2.1.18",
     "time-grunt": "^1.1.0"
+  },
+  "scripts": {
+    "test": "./node_modules/karma/bin/karma start"
   },
   "engines": {
     "node": ">=0.10.1"

@@ -54,7 +54,7 @@
     "mock-websql": "~0.3.0",
     "jquery": "~2.1.4",
     "jasmine-ajax": "~3.1.1",
-    "indexedDBmock": "kristofdegrave/indexedDBmock#9f98b87ed59b46a191c01a05181a2d06d02a4ad9",
+    "indexedDBmock": "git@bitbucket.org:hyphe/web-indexeddbmock.git",
     "jasmine-expect": "~1.22.3",
     "requirejs": "~2.1.18",
     "squire": "~0.2.0",
