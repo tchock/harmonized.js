@@ -103,7 +103,7 @@ define(['Squire', 'sinon'], function(Squire, sinon) {
       });
     });
 
-    it('should find the right store definitions', function(done) {
+    xit('should find the right store definitions', function(done) {
       injector.store('dbHandlerFactory');
       injector.require(['dbHandlerFactory', 'mocks'], function(
         dbHandlerFactory, mocks) {
@@ -120,7 +120,7 @@ define(['Squire', 'sinon'], function(Squire, sinon) {
       });
     });
 
-    it('should get server and store key names', function(done) {
+    xit('should get server and store key names', function(done) {
       injector.store('dbHandlerFactory');
       injector.require(['dbHandlerFactory', 'mocks'], function(
         dbHandlerFactory, mocks) {
