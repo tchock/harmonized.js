@@ -6,12 +6,25 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 ], function(harmonizedData,
   ModelItem, ServerHandler, dbHandlerFactory, _) {
 
+  /**
+   * Sets an option to its default value if undefined in custom options
+   * @param {Object} options     The options object
+   * @param {string} item        The key to the item of the options object
+   * @param {Object} modelSchema The schema of the model that contains the
+   *                             default values
+   */
   function setOptionIfUndefined(options, item, modelSchema) {
     if (_.isUndefined(options[item])) {
       options[item] = modelSchema[item];
     }
   }
 
+  /**
+   * The map function to synchronize the metadata of the ModelItem with the
+   * metadata of the stream item from the database or server downstream
+   * @param  {Model} model  The Model where the metadata will be changed
+   * @return {Object}       The item with the updated metadata
+   */
   function downStreamMap(model) {
     return function(item) {
 
@@ -44,6 +57,11 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     }
   }
 
+  /**
+   * The constructor of the Model
+   * @param {string} modelName Name of the model
+   * @param {Object} [options]   The options to overwrite the default model options
+   */
   var Model = function Model(modelName, options) {
     var _this = this;
 
@@ -121,6 +139,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     return _this;
   };
 
+  /**
+   * Get all items of the model
+   * @return {Array} List of all ModelItems
+   */
   Model.prototype.getItems = function() {
     var itemList = [];
     var hash = this._rtIdHash;
@@ -131,14 +153,27 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     return itemList;
   }
 
+  /**
+   * Gets a single item of the model
+   * @param  {number} rtId  Runtime ID of the item to get
+   * @return {ModelItem}    The ModelItem with the selected runtime ID
+   */
   Model.prototype.getItem = function(rtId) {
     return this._rtIdHash[rtId];
   }
 
+  /**
+   * Request a fetch of data from the server. The requested data will be pushed
+   * to the ServerHandler downstream
+   */
   Model.prototype.getFromServer = function() {
     this._serverHandler.fetch();
   }
 
+  /**
+   * Gets the next runtime ID for a new item
+   * @return {number} a new model-unique runtimeid
+   */
   Model.prototype.getNextRuntimeId = function() {
     return this._nextRuntimeId++;
   }
