@@ -1,6 +1,6 @@
 'use strict';
 
-define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData'], function(DbHandler, harmonizedData) {
+define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData', 'rx'], function(DbHandler, harmonizedData, Rx) {
 
   /**
    * The IndexedDbHandler constructor

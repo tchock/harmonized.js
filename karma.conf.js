@@ -15,6 +15,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      {pattern: 'bower_components/squire/src/Squire.js', included: false},
       {pattern: 'bower_components/jasmine-expect/dist/jasmine-matchers.js', included: true},
       {pattern: 'bower_components/jasmine-object-matchers/dist/jasmine-object-matchers.js', included: true},
       {pattern: 'bower_components/lodash/lodash.js', included: false},
@@ -27,12 +28,9 @@ module.exports = function(config) {
       {pattern: 'bower_components/rxjs/dist/rx.virtualtime.js', included: false},
       {pattern: 'bower_components/rxjs/dist/rx.testing.js', included: false},
 
-
       {pattern: 'src/**/*.js', included: false},
       {pattern: 'tests/testHelper/**/*.js', included: false},
       {pattern: 'tests/**/*.js', included: false},
-
-      {pattern: 'bower_components/squire/src/Squire.js', included: false},
 
       'test-main.js'
     ],
@@ -47,6 +45,12 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
     },
+
+    preprocessors: {
+            'src/**/*.js': [
+                'coverage'
+            ]
+        },
 
 
     // test results reporter to use
@@ -74,7 +78,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS'/*, 'Chrome'*/],
+    browsers: ['PhantomJS', 'Chrome'],
 
 
     // Continuous Integration mode

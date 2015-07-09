@@ -1,9 +1,9 @@
 'use strict';
 
 define('ServerHandler', ['ServerHandler/httpHandler',
-    'ServerHandler/socketHandler'
+    'ServerHandler/socketHandler', 'rx'
   ],
-  function(httpHandler, socketHandler) {
+  function(httpHandler, socketHandler, Rx) {
 
     /**
      * ServerHandler constructor
