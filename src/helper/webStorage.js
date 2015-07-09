@@ -49,7 +49,6 @@ define('helper/webStorage', function() {
    */
   webStore.setWebStorage = function(storage, doClear) {
     if (doClear) {
-      console.log(webStore._webStorage);
       webStore._webStorage.clear();
     }
 

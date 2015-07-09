@@ -16,7 +16,6 @@ Object.keys(window.__karma__.files).forEach(function (file) {
     if (TEST_REGEXP.test(file)) {
         allFiles.push(file);
     } else if (SRC_REGEXP.test(file) && JS_REGEXP.test(file)) {
-      console.log(file);
         allFiles.push(jsToModule(file));
     }
 });
