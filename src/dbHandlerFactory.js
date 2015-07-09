@@ -26,9 +26,9 @@ define('dbHandlerFactory', ['DbHandler/IndexedDbHandler',
    * @param  {Object} options                     Options for the db handler
    * @return {IndexedDbHandler|WebSqlHandler}  created db handler or undefined (if no db support)
    */
-  dbHandlerFactory.createDbHandler = function(name, options) {
+  dbHandlerFactory.createDbHandler = function(name, keys) {
     if (!!dbHandlerFactory._DbHandler) {
-      return new dbHandlerFactory._DbHandler(name, options);
+      return new dbHandlerFactory._DbHandler(name, keys);
     } else {
       return undefined;
     }

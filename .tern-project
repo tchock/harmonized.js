@@ -2,7 +2,12 @@
   "libs": [
     "browser"
   ],
-  "loadEagerly": [
-    "src/**/*.js"
-  ]
+  "plugins": {
+    "requirejs": {
+      "baseURL": "./src",
+      "paths": {
+        "lodash": "../bower_components/lodash/lodash"
+      }
+    }
+  }
 }

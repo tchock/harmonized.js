@@ -1,0 +1,493 @@
+'use strict';
+
+define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'Model'],
+  function(Squire, sinon, _, Rx, RxTest, Model) {
+    describe('Model', function() {
+
+      var testModel;
+      var expectedOptions;
+      var injector;
+      var scheduler;
+
+      var dbHandlerUpstreamList = [];
+      var serverHandlerUpstreamList = [];
+
+      var dbHandlerUpstream = new Rx.Subject();
+      var dbHandlerDownstream = new Rx.Subject();
+
+      var serverHandlerUpstream = new Rx.Subject();
+      var serverHandlerDownstream = new Rx.Subject();
+
+      var ModelItemMock = function ModelItemMock(parent, data, meta) {
+        this._parent = parent;
+        this.data = data || {};
+        this.meta = meta || {};
+      };
+
+      var ServerHandlerMock = function ServerHandlerMock(baseUrl,
+        resourcePath, options) {
+        this._baseUrl = baseUrl;
+        this._resourcePath = resourcePath;
+        this._options = options;
+
+        this.upStream = serverHandlerUpstream;
+        this.downStream = serverHandlerDownstream;
+      };
+
+      var dbFactoryMock = {};
+      dbFactoryMock.createDbHandler = function createDbHandler(storeName,
+        keys) {
+        return {
+          _storeName: storeName,
+          _keys: keys,
+          upStream: dbHandlerUpstream,
+          downStream: dbHandlerUpstream,
+          fetch: jasmine.createSpy()
+        };
+      };
+
+      beforeEach(function() {
+        // Scheduler to mock the RxJS timing
+        scheduler = new RxTest.TestScheduler();
+
+        dbHandlerUpstreamList = [];
+        serverHandlerUpstreamList = [];
+      });
+
+      beforeEach(function() {
+        testModel = new Model('test');
+        expectedOptions = {
+          baseUrl: 'http://www.testserver.de/',
+          resourcePath: 'test',
+          keys: {
+            serverKey: 'id',
+            storeKey: '_id'
+          },
+          serverOptions: {}
+        };
+      });
+
+      beforeEach(function() {
+        injector = new Squire();
+        injector.mock('ModelItem', ModelItemMock);
+        injector.mock('dbHandlerFactory', dbHandlerFactoryMock);
+        injector.mock('ServerHandler', ServerHandlerMock);
+      });
+
+      function testInContext(cb, options) {
+        injector.require(['Model', 'mocks'], function(Model, mocks) {
+
+          testModel = new Model('test');
+
+          cb({
+            Model: Model,
+            mocks: mocks.mocks
+          });
+        });
+      }
+
+      it('should create a model without options', function(done) {
+        testInContext(function(deps) {
+          testModel = new deps.Model('test');
+          expect(testModel._options).toEqual(expectedOptions);
+
+          expect(testModel.downStream instanceof Rx.Subject).toBeTruthy();
+          expect(testModel.upStream instanceof Rx.Subject).toBeTruthy();
+          done();
+        });
+      });
+
+      it('should create a model with options', function(done) {
+        testInContext(function(deps) {
+          testModel = new deps.Model('test', {
+            resourcePath: 'othertest',
+            testOption: 'blub'
+          });
+          var overwrittenExpectedOptions = _.clone(expectedOptions);
+          expect(testModel._options).toEqual(overwrittenExpectedOptions);
+          done();
+        });
+      });
+
+      it('should get all items', function(done) {
+        testInContext(function(deps) {
+          testModel._rtIdHash[123] = new ModelItemMock(testModel, {
+            name: 'Horst'
+          });
+          testModel._rtIdHash[263] = new ModelItemMock(testModel, {
+            name: 'Hans'
+          });
+          testModel._rtIdHash[469] = new ModelItemMock(testModel, {
+            name: 'Dieter'
+          });
+
+          var returnedItems = testModel.getItems();
+
+          var expectedItems = [{
+            name: 'Horst'
+          }, {
+            name: 'Hans'
+          }, {
+            name: 'Dieter'
+          }];
+
+          var i;
+
+          for (i = 0; i < expectedItems.length; i++) {
+            expect(returnedItems[i]).not.toBeUndefined();
+            expect(returnedItems[i].data).toEqual(expectedItems[i]);
+          }
+          expect(i).toBe(expectedItems.length);
+
+          done();
+        });
+      });
+
+      it('should get a specific item', function(done) {
+        testInContext(function(deps) {
+          testModel._rtIdHash[123] = new ModelItemMock(testModel, {
+            name: 'Horst'
+          });
+          testModel._rtIdHash[263] = new ModelItemMock(testModel, {
+            name: 'Hans'
+          });
+          testModel._rtIdHash[469] = new ModelItemMock(testModel, {
+            name: 'Dieter'
+          });
+
+          var returnedItem = testModel.getItem(263);
+
+          expect(returnedItem).not.toBeUndefined();
+          expect(returnedItem.data).toEqual({
+            name: 'Hans'
+          });
+
+          done();
+        });
+      });
+
+      it('should not get an undefined item', function(done) {
+        testInContext(function(deps) {
+          testModel._rtIdHash[123] = new ModelItemMock(testModel, {
+            name: 'Horst'
+          });
+          testModel._rtIdHash[263] = new ModelItemMock(testModel, {
+            name: 'Hans'
+          });
+          testModel._rtIdHash[469] = new ModelItemMock(testModel, {
+            name: 'Dieter'
+          });
+
+          var returnedItem = testModel.getItem(1026);
+
+          expect(returnedItem).toBeUndefined();
+
+          done();
+        });
+      });
+
+      it('should get data from the server', function(done) {
+        testInContext(function(deps) {
+          testModel.getFromServer();
+
+          expect(testModel._serverHandler.fetch.calls.counts()).toBe(1);
+
+          done();
+        });
+      });
+
+      it('should get the next runtime id for the model', function(done) {
+        testInContext(function(deps) {
+          expect(testModel._nextRtId).toBe(1);
+          testModel.getNextRuntimeId();
+          expect(testModel._nextRtId).toBe(2);
+        });
+      });
+
+      it('should receive updated data from the server', function(done) {
+        testInContext(function(deps) {
+
+          var existingItem = new ModelItemMock(testModel, {
+            name: 'John Sneeze'
+          }, {
+            storeId: 12,
+            rtId: 12
+          });
+
+          testModel._serverHash[1000] = existingItem;
+
+          // Add first entry to the server downstream
+          scheduler.scheduleWithAbsolute(1, function() {
+            testModel.serverHandler.downStream.onNext({
+              meta: {
+                serverId: 1000,
+                storeId: 12,
+                rtId: 12
+              },
+              data: {
+                name: 'John Cleese'
+              }
+            });
+          });
+
+          // Add second entry to the server downstream
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel.serverHandler.downStream.onNext({
+              meta: {
+                serverId: 1025,
+                storeId: 13,
+                rtId: 13
+              },
+              data: {
+                name: 'Terry Gilliam'
+              }
+            });
+          });
+
+          scheduler.start();
+
+          var john = {name: 'John Cleese'};
+          expect(testModel._serverIdHash[1000]).toBe(existingItem);
+          expect(testModel._serverIdHash[1000].data).toEqual(john);
+          expect(testModel._storeIdHash[12]).toBe(existingItem);
+          expect(testModel._storeIdHash[12].data).toEqual(john);
+          expect(testModel._rtIdHash[12]).toBe(existingItem);
+          expect(testModel._rtIdHash[12].data).toEqual(john);
+
+          var terry = {name: 'Terry Gilliam'};
+          var terryMeta = {
+            serverId: 1025,
+            storeId: 13,
+            rtId: 13
+          };
+
+          // Check terry to be correctly saved
+          expect(testModel._serverIdHash[1025] instanceof ModelItemMock).toBeTruthy();
+          expect(testModel._serverIdHash[1025].data).toEqual(terry);
+          expect(testModel._serverIdHash[1025].meta).toEqual(terryMeta);
+
+          // If rtId hash item 13 is the same as serverId hash item 1025 and
+          // storeId hash item 13, then serverId item and storeId item are also
+          // the same!
+          expect(testModel._rtIdHash[13]).toBe(testModel._serverIdHash[1025]);
+          expect(testModel._rtIdHash[13]).toBe(testModel._storeIdHash[13]);
+
+          // Check if data are passed to the database upstream
+          expect(dbHandlerUpstreamList.length).toEqual(2);
+          expect(dbHandlerUpstreamList[0].data).toEqual(john);
+          expect(dbHandlerUpstreamList[0].meta).toEqual({
+            serverId: 1000,
+            storeId: 12,
+            rtId: 12
+          });
+          expect(dbHandlerUpstreamList[1].data).toEqual(terry);
+          expect(dbHandlerUpstreamList[1].meta).toEqual(terryMeta);
+
+          done();
+        });
+      });
+
+      it('should receive new data from the server', function(done) {
+        testInContext(function(deps) {
+
+          // Add first entry to the server downstream
+          scheduler.scheduleWithAbsolute(1, function() {
+            testModel.serverHandler.downStream.onNext({
+              meta: {
+                serverId: 1000
+              },
+              data: {
+                name: 'John Cleese'
+              }
+            });
+          });
+
+          // Add second entry to the server downstream
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel.serverHandler.downStream.onNext({
+              meta: {
+                serverId: 1025
+              },
+              data: {
+                name: 'Terry Gilliam'
+              }
+            });
+          });
+
+          scheduler.start();
+
+          expect(_.size(testModel._storeIdHash)).toBe(0);
+          expect(_.size(testModel._rtIdHash)).toBe(0);
+
+          var john = {name: 'John Cleese'};
+          expect(testModel._serverIdHash[1000]).toBe(existingItem);
+          expect(testModel._serverIdHash[1000].data).toEqual(john);
+
+          var terry = {name: 'Terry Gilliam'};
+          var terryMeta = {
+            serverId: 1025
+          };
+
+          // Check terry to be correctly saved
+          expect(testModel._serverIdHash[1025] instanceof ModelItemMock).toBeTruthy();
+          expect(testModel._serverIdHash[1025].data).toEqual(terry);
+          expect(testModel._serverIdHash[1025].meta).toEqual(terryMeta);
+
+          // Check if data are passed to the database upstream
+          expect(serverHandlerUpstreamList.length).toEqual(0);
+          expect(dbHandlerUpstreamList.length).toEqual(2);
+          expect(dbHandlerUpstreamList[0].data).toEqual(john);
+          expect(dbHandlerUpstreamList[0].meta).toEqual({
+            serverId: 1000
+          });
+          expect(dbHandlerUpstreamList[1].data).toEqual(terry);
+          expect(dbHandlerUpstreamList[1].meta).toEqual(terryMeta);
+
+          done();
+        });
+      });
+
+      it('should receive updated data from the database', function(done) {
+        testInContext(function(deps) {
+          var existingItem = new ModelItemMock(testModel, {
+            name: 'John Freeze'
+          }, {
+            serverId: 1000,
+            rtId: 12
+          });
+
+          testModel._serverHash[1000] = existingItem;
+
+          // Add first entry to the server downstream
+          scheduler.scheduleWithAbsolute(1, function() {
+            testModel.dbHandler.downStream.onNext({
+              meta: {
+                serverId: 1000,
+                storeId: 12,
+                rtId: 12
+              },
+              data: {
+                name: 'John Cleese'
+              }
+            });
+          });
+
+          // Add second entry to the server downstream
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel.dbHandler.downStream.onNext({
+              meta: {
+                serverId: 1025,
+                storeId: 13,
+                rtId: 13
+              },
+              data: {
+                name: 'Terry Gilliam'
+              }
+            });
+          });
+
+          scheduler.start();
+
+          var john = {name: 'John Cleese'};
+          expect(testModel._serverIdHash[1000]).toBe(existingItem);
+          expect(testModel._serverIdHash[1000].data).toEqual(john);
+          expect(testModel._storeIdHash[12]).toBe(existingItem);
+          expect(testModel._storeIdHash[12].data).toEqual(john);
+          expect(testModel._rtIdHash[12]).toBe(existingItem);
+          expect(testModel._rtIdHash[12].data).toEqual(john);
+
+          var terry = {name: 'Terry Gilliam'};
+          var terryMeta = {
+            serverId: 1025,
+            storeId: 13,
+            rtId: 13
+          };
+
+          // Check terry to be correctly saved
+          expect(testModel._serverIdHash[1025] instanceof ModelItemMock).toBeTruthy();
+          expect(testModel._serverIdHash[1025].data).toEqual(terry);
+          expect(testModel._serverIdHash[1025].meta).toEqual(terryMeta);
+
+          // If rtId hash item 13 is the same as serverId hash item 1025 and
+          // storeId hash item 13, then serverId item and storeId item are also
+          // the same!
+          expect(testModel._rtIdHash[13]).toBe(testModel._serverIdHash[1025]);
+          expect(testModel._rtIdHash[13]).toBe(testModel._storeIdHash[13]);
+
+          // Check if data are passed to the database upstream
+          expect(serverHandlerUpstreamList.length).toEqual(2);
+          expect(serverHandlerUpstreamList[0].data).toEqual(john);
+          expect(serverHandlerUpstreamList[0].meta).toEqual({
+            serverId: 1000,
+            storeId: 12,
+            rtId: 12
+          });
+          expect(serverHandlerUpstreamList[1].data).toEqual(terry);
+          expect(serverHandlerUpstreamList[1].meta).toEqual(terryMeta);
+
+          done();
+        });
+      });
+
+      it('should receive new data from the database', function(done) {
+        testInContext(function(deps) {
+
+          // Add first entry to the server downstream
+          scheduler.scheduleWithAbsolute(1, function() {
+            testModel.dbHandler.downStream.onNext({
+              meta: {
+                storeId: 1
+              },
+              data: {
+                name: 'John Cleese'
+              }
+            });
+          });
+
+          // Add second entry to the server downstream
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel.dbHandler.downStream.onNext({
+              meta: {
+                storeId: 2
+              },
+              data: {
+                name: 'Terry Gilliam'
+              }
+            });
+          });
+
+          scheduler.start();
+
+          expect(_.size(testModel._storeIdHash)).toBe(0);
+          expect(_.size(testModel._rtIdHash)).toBe(0);
+
+          var john = {name: 'John Cleese'};
+          expect(testModel._storeIdHash[1]).toBe(existingItem);
+          expect(testModel._storeIdHash[1].data).toEqual(john);
+
+          var terry = {name: 'Terry Gilliam'};
+          var terryMeta = {
+            storeId: 1
+          };
+
+          // Check terry to be correctly saved
+          expect(testModel._storeIdHash[2] instanceof ModelItemMock).toBeTruthy();
+          expect(testModel._storeIdHash[2].data).toEqual(terry);
+          expect(testModel._storeIdHash[2].meta).toEqual(terryMeta);
+
+          // Check if data are passed to the database upstream
+          expect(dbHandlerUpstreamList.length).toEqual(0);
+          expect(serverHandlerUpstreamList.length).toEqual(2);
+          expect(serverHandlerUpstreamList[0].data).toEqual(john);
+          expect(serverHandlerUpstreamList[0].meta).toEqual({
+            storeId: 2
+          });
+          expect(serverHandlerUpstreamList[1].data).toEqual(terry);
+          expect(serverHandlerUpstreamList[1].meta).toEqual(terryMeta);
+
+          done();
+        });
+      });
+
+    });
+  });
