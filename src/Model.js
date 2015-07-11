@@ -113,9 +113,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       _this._dbDownStream);
 
     // Only add already existing model items to the public downstream
-    _this._downStream.filter(function(item) {
+    _this._existingItemDownStream = _this._downStream.filter(function(item) {
       return !_.isUndefined(item.meta.rtId);
-    }).subscribe(_this.downStream);
+    });
+    _this._existingItemDownStream.subscribe(_this.downStream);
 
     // Create a stream for data not yet in the model
     _this._downStream.filter(function(item) {
