@@ -30,7 +30,16 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         this.getNextRuntimeId = function() {
           return this._nextRuntimeId++;
         };
+
+        this.getUrl = function() {
+          return 'http://www.test.de/' + modelName
+        }
       };
+
+      beforeEach(function() {
+        // Scheduler to mock the RxJS timing
+        scheduler = new RxTest.TestScheduler();
+      });
 
       beforeEach(function() {
         testModelMock = new ModelMock('test');
@@ -38,11 +47,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
           name: 'Werner'
         }, {
           rtId: 123,
-          storeId: 120
+          serverId: 1052305,
         });
       });
 
-      xit('should create an item with runtime ID given', function(done) {
+      it('should create an item with runtime ID given', function() {
         testModelItem = new ModelItem(testModelMock, {
           name: 'Werner'
         }, {
@@ -55,7 +64,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         expect(testModelItem.meta.rtId).toBe(123);
       });
 
-      xit('should create an item without runtime ID given', function(done) {
+      it('should create an item without runtime ID given', function() {
         testModelItem = new ModelItem(testModelMock, {
           name: 'Werner'
         }, {
@@ -67,7 +76,23 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         expect(testModelItem.meta.rtId).toBe(1);
       });
 
-      xit('should update an item with update from model upstream ', function(done) {
+      it('should get the itemUrl with serverId given', function() {
+        var itemUrl = testModelItem.getUrl();
+        expect(itemUrl).toBe('http://www.test.de/test/1052305');
+      });
+
+      it('should get the itemUrl without serverId given', function() {
+        testModelItem = new ModelItem(testModelMock, {
+          name: 'Werner'
+        }, {
+          rtId: 123,
+          storeId: 120
+        });
+        var itemUrl = testModelItem.getUrl();
+        expect(itemUrl).toBe('http://www.test.de/test/');
+      });
+
+      it('should update an item with update from model upstream ', function() {
         otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
@@ -104,17 +129,17 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
           });
 
           expect(testModelItem.data.name).toBe('Werner');
-          expect(testModelItem.meta.serverId).toBeUndefined();
+          expect(testModelItem.meta.storeId).toBeUndefined();
           expect(otherModelItem.data.name).toBe('Günther');
 
           scheduler.start();
 
           expect(testModelItem.data.name).toBe('Werner Herzog');
-          expect(testModelItem.meta.serverId).toBe(9001);
+          expect(testModelItem.meta.storeId).toBe(120);
           expect(otherModelItem.data.name).toBe('Günther Kastenfrosch');
       });
 
-      xit('should update an item with update from existingItemDownStream', function(done) {
+      it('should update an item with update from existingItemDownStream', function() {
         otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
@@ -162,7 +187,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         expect(otherModelItem.data.name).toBe('Günther Kastenfrosch');
       });
 
-      xit('should mark an item as deleted with update from model upstream', function(done) {
+      it('should mark an item as deleted with update from model upstream', function() {
         otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
@@ -210,7 +235,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         expect(otherModelItem.meta.deleted).toBe(true);
       });
 
-      xit('should mark an item as deleted with update from model existingItemDownStream', function(done) {
+      it('should mark an item as deleted with update from model existingItemDownStream', function() {
         otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
@@ -258,7 +283,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         expect(otherModelItem.meta.deleted).toBe(true);
       });
 
-      xit('should finally delete an item with update from database downstream', function(done) {
+      it('should finally delete an item with update from database downstream', function() {
         otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
@@ -307,3 +332,4 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
 
     });
   });
+});
