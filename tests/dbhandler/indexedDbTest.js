@@ -256,17 +256,20 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         expect(storeData[1]).toEqual({
           firstname: 'Igor',
           lastname: 'Igorson',
-          _id: 1
+          _id: 1,
+          _deleted: false
         });
         expect(storeData[2]).toEqual({
           firstname: 'Igor',
           lastname: 'Igorson',
-          _id: 2
+          _id: 2,
+          _deleted: false
         });
         expect(storeData[3]).toEqual({
           firstname: 'Igor',
           lastname: 'Igorov',
-          _id: 3
+          _id: 3,
+          _deleted: false
         });
       });
 
@@ -312,7 +315,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         expect(storeData[1]).toEqual({
           firstname: 'Stanislav',
           lastname: 'Schewadnaze',
-          _id: 1
+          _id: 1,
+          _deleted: false
         });
       });
 
@@ -333,7 +337,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
                   lastname: 'Igorson'
                 },
                 meta: {
-                  serverId: 123
+                  serverId: 123,
+                  deleted: false
                 }
               }, {
                 data: {
@@ -341,7 +346,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
                   lastname: 'Schewadnaze'
                 },
                 meta: {
-                  serverId: 123
+                  serverId: 123,
+                  deleted: false
                 }
               }, {
                 data: {
@@ -365,7 +371,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
           expect(putItems).toEqual([{
             meta: {
               storeId: 1,
-              serverId: 123
+              serverId: 123,
+              deleted: false
             },
             data: {
               firstname: 'Igor',
@@ -380,7 +387,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
             firstname: 'Igor',
             lastname: 'Igorson',
             _id: 1,
-            id: 123
+            id: 123,
+            _deleted: false
           });
         });
 
@@ -400,7 +408,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
                 lastname: 'Igorson'
               },
               meta: {
-                serverId: 123
+                serverId: 123,
+                deleted: false
               }
             }]);
 

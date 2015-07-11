@@ -415,7 +415,12 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           });
 
           expect(returnedItem).toEqual({
-            meta: deleteItem.meta,
+            meta: {
+              action: 'deletePermanently',
+              rtId: 12,
+              serverId: 4103,
+              storeId: 11
+            },
             data: deleteItem.data
           });
         });

@@ -38,8 +38,15 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
       return item.meta.action === 'delete';
     });
 
-    this._deleteDownstream = this._deleteUpstream.map(this.remove);
+    this._deletePermanentlyUpstream = this._upstream.filter(function(item) {
+      return item.meta.action === 'deletePermanently';
+    });
+
+    this._deleteDownstream = this._deleteUpstream.map(this.put);
     this._deleteSubscribe = this._deleteDownstream.subscribe(this.downstream);
+
+    this._deletePermanentlyDownstream = this._deletePermanentlyUpstream.map(this.remove);
+    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downstream);
 
     // Initially get the metadata
     this._metaStorageName = 'harmonizedMeta_' + this._storeName;
@@ -79,6 +86,12 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
 
     if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
       putItem[this._keys.serverKey] = item.meta.serverId;
+    }
+
+    if (!_.isUndefined(item.meta) && item.meta.action === 'delete') {
+      putItem._deleted = true;
+    } else {
+      putItem._deleted = false;
     }
 
     return putItem;

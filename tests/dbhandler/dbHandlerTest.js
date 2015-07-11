@@ -101,6 +101,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
         var saveDownstreamOutputs;
         var deleteUpstreamOutputs;
         var deleteDownstreamOutputs;
+        var deletePermanentlyUpstreamOutputs;
+        var deletePermanentlyDownstreamOutputs;
 
         var streamInputs = [{
           data: {
@@ -129,6 +131,13 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           },
           meta: {
             action: 'delete'
+          }
+        }, {
+          data: {
+            name: 'Evil Supervillain'
+          },
+          meta: {
+            action: 'deletePermanently'
           }
         }];
 
@@ -164,6 +173,10 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
           scheduler.scheduleWithAbsolute(60, function() {
             dbHandler.upstream.onNext(streamInputs[3]);
+          });
+
+          scheduler.scheduleWithAbsolute(70, function() {
+            dbHandler.upstream.onNext(streamInputs[4]);
           });
         }
 
@@ -205,6 +218,9 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           deleteUpstreamOutputs = [];
           deleteDownstreamOutputs = [];
 
+          deletePermanentlyUpstreamOutputs = [];
+          deletePermanentlyDownstreamOutputs = [];
+
           saveUpstreamOutputs = [];
           saveDownstreamOutputs = [];
 
@@ -235,6 +251,10 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           dbHandler._deleteUpstream.subscribe(function(item) {
             deleteUpstreamOutputs.push(item);
           });
+
+          dbHandler._deletePermanentlyUpstream.subscribe(function(item) {
+            deletePermanentlyUpstreamOutputs.push(item);
+          });
         }
 
 
@@ -249,13 +269,14 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
             // unsubscribe _deleteDownstream=>downstream;
             dbHandler._deleteSubscribe.dispose();
+            dbHandler._deletePermanentlySubscribe.dispose();
 
             // Fill upstream with data
             scheduleData();
             scheduler.start();
 
             // Test if the data was filtered as expected
-            expect(upstreamOutputs.length).toBe(4);
+            expect(upstreamOutputs.length).toBe(5);
             expect(saveUpstreamOutputs).toEqual(
               expectedStreamOutputs);
 
@@ -282,13 +303,14 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
             // unsubscribe _saveDownstream=>downstream;
             dbHandler._saveSubscribe.dispose();
+            dbHandler._deletePermanentlySubscribe.dispose();
 
             // Fill upstream with data
             scheduleData();
             scheduler.start();
 
             // Test if the data was filtered as expected
-            expect(upstreamOutputs.length).toBe(4);
+            expect(upstreamOutputs.length).toBe(5);
             expect(deleteUpstreamOutputs).toEqual(
               expectedStreamOutputs);
 
@@ -296,6 +318,37 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             expect(downstreamOutputs.length).toBe(2);
             expect(downstreamOutputs).toEqual(
               expectedStreamOutputs);
+
+            // Test if map functions were called
+            expect(deps.MockDbHandler.mockRemove).not.toHaveBeenCalled();
+            expect(deps.MockDbHandler.mockPut).toHaveBeenCalled();
+
+            done();
+          });
+        });
+
+        it('should filter data to be permanently deleted', function(done) {
+          testInContext(function(deps) {
+            rebuildDbHandler(deps);
+            var expectedStreamOutputs = [
+              streamInputs[4]
+            ];
+
+            // unsubscribe _saveDownstream=>downstream;
+            dbHandler._saveSubscribe.dispose();
+            dbHandler._deleteSubscribe.dispose();
+
+            // Fill upstream with data
+            scheduleData();
+            scheduler.start();
+
+            // Test if the data was filtered as expected
+            expect(upstreamOutputs.length).toBe(5);
+            expect(deletePermanentlyUpstreamOutputs).toEqual(expectedStreamOutputs);
+
+            // check Downstream length
+            expect(downstreamOutputs.length).toBe(1);
+            expect(downstreamOutputs).toEqual(expectedStreamOutputs);
 
             // Test if map functions were called
             expect(deps.MockDbHandler.mockRemove).toHaveBeenCalled();
@@ -314,10 +367,10 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             scheduler.start();
 
             // Check stream lengths
-            expect(upstreamOutputs.length).toBe(6);
+            expect(upstreamOutputs.length).toBe(7);
             expect(deleteUpstreamOutputs.length).toBe(2);
             expect(saveUpstreamOutputs.length).toBe(2);
-            expect(downstreamOutputs.length).toBe(4);
+            expect(downstreamOutputs.length).toBe(5);
             expect(downstreamOutputs).toEqual(streamInputs);
 
             done();
@@ -377,7 +430,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
             // Now all items should be handled by the database and put on the public
             // downstream! These items should match the input
-            expect(upstreamOutputs.length).toBe(4);
+            expect(upstreamOutputs.length).toBe(5);
             expect(downstreamOutputs).toEqual(streamInputs);
             done();
           });
@@ -476,12 +529,38 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               var expectedOutputItem = _.clone(inputItem.data);
               expectedOutputItem._id = 123;
               expectedOutputItem.id = 321;
+              expectedOutputItem._deleted = false;
               var outputItem = dbHandler._createDbItem(
                 inputItem);
 
               expect(outputItem).toEqual(expectedOutputItem);
               expect(outputItem).not.toEqual(inputItem.data);
               expect(outputItem).not.toBe(inputItem.data);
+
+              // Test with delete action
+              var inputItem = {
+                data: {
+                  firstName: 'John',
+                  lastName: 'Doe'
+                },
+                meta: {
+                  action: 'delete',
+                  storeId: 123,
+                  serverId: 321
+                }
+              };
+
+              var expectedOutputItem = _.clone(inputItem.data);
+              expectedOutputItem._id = 123;
+              expectedOutputItem.id = 321;
+              expectedOutputItem._deleted = true;
+              var outputItem = dbHandler._createDbItem(
+                inputItem);
+
+              expect(outputItem).toEqual(expectedOutputItem);
+              expect(outputItem).not.toEqual(inputItem.data);
+              expect(outputItem).not.toBe(inputItem.data);
+
               done();
             });
           });
@@ -495,16 +574,22 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
                   lastName: 'Doe'
                 },
                 meta: {
-                  serverId: 321
+                  serverId: 321,
+                  action: 'delete'
                 }
               };
 
               var expectedOutputItem = _.clone(inputItem.data);
               expectedOutputItem.id = 321;
+              expectedOutputItem._deleted = true;
 
               var outputItem = dbHandler._createDbItem(inputItem);
               expect(outputItem).toEqual(expectedOutputItem);
-              expect(outputItem).not.toEqual(inputItem.data);
+              expect(outputItem).not.toEqual({
+                firstName: 'John',
+                lastName: 'Doe',
+                _deleted: false
+              });
               expect(outputItem).not.toBe(inputItem.data);
               done();
             });
@@ -522,10 +607,10 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               };
 
               var expectedOutputItem = _.clone(inputItem.data);
+              expectedOutputItem._deleted = false;
 
               var outputItem = dbHandler._createDbItem(inputItem);
               expect(outputItem).toEqual(expectedOutputItem);
-              expect(outputItem).toEqual(inputItem.data);
               expect(outputItem).not.toBe(inputItem.data);
               done();
             });
