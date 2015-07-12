@@ -179,6 +179,14 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     return this._nextRuntimeId++;
   }
 
+  /**
+   * Gets the full URL to the resource of the server
+   * @return {String} URL to the resource of the server
+   */
+  Model.prototype.getUrl = function () {
+    return this._options.baseUrl + this._options.route;
+  }
+
   return Model;
 
 });

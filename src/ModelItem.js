@@ -1,3 +1,5 @@
+'use strict';
+
 define('ModelItem', ['rx'], function(Rx) {
 
   /**
@@ -7,7 +9,7 @@ define('ModelItem', ['rx'], function(Rx) {
    * @param {Object} meta       The metadata of the item (e.g. IDs, deletedFlag)
    */
   var ModelItem = function ModelItem(parentModel, data, meta) {
-    _this = this;
+    var _this = this;
     _this.data = data || {};
     _this.meta = meta || {};
 
@@ -16,54 +18,59 @@ define('ModelItem', ['rx'], function(Rx) {
     // If runtime ID is not set in metadata, get a new runtime ID from the model
     _this.meta.rtId = _this.meta.rtId || parentModel.getNextRuntimeId();
 
-    // Function to filter the current item on the basis of the runtime ID
-    function filterThisItem(item) {
-      return item.meta.rtId === _this.meta.rtId;
-    }
-
     // filtered streams to the streams of the model
-    _this._dbDownStream = parentModel._dbDownStream.filter(filterThisItem);
+    _this._dbDownStream = parentModel._dbDownStream.filter(function(item) {
+      return item.meta.rtId === _this.meta.rtId;
+    });
     _this._updateStreams = Rx.Observable.merge(parentModel.upStream,
-        parentModel._existingItemDownStream).filter(filterThisItem);
+        parentModel._existingItemDownStream).filter(function(item) {
+          return item.meta.rtId === _this.meta.rtId;
+        });
 
     /**
      * Gets the model of the item. This is needed as a function to prevent
      * circular dependency
      * @return {Model} The model of the item
      */
-    _this.getModel = function getModel() {
+    _this.getModel = function() {
       return parentModel;
     }
 
     // Add item to the runtime ID hash
-    _this.getModel()._rtIdHash[_this.meta.rtId] = _this;
+    parentModel._rtIdHash[_this.meta.rtId] = _this;
 
     // Add item to the server ID hash if server ID is available
     if (!_.isUndefined(_this.meta.serverId)) {
-      _this.getModel()._serverIdHash[_this.meta.serverId] = _this;
+      parentModel._serverIdHash[_this.meta.serverId] = _this;
     }
 
     // Add item to the store ID hash if store ID is available
     if (!_.isUndefined(_this.meta.storeId)) {
-      _this.getModel()._storeIdHash[_this.meta.storeId] = _this;
+      parentModel._storeIdHash[_this.meta.storeId] = _this;
     }
 
     // Delete permanently when item was deleted permanently in database
     _this._dbDownStream.filter(function(item) {
       return item.meta.action === 'deletePermanently';
-    }).subscribe(_this.deletePermanently);
+    }).subscribe(function(item) {
+      _this.deletePermanently(item);
+    });
 
     // Filter update streams for this item to be saved
     _this._updateStreams.filter(function(item) {
       return item.meta.action === 'save';
-    }).subscribe(_this.save);
+    }).subscribe(function(item) {
+      _this.save(item);
+    });
 
     // Filter update streams for this item to be marked as deleted
     _this._updateStreams.filter(function(item) {
       return item.meta.action === 'delete';
-    }).subscribe(_this.delete);
+    }).subscribe(function(item) {
+      _this.delete(item)
+    });
 
-    return this;
+    return _this;
   };
 
   /**
@@ -78,7 +85,6 @@ define('ModelItem', ['rx'], function(Rx) {
   /**
    * Save the model item
    * @param  {Object} item  The stream item
-   * @return {Object}       The stream item
    */
   ModelItem.prototype.save = function(item) {
     this.meta = item.meta;
@@ -89,20 +95,19 @@ define('ModelItem', ['rx'], function(Rx) {
   /**
    * Mark the model item as deleted
    * @param  {Object} item  The stream item
-   * @return {Object}       The stream item
    */
   ModelItem.prototype.delete = function(item) {
     this.meta.deleted = true;
-    return item;
   }
 
   /**
    * Delete the model item permanently from the model
    * @param  {Object} item  The stream item
-   * @return {Object}       The stream item
    */
   ModelItem.prototype.deletePermanently = function(item) {
+
     var parentModel = this.getModel();
+
     delete parentModel._rtIdHash[this.meta.rtId];
 
     if (!_.isUndefined(this.meta.serverId)) {
@@ -112,8 +117,6 @@ define('ModelItem', ['rx'], function(Rx) {
     if (!_.isUndefined(this.meta.storeId)) {
       delete parentModel._storeIdHash[this.meta.storeId];
     }
-
-    return item;
   }
 
 

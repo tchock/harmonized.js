@@ -1,99 +1,118 @@
 define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
-  function(Squire, sinon, _, Rx, RxTest, ModelItem) {
-    describe('Model', function() {
+function(Squire, sinon, _, Rx, RxTest, ModelItem) {
+  describe('ModelItem', function() {
 
-      var testModelMock;
-      var testModelItem;
-      var injector;
-      var scheduler;
+    var testModelMock;
+    var testModelItem;
+    var injector;
+    var scheduler;
 
-      var dbHandlerUpstreamList = [];
-      var serverHandlerUpstreamList = [];
+    var dbHandlerUpstreamList = [];
+    var serverHandlerUpstreamList = [];
 
-      var dbHandlerUpstream;
-      var dbHandlerDownstream;
+    var dbHandlerUpstream;
+    var dbHandlerDownstream;
 
-      var serverHandlerUpstream;
-      var serverHandlerDownstream;
+    var serverHandlerUpstream;
+    var serverHandlerDownstream;
 
-      var ModelMock = function ModelMock(modelName, options) {
-        this.downStream = new Rx.Subject();
-        this.upStream = new Rx.Subject();
-        this._existingItemDownStream = new Rx.Subject();
-        this._dbDownStream = new Rx.Subject();
+    var ModelMock = function ModelMock(modelName, options) {
+      this.downStream = new Rx.Subject();
+      this.upStream = new Rx.Subject();
+      this._existingItemDownStream = new Rx.Subject();
+      this._dbDownStream = new Rx.Subject();
 
-        this._rtIdHash = {};
-        this._serverIdHash = {};
-        this._storeIdHash = {};
+      this._rtIdHash = {};
+      this._serverIdHash = {};
+      this._storeIdHash = {};
 
-        this._nextRuntimeId = 1;
-        this.getNextRuntimeId = function() {
-          return this._nextRuntimeId++;
-        };
-
-        this.getUrl = function() {
-          return 'http://www.test.de/' + modelName
-        }
+      this._nextRuntimeId = 1;
+      this.getNextRuntimeId = function() {
+        return this._nextRuntimeId++;
       };
 
-      beforeEach(function() {
-        // Scheduler to mock the RxJS timing
-        scheduler = new RxTest.TestScheduler();
+      this.getUrl = function() {
+        return 'http://www.test.de/' + modelName
+      }
+    };
+
+    beforeEach(function() {
+      // Scheduler to mock the RxJS timing
+      scheduler = new RxTest.TestScheduler();
+    });
+
+    beforeEach(function() {
+      ModelItem.streamList = [];
+      testModelMock = new ModelMock('test');
+      testModelItem = new ModelItem(testModelMock, {
+        name: 'Werner'
+      }, {
+        rtId: 123,
+        serverId: 1052305,
+      });
+    });
+
+    it('should create an item without any data', function(done) {
+      testModelItem = new ModelItem(testModelMock);
+
+      expect(testModelItem.data).toEqual({});
+      expect(testModelItem.meta).toEqual({ rtId: 1 });
+
+      done();
+    });
+
+    it('should create an item with runtime ID given', function(done) {
+      testModelItem = new ModelItem(testModelMock, {
+        name: 'Werner'
+      }, {
+        rtId: 123,
+        serverId: 1052305,
+        storeId: 120
       });
 
-      beforeEach(function() {
-        testModelMock = new ModelMock('test');
-        testModelItem = new ModelItem(testModelMock, {
-          name: 'Werner'
-        }, {
-          rtId: 123,
-          serverId: 1052305,
-        });
+      expect(testModelMock._nextRuntimeId).toBe(1);
+      expect(testModelItem.meta.rtId).toBe(123);
+
+      done();
+    });
+
+    it('should create an item without runtime ID given', function(done) {
+      testModelItem = new ModelItem(testModelMock, {
+        name: 'Werner'
+      }, {
+        serverId: 1052305,
+        storeId: 120
       });
 
-      it('should create an item with runtime ID given', function() {
-        testModelItem = new ModelItem(testModelMock, {
-          name: 'Werner'
-        }, {
-          rtId: 123,
-          serverId: 1052305,
-          storeId: 120
-        });
+      expect(testModelMock._nextRuntimeId).toBe(2);
+      expect(testModelItem.meta.rtId).toBe(1);
 
-        expect(testModelMock._nextRuntimeId).toBe(1);
-        expect(testModelItem.meta.rtId).toBe(123);
+      done();
+    });
+
+    it('should get the itemUrl with serverId given', function(done) {
+      var itemUrl = testModelItem.getUrl();
+      expect(itemUrl).toBe('http://www.test.de/test/1052305');
+
+      done();
+    });
+
+    it('should get the itemUrl without serverId given', function(done) {
+      testModelItem = new ModelItem(testModelMock, {
+        name: 'Werner'
+      }, {
+        rtId: 123,
+        storeId: 120
       });
+      var itemUrl = testModelItem.getUrl();
+      expect(itemUrl).toBe('http://www.test.de/test/');
 
-      it('should create an item without runtime ID given', function() {
-        testModelItem = new ModelItem(testModelMock, {
-          name: 'Werner'
-        }, {
-          serverId: 1052305,
-          storeId: 120
-        });
+      done();
+    });
 
-        expect(testModelMock._nextRuntimeId).toBe(2);
-        expect(testModelItem.meta.rtId).toBe(1);
-      });
-
-      it('should get the itemUrl with serverId given', function() {
-        var itemUrl = testModelItem.getUrl();
-        expect(itemUrl).toBe('http://www.test.de/test/1052305');
-      });
-
-      it('should get the itemUrl without serverId given', function() {
-        testModelItem = new ModelItem(testModelMock, {
-          name: 'Werner'
-        }, {
-          rtId: 123,
-          storeId: 120
-        });
-        var itemUrl = testModelItem.getUrl();
-        expect(itemUrl).toBe('http://www.test.de/test/');
-      });
-
-      it('should update an item with update from model upstream ', function() {
-        otherModelItem = new ModelItem(testModelMock, {
+    it('should update an item with update from model upstream ',
+      function(done) {
+        var otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
           serverId: 1,
@@ -127,20 +146,26 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
               action: 'save'
             }
           });
+        });
 
-          expect(testModelItem.data.name).toBe('Werner');
-          expect(testModelItem.meta.storeId).toBeUndefined();
-          expect(otherModelItem.data.name).toBe('Günther');
+        expect(testModelItem.data.name).toBe('Werner');
+        expect(testModelItem.meta.storeId).toBeUndefined();
+        expect(otherModelItem.data.name).toBe('Günther');
 
-          scheduler.start();
+        scheduler.start();
 
-          expect(testModelItem.data.name).toBe('Werner Herzog');
-          expect(testModelItem.meta.storeId).toBe(120);
-          expect(otherModelItem.data.name).toBe('Günther Kastenfrosch');
+        expect(testModelItem.data.name).toBe('Werner Herzog');
+        expect(testModelItem.meta.storeId).toBe(120);
+        expect(otherModelItem.data.name).toBe(
+          'Günther Kastenfrosch');
+
+        done();
       });
 
-      it('should update an item with update from existingItemDownStream', function() {
-        otherModelItem = new ModelItem(testModelMock, {
+    it(
+      'should update an item with update from existingItemDownStream',
+      function(done) {
+        var otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
           serverId: 1,
@@ -160,6 +185,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
               action: 'save'
             }
           });
+
         });
 
         scheduler.scheduleWithAbsolute(10, function() {
@@ -177,18 +203,23 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         });
 
         expect(testModelItem.data.name).toBe('Werner');
-        expect(testModelItem.meta.serverId).toBeUndefined();
+        expect(testModelItem.meta.storeId).toBeUndefined();
         expect(otherModelItem.data.name).toBe('Günther');
 
         scheduler.start();
 
         expect(testModelItem.data.name).toBe('Werner Herzog');
         expect(testModelItem.meta.serverId).toBe(9001);
-        expect(otherModelItem.data.name).toBe('Günther Kastenfrosch');
+        expect(otherModelItem.data.name).toBe(
+          'Günther Kastenfrosch');
+
+        done();
       });
 
-      it('should mark an item as deleted with update from model upstream', function() {
-        otherModelItem = new ModelItem(testModelMock, {
+    it(
+      'should mark an item as deleted with update from model upstream',
+      function(done) {
+        var otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
           serverId: 1,
@@ -224,19 +255,20 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
           });
         });
         expect(testModelItem.data.name).toBe('Werner');
-        expect(testModelItem.meta.serverId).toBeUndefined();
         expect(otherModelItem.data.name).toBe('Günther');
 
         scheduler.start();
 
-        expect(testModelItem.data.name).toBe('Werner Herzog');
         expect(testModelItem.meta.deleted).toBe(true);
-        expect(otherModelItem.data.name).toBe('Günther Kastenfrosch');
         expect(otherModelItem.meta.deleted).toBe(true);
+
+        done();
       });
 
-      it('should mark an item as deleted with update from model existingItemDownStream', function() {
-        otherModelItem = new ModelItem(testModelMock, {
+    it(
+      'should mark an item as deleted with update from model existingItemDownStream',
+      function(done) {
+        var otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
           serverId: 1,
@@ -272,22 +304,22 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
           });
         });
         expect(testModelItem.data.name).toBe('Werner');
-        expect(testModelItem.meta.serverId).toBeUndefined();
         expect(otherModelItem.data.name).toBe('Günther');
 
         scheduler.start();
 
-        expect(testModelItem.data.name).toBe('Werner Herzog');
         expect(testModelItem.meta.deleted).toBe(true);
-        expect(otherModelItem.data.name).toBe('Günther Kastenfrosch');
         expect(otherModelItem.meta.deleted).toBe(true);
+
+        done();
       });
 
-      it('should finally delete an item with update from database downstream', function() {
-        otherModelItem = new ModelItem(testModelMock, {
+    it(
+      'should finally delete an item with update from database downstream',
+      function(done) {
+        var otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
         }, {
-          serverId: 1,
           storeId: 123,
           rtId: 12
         });
@@ -312,7 +344,6 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
               name: 'Günther Kastenfrosch'
             },
             meta: {
-              serverId: 1,
               rtId: 12,
               storeId: 123,
               action: 'deletePermanently'
@@ -324,12 +355,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
         expect(testModelMock._rtIdHash[12]).toBe(otherModelItem);
 
         scheduler.start();
-
         expect(testModelMock._rtIdHash[123]).toBeUndefined();
         expect(testModelMock._rtIdHash[12]).toBeUndefined();
+
+        done();
       });
 
-
-    });
   });
 });
