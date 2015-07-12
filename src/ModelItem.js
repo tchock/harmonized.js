@@ -3,6 +3,21 @@
 define('ModelItem', ['rx'], function(Rx) {
 
   /**
+   * Creates the action filter stream and subscribes the callback for the action
+   * to that stream
+   * @param  {Rx.Observable}  stream  The stream where the data comes in
+   * @param  {string}         action  The action to filter
+   * @param  {Function}       cb      The function to call when the action occurs
+   */
+  function createActionFilter(modelItem, stream, action) {
+    stream.filter(function(item) {
+      return item.meta.action === action;
+    }).subscribe(function(item) {
+      modelItem[action](item);
+    });
+  }
+
+  /**
    * The ModelItem constructor
    * @param {Model} parentModel The model the item belongs to
    * @param {Object} data       The data of the item
@@ -18,14 +33,14 @@ define('ModelItem', ['rx'], function(Rx) {
     // If runtime ID is not set in metadata, get a new runtime ID from the model
     _this.meta.rtId = _this.meta.rtId || parentModel.getNextRuntimeId();
 
-    // filtered streams to the streams of the model
-    _this._dbDownStream = parentModel._dbDownStream.filter(function(item) {
+    var filterThisItem = function(item) {
       return item.meta.rtId === _this.meta.rtId;
-    });
+    };
+
+    // filtered streams to the streams of the model
+    _this._dbDownStream = parentModel._dbDownStream.filter(filterThisItem);
     _this._updateStreams = Rx.Observable.merge(parentModel.upStream,
-        parentModel._existingItemDownStream).filter(function(item) {
-          return item.meta.rtId === _this.meta.rtId;
-        });
+      parentModel._existingItemDownStream).filter(filterThisItem);
 
     /**
      * Gets the model of the item. This is needed as a function to prevent
@@ -50,25 +65,13 @@ define('ModelItem', ['rx'], function(Rx) {
     }
 
     // Delete permanently when item was deleted permanently in database
-    _this._dbDownStream.filter(function(item) {
-      return item.meta.action === 'deletePermanently';
-    }).subscribe(function(item) {
-      _this.deletePermanently(item);
-    });
+    createActionFilter(_this, _this._dbDownStream, 'deletePermanently');
 
     // Filter update streams for this item to be saved
-    _this._updateStreams.filter(function(item) {
-      return item.meta.action === 'save';
-    }).subscribe(function(item) {
-      _this.save(item);
-    });
+    createActionFilter(_this, _this._updateStreams, 'save');
 
     // Filter update streams for this item to be marked as deleted
-    _this._updateStreams.filter(function(item) {
-      return item.meta.action === 'delete';
-    }).subscribe(function(item) {
-      _this.delete(item)
-    });
+    createActionFilter(_this, _this._updateStreams, 'delete');
 
     return _this;
   };
