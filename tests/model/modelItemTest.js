@@ -1,5 +1,4 @@
-define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'ModelItem'],
-function(Squire, sinon, _, Rx, RxTest, ModelItem) {
+define(['rx', 'rx.testing', 'ModelItem'], function(Rx, RxTest, ModelItem) {
   describe('ModelItem', function() {
 
     var testModelMock;
@@ -56,7 +55,9 @@ function(Squire, sinon, _, Rx, RxTest, ModelItem) {
       testModelItem = new ModelItem(testModelMock);
 
       expect(testModelItem.data).toEqual({});
-      expect(testModelItem.meta).toEqual({ rtId: 1 });
+      expect(testModelItem.meta).toEqual({
+        rtId: 1
+      });
 
       done();
     });
