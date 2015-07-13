@@ -100,7 +100,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     // Public upstream
     _this.upStream = new Rx.Subject();
 
-
     // public upstream => serverHandler upstream & dbHandler upstream
     _this.upStream.subscribe(_this._serverHandler.upStream);
     _this.upStream.subscribe(_this._dbHandler.upStream);
@@ -116,6 +115,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._existingItemDownStream = _this._downStream.filter(function(item) {
       return !_.isUndefined(item.meta.rtId);
     });
+
     _this._existingItemDownStream.subscribe(_this.downStream);
 
     // Create a stream for data not yet in the model

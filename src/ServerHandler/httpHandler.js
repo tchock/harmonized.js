@@ -72,6 +72,7 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
         if (item.meta.action === 'delete') {
           item.meta.action = 'deletePermanently';
         }
+
         serverHandler.downStream.onNext(item);
       }).catch(function(error) {
         serverHandler._unpushedList[item.meta.rtId] = item;

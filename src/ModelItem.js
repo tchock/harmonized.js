@@ -93,7 +93,7 @@ define('ModelItem', ['rx'], function(Rx) {
     this.meta = item.meta;
     this.data = item.data;
     return item;
-  }
+  };
 
   /**
    * Mark the model item as deleted
@@ -101,7 +101,7 @@ define('ModelItem', ['rx'], function(Rx) {
    */
   ModelItem.prototype.delete = function(item) {
     this.meta.deleted = true;
-  }
+  };
 
   /**
    * Delete the model item permanently from the model
@@ -120,7 +120,7 @@ define('ModelItem', ['rx'], function(Rx) {
     if (!_.isUndefined(this.meta.storeId)) {
       delete parentModel._storeIdHash[this.meta.storeId];
     }
-  }
+  };
 
   return ModelItem;
 });
