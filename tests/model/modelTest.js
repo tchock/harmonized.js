@@ -435,7 +435,6 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
           // Add second entry to the server downstream
           scheduler.scheduleWithAbsolute(10, function() {
-            console.log('add second item');
             testModel._dbHandler.downStream.onNext({
               meta: {
                 serverId: 1025,
@@ -546,6 +545,15 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           expect(serverHandlerUpstreamList[1].meta).toEqual(terryMeta);
 
           expect(dbHandlerUpstreamList).toEqual(serverHandlerUpstreamList);
+
+          done();
+        });
+      });
+
+      it('should get the itemUrl with serverId given', function(done) {
+        testInContext(function(deps) {
+          var modelUrl = testModel.getUrl();
+          expect(modelUrl).toBe('http://www.testserver.de/test');
 
           done();
         });

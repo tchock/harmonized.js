@@ -19,8 +19,14 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
         this[key] = data[key];
       }
 
-      console.log(meta);
       this._meta = meta;
+
+      if (addToCollection) {
+        console.log('meta', meta);
+        parent.push(this);
+        parent._items[meta.rtId] = this;
+      }
+
     };
 
     var ModelMock = function ModelMock(modelName, options) {
@@ -113,9 +119,12 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
         expect(testViewCollection.length).toBe(3);
         expect(testViewCollection[0].name).toBe('Darth Vader');
+        expect(testViewCollection._items[123].name).toBe('Darth Vader');
         expect(testViewCollection[0]._meta.rtId).toBe(123);
+        expect(testViewCollection._items[124].name).toBe('Luke Skywalker');
         expect(testViewCollection[1].name).toBe('Luke Skywalker');
         expect(testViewCollection[1]._meta.rtId).toBe(124);
+        expect(testViewCollection._items[125].name).toBe('Han Solo');
         expect(testViewCollection[2].name).toBe('Han Solo');
         expect(testViewCollection[2]._meta.rtId).toBe(125);
 
@@ -143,6 +152,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
         expect(testViewCollection.length).toBe(1);
         expect(testViewCollection[0].name).toBe('Darth Vader');
+        expect(testViewCollection._items[123].name).toBe('Darth Vader');
         expect(testViewCollection[0]._meta.rtId).toBe(123);
 
         done();
@@ -158,6 +168,34 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
         expect(newItem.getCollection()).toBe(testViewCollection);
         expect(testViewCollection.length).toBe(0);
+
+        done();
+      });
+    });
+
+    it('should create a new view item from downstream', function(done) {
+      testInContext(function(deps) {
+        var newViewItem = new ViewItemMock(testViewCollection, {}, {rtId:123});
+        testViewCollection._items[123] = newViewItem;
+        testViewCollection.push(newViewItem);
+
+        // Add second entry to the server downstream
+        scheduler.scheduleWithAbsolute(10, function() {
+          testModel.downStream.onNext({
+            data: {
+              name: 'Han Solo'
+            }, meta: {
+              rtId: 125
+            }
+          });
+        });
+
+        scheduler.start();
+
+        expect(testViewCollection.length).toBe(2);
+        expect(testViewCollection[1].name).toBe('Han Solo');
+        expect(testViewCollection._items[125].name).toBe('Han Solo');
+        expect(testViewCollection[1]._meta.rtId).toBe(125);
 
         done();
       });
@@ -226,7 +264,9 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
           newItem.gdp = item.gdp;
           newItem.dept = item.exactDept / item.gdp * 100;
           return newItem;
-        }, function(item) {
+        },
+
+        function(item) {
           var newItem = {};
           newItem.country = item.country;
           newItem.gdp = item.gdp;
