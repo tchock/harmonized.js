@@ -4,9 +4,9 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
 
   /**
    * The ViewCollection constructor
-   * @param {Model} model     The model the view collection should get the data from
-   * @param {Function} mapDownFn Function to change the data to the view format
-   * @param {Function} mapUpFn   Function to change the data to the model format
+   * @param {Model} model         The model of the view collection
+   * @param {Function} mapDownFn  Function to change data to the view format
+   * @param {Function} mapUpFn    Function to change data to the model format
    */
   var ViewCollection = function ViewCollection(model, mapDownFn, mapUpFn) {
     // Make the collection act as an array
@@ -52,7 +52,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
 
     // Get all model items
     model.getItems(function(item) {
-      var newViewItem = new ViewItem(collection, item.data, item.meta, true);
+      new ViewItem(collection, item.data, item.meta, true);
     });
 
     return collection;

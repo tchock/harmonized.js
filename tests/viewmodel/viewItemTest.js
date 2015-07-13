@@ -4,7 +4,6 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
   ViewItem) {
   describe('ViewItem', function() {
 
-    var injector;
     var testViewCollection;
     var scheduler;
 
@@ -53,7 +52,8 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
 
       var itemPropertyCount = 0;
       for (var item in viewItem) {
-        if (viewItem.hasOwnProperty(item) && item !== '_meta' && item !== 'getCollection' && item !== '_streams') {
+        if (viewItem.hasOwnProperty(item) && item !== '_meta' &&
+          item !== 'getCollection' && item !== '_streams') {
           itemPropertyCount++;
         }
       }
@@ -80,7 +80,8 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
 
       var itemPropertyCount = 0;
       for (var item in viewItem) {
-        if (viewItem.hasOwnProperty(item) && item !== '_meta' && item !== 'getCollection' && item !== '_streams') {
+        if (viewItem.hasOwnProperty(item) && item !== '_meta' &&
+          item !== 'getCollection' && item !== '_streams') {
           itemPropertyCount++;
         }
       }
@@ -210,10 +211,12 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
 
       expect(testViewCollection.length).toBe(0);
 
-      expect(viewItem._streams.saveDownStreamSub.dispose.calls.count()).toBe(
-        1);
-      expect(viewItem._streams.deleteDownStreamSub.dispose.calls.count()).toBe(
-        1);
+      expect(viewItem._streams.saveDownStreamSub.dispose.calls.count())
+        .toBe(
+          1);
+      expect(viewItem._streams.deleteDownStreamSub.dispose.calls.count())
+        .toBe(
+          1);
       expect(viewItem._meta.deleted).toBeTruthy();
       expect(downStreamItems.length).toBe(0);
       expect(upStreamItems.length).toBe(1);

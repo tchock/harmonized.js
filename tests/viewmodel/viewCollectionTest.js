@@ -10,7 +10,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
     var upStreamItems;
     var downStreamItems;
 
-    var ViewItemMock = function ViewItemMock(parent, data, meta, addToCollection) {
+    var ViewItemMock = function ViewItemMock(parent, data, meta,
+      addToCollection) {
       this.getCollection = function() {
         return parent;
       };
@@ -56,7 +57,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
         for (var item in hash) {
           itemCb(hash[item]);
         }
-      }
+      };
     };
 
     beforeEach(function() {
@@ -76,7 +77,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
     });
 
     function testInContext(cb, options) {
-      injector.require(['ViewCollection', 'mocks'], function(ViewCollection, mocks) {
+      injector.require(['ViewCollection', 'mocks'], function(
+        ViewCollection, mocks) {
 
         testModel = new ModelMock('test');
         testViewCollection = new ViewCollection(testModel);
@@ -88,26 +90,32 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       });
     }
 
-    it('should add all existing model items at the start', function(done) {
+    it('should add all existing model items at the start', function(
+      done) {
       testInContext(function(deps) {
         // Create the items in the rtIdHash
         testModel._rtIdHash = {
           123: {
             data: {
               name: 'Darth Vader'
-            }, meta: {
+            },
+            meta: {
               rtId: 123
             }
-          }, 124: {
+          },
+          124: {
             data: {
               name: 'Luke Skywalker'
-            }, meta: {
+            },
+            meta: {
               rtId: 124
             }
-          }, 125: {
+          },
+          125: {
             data: {
               name: 'Han Solo'
-            }, meta: {
+            },
+            meta: {
               rtId: 125
             }
           }
@@ -118,12 +126,16 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
         expect(testViewCollection.length).toBe(3);
         expect(testViewCollection[0].name).toBe('Darth Vader');
-        expect(testViewCollection._items[123].name).toBe('Darth Vader');
+        expect(testViewCollection._items[123].name).toBe(
+          'Darth Vader');
         expect(testViewCollection[0]._meta.rtId).toBe(123);
-        expect(testViewCollection._items[124].name).toBe('Luke Skywalker');
-        expect(testViewCollection[1].name).toBe('Luke Skywalker');
+        expect(testViewCollection._items[124].name).toBe(
+          'Luke Skywalker');
+        expect(testViewCollection[1].name).toBe(
+          'Luke Skywalker');
         expect(testViewCollection[1]._meta.rtId).toBe(124);
-        expect(testViewCollection._items[125].name).toBe('Han Solo');
+        expect(testViewCollection._items[125].name).toBe(
+          'Han Solo');
         expect(testViewCollection[2].name).toBe('Han Solo');
         expect(testViewCollection[2]._meta.rtId).toBe(125);
 
@@ -131,35 +143,39 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       });
     });
 
-    it('should add an existing item from the model to the view collection', function(done) {
-      testInContext(function(deps) {
-        // Create an item after the the collection was initialized
-        testModel._rtIdHash = {
-          123: {
-            data: {
-              name: 'Darth Vader'
-            }, meta: {
-              rtId: 123
+    it(
+      'should add an existing item from the model to the view collection',
+      function(done) {
+        testInContext(function(deps) {
+          // Create an item after the the collection was initialized
+          testModel._rtIdHash = {
+            123: {
+              data: {
+                name: 'Darth Vader'
+              },
+              meta: {
+                rtId: 123
+              }
             }
-          }
-        };
+          };
 
-        var newItem = testViewCollection.addItem(123);
+          var newItem = testViewCollection.addItem(123);
 
-        expect(newItem.name).toBe('Darth Vader');
-        expect(newItem._meta.rtId).toBe(123);
+          expect(newItem.name).toBe('Darth Vader');
+          expect(newItem._meta.rtId).toBe(123);
 
-        expect(testViewCollection.length).toBe(1);
-        expect(testViewCollection[0].name).toBe('Darth Vader');
-        expect(testViewCollection._items[123].name).toBe('Darth Vader');
-        expect(testViewCollection[0]._meta.rtId).toBe(123);
+          expect(testViewCollection.length).toBe(1);
+          expect(testViewCollection[0].name).toBe('Darth Vader');
+          expect(testViewCollection._items[123].name).toBe(
+            'Darth Vader');
+          expect(testViewCollection[0]._meta.rtId).toBe(123);
 
-        done();
+          done();
+        });
       });
-    });
 
     it('should create a new view item', function(done) {
-      testInContext(function(deps) {
+      testInContext(function() {
         var newItem = testViewCollection.new();
 
         expect(newItem instanceof ViewItemMock).toBeTruthy();
@@ -174,7 +190,9 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
     it('should create a new view item from downstream', function(done) {
       testInContext(function(deps) {
-        var newViewItem = new ViewItemMock(testViewCollection, {}, {rtId:123});
+        var newViewItem = new ViewItemMock(testViewCollection, {}, {
+          rtId: 123
+        });
         testViewCollection._items[123] = newViewItem;
         testViewCollection.push(newViewItem);
 
@@ -183,7 +201,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
           testModel.downStream.onNext({
             data: {
               name: 'Han Solo'
-            }, meta: {
+            },
+            meta: {
               rtId: 125
             }
           });
@@ -193,85 +212,93 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
         expect(testViewCollection.length).toBe(2);
         expect(testViewCollection[1].name).toBe('Han Solo');
-        expect(testViewCollection._items[125].name).toBe('Han Solo');
+        expect(testViewCollection._items[125].name).toBe(
+          'Han Solo');
         expect(testViewCollection[1]._meta.rtId).toBe(125);
 
         done();
       });
     });
 
-    it('should create a view collection without map functions', function(done) {
-      testInContext(function(deps) {
-        testViewCollection.downStream.subscribe(function(item) {
-          downStreamItems.push(item);
-        });
+    it('should create a view collection without map functions',
+      function(done) {
+        testInContext(function() {
+          testViewCollection.downStream.subscribe(function(item) {
+            downStreamItems.push(item);
+          });
 
-        testModel.upStream.subscribe(function(item) {
-          upStreamItems.push(item);
-        });
+          testModel.upStream.subscribe(function(item) {
+            upStreamItems.push(item);
+          });
 
-        // Add first entry to the server downstream
-        scheduler.scheduleWithAbsolute(1, function() {
-          testViewCollection.upStream.onNext({
+          // Add first entry to the server downstream
+          scheduler.scheduleWithAbsolute(1, function() {
+            testViewCollection.upStream.onNext({
+              data: {
+                name: 'Darth Vader'
+              },
+              meta: {
+                rtId: 123
+              }
+            });
+          });
+
+          // Add second entry to the server downstream
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel.downStream.onNext({
+              data: {
+                name: 'Han Solo'
+              },
+              meta: {
+                rtId: 125
+              }
+            });
+          });
+
+          scheduler.start();
+
+          expect(upStreamItems).toEqual([{
             data: {
               name: 'Darth Vader'
-            }, meta: {
+            },
+            meta: {
               rtId: 123
             }
-          });
-        });
+          }]);
 
-        // Add second entry to the server downstream
-        scheduler.scheduleWithAbsolute(10, function() {
-          testModel.downStream.onNext({
+          expect(downStreamItems).toEqual([{
             data: {
               name: 'Han Solo'
-            }, meta: {
+            },
+            meta: {
               rtId: 125
             }
-          });
+          }]);
+
+          done();
         });
-
-        scheduler.start();
-
-        expect(upStreamItems).toEqual([{
-          data: {
-            name: 'Darth Vader'
-          }, meta: {
-            rtId: 123
-          }
-        }]);
-
-        expect(downStreamItems).toEqual([{
-          data: {
-            name: 'Han Solo'
-          }, meta: {
-            rtId: 125
-          }
-        }]);
-
-        done();
       });
-    });
 
-    it('should create a view collection with map functions', function(done) {
+    it('should create a view collection with map functions', function(
+      done) {
       testInContext(function(deps) {
 
-        testViewCollection = new deps.ViewCollection(testModel, function(item) {
-          var newItem = {};
-          newItem.country = item.country;
-          newItem.gdp = item.gdp;
-          newItem.dept = item.exactDept / item.gdp * 100;
-          return newItem;
-        },
+        testViewCollection = new deps.ViewCollection(testModel,
+          function(item) {
+            var newItem = {};
+            newItem.country = item.country;
+            newItem.gdp = item.gdp;
+            newItem.dept = item.exactDept / item.gdp * 100;
+            return newItem;
+          },
 
-        function(item) {
-          var newItem = {};
-          newItem.country = item.country;
-          newItem.gdp = item.gdp;
-          newItem.exactDept = item.gdp / 100 * item.dept;
-          return newItem;
-        });
+          function(item) {
+            var newItem = {};
+            newItem.country = item.country;
+            newItem.gdp = item.gdp;
+            newItem.exactDept = item.gdp / 100 * item.dept;
+            return newItem;
+          });
 
         testViewCollection.downStream.subscribe(function(item) {
           downStreamItems.push(item);
@@ -288,7 +315,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
               country: 'Germany',
               gdp: 3730000000,
               dept: 78.4
-            }, meta: {
+            },
+            meta: {
               rtId: 123
             }
           });
@@ -301,7 +329,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
               country: 'Germany',
               gdp: 3730000000,
               exactDept: 2924320000
-            }, meta: {
+            },
+            meta: {
               rtId: 125
             }
           });
@@ -314,7 +343,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
             country: 'Germany',
             gdp: 3730000000,
             exactDept: 2924320000
-          }, meta: {
+          },
+          meta: {
             rtId: 123
           }
         }]);
@@ -324,7 +354,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
             country: 'Germany',
             gdp: 3730000000,
             dept: 78.4
-          }, meta: {
+          },
+          meta: {
             rtId: 125
           }
         }]);

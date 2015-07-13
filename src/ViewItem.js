@@ -7,8 +7,8 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
    * @param {ViewCollection} viewCollection   The collection of the item
    * @param {Object} [data]                   The data of the item
    * @param {Object} [meta]                   The metadata of the item
-   * @param {boolean} [addToCollection]       true if item should be added directly,
-   *                                          false if not
+   * @param {boolean} [addToCollection]       true if item should be added
+   *                                          directly, false if not
    */
   var ViewItem = function ViewItem(viewCollection, data, meta,
     addToCollection) {
@@ -108,8 +108,8 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
   };
 
   /**
-   * Saves the item and updates the data of the model, server and local database.
-   * If item is not yet in the collection, it adds itself automatically.
+   * Saves the item and updates the data of the model, server and local
+   * database. If item is not yet in the collection, it adds itself.
    */
   ViewItem.prototype.save = function() {
     this._sendItemToUpStream('save');
