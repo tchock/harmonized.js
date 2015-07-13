@@ -122,7 +122,5 @@ define('ModelItem', ['rx'], function(Rx) {
     }
   }
 
-
-
   return ModelItem;
 });

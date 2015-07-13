@@ -22,7 +22,6 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       this._meta = meta;
 
       if (addToCollection) {
-        console.log('meta', meta);
         parent.push(this);
         parent._items[meta.rtId] = this;
       }
