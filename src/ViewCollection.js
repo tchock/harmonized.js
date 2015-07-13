@@ -14,6 +14,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     collection = Array.apply(collection);
 
     collection._model = model;
+    collection._items = {};
 
     // Set the map functions to the ones in the parameter or to default
     collection._mapDownFn = mapDownFn || function(item) {
@@ -31,6 +32,13 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       return newItem;
     });
 
+    // Filters items that are not in the view model yet
+    collection.downStream.filter(function(item) {
+      return _.isUndefined(collection._items[item.meta.rtId]);
+    }).subscribe(function(item) {
+      new ViewItem(collection, item.data, item.meta, true);
+    });
+
     // map the upstream to transform the data to the model format
     collection.upStream = new Rx.Subject();
     collection.upStream.map(function(item) {
@@ -44,8 +52,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
 
     // Get all model items
     model.getItems(function(item) {
-      console.log(item);
-      collection.push(new ViewItem(this, item.data, item.meta, true));
+      var newViewItem = new ViewItem(collection, item.data, item.meta, true);
     });
 
     return collection;
@@ -83,7 +90,6 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     if (!_.isUndefined(itemToAdd)) {
       var data = this._mapDownFn(itemToAdd.data);
       newViewItem = new ViewItem(this, data, itemToAdd.meta, true);
-      this.push(newViewItem);
     }
 
     return newViewItem;
