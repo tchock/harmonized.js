@@ -144,15 +144,12 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * Get all items of the model
    * @return {Array} List of all ModelItems
    */
-  Model.prototype.getItems = function() {
-    var itemList = [];
+  Model.prototype.getItems = function(itemCb) {
     var hash = this._rtIdHash;
     for (var item in hash) {
-      itemList.push(hash[item]);
+      itemCb(hash[item]);
     }
-
-    return itemList;
-  }
+  };
 
   /**
    * Gets a single item of the model
@@ -161,7 +158,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   Model.prototype.getItem = function(rtId) {
     return this._rtIdHash[rtId];
-  }
+  };
 
   /**
    * Request a fetch of data from the server. The requested data will be pushed
@@ -169,7 +166,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   Model.prototype.getFromServer = function() {
     this._serverHandler.fetch();
-  }
+  };
 
   /**
    * Gets the next runtime ID for a new item
@@ -177,15 +174,15 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   Model.prototype.getNextRuntimeId = function() {
     return this._nextRuntimeId++;
-  }
+  };
 
   /**
    * Gets the full URL to the resource of the server
    * @return {String} URL to the resource of the server
    */
-  Model.prototype.getUrl = function () {
+  Model.prototype.getUrl = function() {
     return this._options.baseUrl + this._options.route;
-  }
+  };
 
   return Model;
 

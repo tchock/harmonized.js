@@ -6,7 +6,8 @@
     "requirejs": {
       "baseURL": "./src",
       "paths": {
-        "lodash": "../bower_components/lodash/lodash"
+        "lodash": "../bower_components/lodash/lodash",
+        "rx": "../bower_components/rxjs/dist/rx.lite"
       }
     }
   }

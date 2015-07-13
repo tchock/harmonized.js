@@ -172,7 +172,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           new ModelItemMock(testModel, {name: 'Hans'}, {rtId: 263});
           new ModelItemMock(testModel, {name: 'Dieter'}, {rtId: 469});
 
-          var returnedItems = testModel.getItems();
+          var returnedItems = [];
+
+          testModel.getItems(function(item) {
+            returnedItems.push(item);
+          });
 
           var expectedItems = [{
             name: 'Horst'

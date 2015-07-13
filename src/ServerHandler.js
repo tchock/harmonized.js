@@ -41,8 +41,8 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
       // List of items that couldn't be pushed to the server (e.g. because of
       // missing connection or offline mode).
-      // Key of the items is always the runtime ID, so they can be replaced by newer
-      // versions.
+      // Key of the items is always the runtime ID, so they can be replaced by
+      // newer versions.
       this._unpushedList = {};
 
       // TODO implement last modified
@@ -82,8 +82,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
       if (protocol === 'http' && this._protocol !== httpHandler) {
         setTheProtocol(httpHandler);
-      } else if (protocol === 'websocket' && this._protocol !==
-        socketHandler) {
+      } else if (protocol === 'websocket' && this._protocol !== socketHandler) {
         setTheProtocol(socketHandler);
       }
     };
