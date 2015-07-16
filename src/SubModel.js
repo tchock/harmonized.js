@@ -17,6 +17,13 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         }
       }
 
+      /**
+       * Constructor for SubModel
+       * @param {string} modelName      The name of the sub model
+       * @param {ModelItem} parentItem  The item the sub model belongs to
+       * @param {Model} model           The model the sub model gets its items from
+       * @param {Object} options        The options for the sub model (overwrites default)
+       */
       var SubModel = function SubModel(modelName, parentItem, model, options) {
         var _this = this;
 
@@ -175,6 +182,9 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         _this._serverHandler.fetch();
       };
 
+      /**
+       * Updates the database with the current items of the sub model
+       */
       SubModel.prototype._updateDb = function () {
         this._dbHandler.upStream.onNext({
           meta: {
@@ -187,6 +197,11 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         });
       };
 
+      /**
+       * Sends the items of a certain type (server/store) to the downstream
+       * @param  {string} idType  The type of the data ('server' or 'store')
+       * @param  {*} id           The server or store id
+       */
       SubModel.prototype._sendItemDownstream = function (idType, id) {
         var modelItem = this._model['_' + idType + 'IdHash'][id];
         if (!_.isUndefined(modelItem)) {
@@ -197,6 +212,9 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         }
       };
 
+      /**
+       * Sends all items of the sub model to the downstream
+       */
       SubModel.prototype._sendAllItemsDownstream = function () {
         var i;
         var modelItem;
@@ -215,6 +233,11 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         }
       }
 
+      /**
+       * Adds an item to the server to add it the sub resource
+       * @param {*} serverId      The server id of the item to add
+       * @param {number} storeId  The store id of the item to add
+       */
       SubModel.prototype._addToServer = function (serverId, storeId) {
         var storeItems = this._storeItems;
 
@@ -227,6 +250,10 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         });
       };
 
+      /**
+       * Removes an item from the server sub resource
+       * @param  {*} serverId The server id of the item to remove from the resource
+       */
       SubModel.prototype._removeFromServer = function (serverId) {
         var storeItems = this._storeItems;
 
@@ -238,14 +265,29 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         this._updateDb();
       };
 
+      /**
+       * Gets the full resource path to communicate to the server
+       * @return {Array} The different segments of the path (URL). The first segmen
+       *                 is the base URL to the server
+       */
       SubModel.prototype.getFullRoute = function () {
         return this.getParent().getFullRoute().concat([this._options.route]);
       };
 
+      /**
+       * Gets the next runtime id from the connected model
+       * @return {number} The next unused and unique runtime DI
+       */
       SubModel.prototype.getNextRuntimeId = function () {
         return this._model.getNextRuntimeId();
       };
 
+      /**
+       * Gets a single item from the submodel
+       * @param  {number} rtId The runtime id of the item to get
+       * @return {ModelItem}   The requested item. If not available in model or
+       *                           or in the sub model, 'undefined' is returned
+       */
       SubModel.prototype.getItem = function (rtId) {
         var item = this._model.getItem(rtId);
         if (_.includes(this._serverItems, item.meta.serverId) || _.includes(this._storeItems, item.meta.storeId)) {
@@ -255,6 +297,12 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         }
       }
 
+      /**
+       * Gets all items of the sub model
+       * @param  {Function} itemCb Function that has one of the ModelItems as the
+       *                           parameter. Is invoked for every ModelItem in
+       *                           the sub model
+       */
       SubModel.prototype.getItems = function (itemCb) {
         var modelItem;
         var i;
