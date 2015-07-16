@@ -7,7 +7,7 @@ define('mockWebStorage', function() {
     sessionStorage: {},
     localStorageContent: {},
     sessionStorageContent: {}
-  }
+  };
 
   mockWebStorage.localStorage.getItem = function(key) {
     return mockWebStorage.localStorageContent[key];

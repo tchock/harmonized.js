@@ -29,7 +29,7 @@ define('helper/webStorage', function() {
   /**
    * Gets the sessionStorage
    *
-   * THis function exists to make it possible to spy on the session storage
+   * This function exists to make it possible to spy on the session storage
    *
    * @return {Storage} The sessionStorage
    */

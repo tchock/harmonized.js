@@ -65,11 +65,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
   var Model = function Model(modelName, options) {
     var _this = this;
 
-    _this._randomId = Math.round(Math.random() * 10000);
-
     _this._modelName = modelName;
     _this._options = options || {};
 
+    // Set the options defined in the model schema if not manually overwritten
     var modelSchema = harmonizedData._modelSchema[modelName];
     var thisOptions = _this._options;
     setOptionIfUndefined(thisOptions, 'baseUrl', modelSchema);

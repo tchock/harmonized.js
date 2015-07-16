@@ -1,19 +1,11 @@
+'use strict';
+
 define(['rx', 'rx.testing', 'ModelItem'], function(Rx, RxTest, ModelItem) {
   describe('ModelItem', function() {
 
     var testModelMock;
     var testModelItem;
-    var injector;
     var scheduler;
-
-    var dbHandlerUpstreamList = [];
-    var serverHandlerUpstreamList = [];
-
-    var dbHandlerUpstream;
-    var dbHandlerDownstream;
-
-    var serverHandlerUpstream;
-    var serverHandlerDownstream;
 
     var ModelMock = function ModelMock(modelName, options) {
       this.downStream = new Rx.Subject();
@@ -31,8 +23,8 @@ define(['rx', 'rx.testing', 'ModelItem'], function(Rx, RxTest, ModelItem) {
       };
 
       this.getUrl = function() {
-        return 'http://www.test.de/' + modelName
-      }
+        return 'http://www.test.de/' + modelName;
+      };
     };
 
     beforeEach(function() {
@@ -47,7 +39,7 @@ define(['rx', 'rx.testing', 'ModelItem'], function(Rx, RxTest, ModelItem) {
         name: 'Werner'
       }, {
         rtId: 123,
-        serverId: 1052305,
+        serverId: 1052305
       });
     });
 

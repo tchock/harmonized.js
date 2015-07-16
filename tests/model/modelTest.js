@@ -22,6 +22,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
         this.getModel = function() {
           return model;
         };
+
         this.data = data || {};
         this.meta = meta || {};
 
@@ -86,7 +87,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
             keys: {
               serverKey: 'id',
               storeKey: '_id'
-            },
+            }
           },
           explicitTest: {
             storeName: 'test',
@@ -95,7 +96,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
             keys: {
               serverKey: 'id',
               storeKey: '_id'
-            },
+            }
           }
         }
       };
@@ -126,7 +127,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
         injector.mock('ModelItem', ModelItemMock);
         injector.mock('dbHandlerFactory', dbHandlerFactoryMock);
         injector.mock('ServerHandler', ServerHandlerMock);
-        injector.mock('harmonizedData', harmonizedDataMock)
+        injector.mock('harmonizedData', harmonizedDataMock);
       });
 
       function testInContext(cb, options) {
@@ -192,6 +193,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
             expect(returnedItems[i]).not.toBeUndefined();
             expect(returnedItems[i].data).toEqual(expectedItems[i]);
           }
+
           expect(i).toBe(expectedItems.length);
 
           done();

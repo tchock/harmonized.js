@@ -1,3 +1,5 @@
+'use strict';
+
 define(['Squire', 'lodash'], function(Squire, _) {
   describe('ModelHandler', function() {
 
