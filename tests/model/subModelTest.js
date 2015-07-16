@@ -257,6 +257,26 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
           }
         });
 
+        scheduler.stop();
+
+        testSubModel._gotServerData = false;
+
+        // Add first entry to the server downstream
+        scheduler.scheduleWithAbsolute(10, function() {
+          testSubModel._dbHandler.downStream.onNext({
+            meta: { storeId: 123 },
+            data: {
+              serverItems: [1025, 1000],
+              storeItems: [60],
+              deletedItems: []
+            }
+          });
+        });
+
+        scheduler.start();
+
+        expect(testSubModel._serverItems).toEqual([1025, 1000]);
+
         done();
       });
     });
