@@ -21,6 +21,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
     var serverHandlerDownstream;
 
     var ModelMock = function ModelMock(modelName, options) {
+      this._modelName = modelName;
       this.downStream = new Rx.Subject();
       this.upStream = new Rx.Subject();
       this._existingItemDownStream = new Rx.Subject();
@@ -38,11 +39,25 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       this.getUrl = function() {
         return 'http://www.test.de/' + modelName;
       };
+
+      this.getItem = function(rtId) {
+        return this._rtIdHash[rtId];
+      }
     };
 
-    var modelItemMock = function ModelItemMock() {
-      this.getUrl = function() {
-        return 'blub';
+    var ModelItemMock = function ModelItemMock() {
+      this.meta = {
+        storeId: 123
+      };
+
+      this.getModel = function() {
+        return {
+          _modelName: 'test'
+        }
+      },
+
+      this.getFullRoute = function() {
+        return ['http://hyphe.me', 'test', '123'];
       };
     };
 
@@ -100,7 +115,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
           },
           subModels: {
             informations: {
-              storeName: 'informations',
+              storeName: 'test_informations',
               route: 'informations',
               keys: {
                 serverKey: 'id',
@@ -157,14 +172,6 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
         testParentItem = new ModelItemMock();
         testSubModel = new SubModel('informations', testParentItem, testModel);
 
-        testSubModel._dbHandler.upStream.subscribe(function(item) {
-          dbHandlerUpstreamList.push(item);
-        });
-
-        testSubModel._serverHandler.upStream.subscribe(function(item) {
-          serverHandlerUpstreamList.push(item);
-        });
-
         cb({
           SubModel: SubModel,
           mocks: mocks.mocks
@@ -172,15 +179,15 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     }
 
-    xit('should create a new submodel with options', function(done) {
+    it('should create a new submodel with options', function(done) {
       testInContext(function(deps) {
-        expect(testModel._options).toEqual(expectedOptions);
+        expect(testSubModel._options).toEqual(expectedOptions);
 
         done();
       });
     });
 
-    xit('should create a new submodel with options', function(done) {
+    it('should create a new submodel with options', function(done) {
       testInContext(function(deps) {
         testSubModel = new deps.SubModel('informations', testParentItem, testModel, {
           route: 'othertest',
@@ -188,18 +195,18 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
         });
 
         expect(testSubModel._model).toBe(testModel);
-        expect(testSubModel._parent).toBe(testParentItem);
+        expect(testSubModel.getParent()).toBe(testParentItem);
 
         var overwrittenExpectedOptions = _.clone(expectedOptions);
         overwrittenExpectedOptions.route = 'othertest';
         overwrittenExpectedOptions.testOption = 'blub';
-        expect(testSubModel._options).toEqual();
+        expect(testSubModel._options).toEqual(overwrittenExpectedOptions);
 
         done();
       });
     });
 
-    xit('should initially get data from the database AND server', function(done) {
+    it('should initially get data from the database AND server', function(done) {
       testInContext(function(deps) {
         testSubModel = new deps.SubModel('informations', testParentItem, testModel);
 
@@ -212,10 +219,11 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get data from the local database', function(done) {
+    it('should get data from the local database', function(done) {
       testInContext(function(deps) {
 
         testSubModel._serverItems = [1025];
+        testSubModel._gotServerData = true;
 
         // Add first entry to the server downstream
         scheduler.scheduleWithAbsolute(1, function() {
@@ -223,7 +231,8 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
             meta: { storeId: 123 },
             data: {
               serverItems: [1025, 1000],
-              storeItems: [60]
+              storeItems: [60],
+              deletedItems: []
             }
           });
         });
@@ -243,7 +252,8 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
           meta: { storeId: 123 },
           data: {
             serverItems: [1025],
-            storeItems: [60]
+            storeItems: [60],
+            deletedItems: []
           }
         });
 
@@ -251,20 +261,20 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get data from the server', function(done) {
+    it('should get data from the server', function(done) {
       testInContext(function(deps) {
-        testSubModel = new deps.SubModel('testsub', testParentItem, testModel, {
+        testSubModel = new deps.SubModel('informations', testParentItem, testModel, {
           serverMapFn: function(item) {
             return item.meta.serverId;
           }
         });
-
+        testSubModel._gotDbData = true;
         testSubModel._serverItems = [1025];
 
         // Add first entry to the server downstream
         scheduler.scheduleWithAbsolute(1, function() {
           testSubModel._serverHandler.downStream.onNext({
-            meta: { storeId: 123 },
+            meta: { storeId: 123, action: 'save' },
             data: [1000, 1025]
           });
         });
@@ -280,7 +290,8 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
         expect(dbHandlerUpstreamList.length).toEqual(1);
         expect(dbHandlerUpstreamList[0].data).toEqual({
           serverItems: [1000, 1025],
-          storeItems: []
+          storeItems: [],
+          deletedItems: []
         });
         expect(dbHandlerUpstreamList[0].meta).toEqual({
           storeId: 123
@@ -290,7 +301,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get all the items from the model', function(done) {
+    it('should get all the items from the model', function(done) {
       testInContext(function(deps) {
         testModel._serverIdHash[1000] = {
           meta: { serverId: 1000 },
@@ -334,7 +345,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get a single item from the model', function(done) {
+    it('should get a single item from the model', function(done) {
       testInContext(function(deps) {
         testModel._rtIdHash[123] = {
           meta: { rtId: 123 },
@@ -346,27 +357,25 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
         };
 
         testSubModel._serverItems = [1000];
-
-        var returnedItem = testModel.getItem(263);
-
+        var returnedItem = testSubModel.getItem(263);
         expect(returnedItem).not.toBeUndefined();
         expect(returnedItem.data).toEqual({
           name: 'Hans'
         });
 
         // Item 1026 should not be there
-        returnedItem = testModel.getItem(123);
+        returnedItem = testSubModel.getItem(123);
         expect(returnedItem).toBeUndefined();
 
         done();
       });
     });
 
-    xit('should filter items from the data model', function(done) {
+    it('should filter items from the data model', function(done) {
       testInContext(function(deps) {
         // Set the entries of the sub model
         testSubModel._serverItems = [1000, 1025];
-        testSubModel._serverItems = [100];
+        testSubModel._storeItems = [100];
 
         var modelStreamItems = [];
         testModel.downStream.subscribe(function(item) {
@@ -398,7 +407,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
           });
           testModel.downStream.onNext({
             meta: { rtId: 18, serverId: 1025 },
-            data: { name: 'Gustavo Fring' }
+            data: { name: 'Gyustavo Fring' }
           });
         });
 
@@ -414,7 +423,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get known data with existing serverID from the data model downstream', function(done) {
+    it('should get known data with existing serverID from the data model downstream', function(done) {
       testInContext(function(deps) {
 
         // Set the entries of the sub model
@@ -438,7 +447,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get known data with new serverID from the data model downstream', function(done) {
+    it('should get known data with new serverID from the data model downstream', function(done) {
       testInContext(function(deps) {
 
         // Set the items at the model
@@ -470,25 +479,25 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
         expect(dbHandlerUpstreamList.length).toBe(0);
         expect(serverHandlerUpstreamList.length).toBe(1);
         expect(serverHandlerUpstreamList[0]).toEqual({
-          meta: { storeId: 30, serverId: 130 }
+          meta: { storeId: 30, serverId: 130, action: 'save' }
         });
 
         scheduler.stop();
 
         serverHandlerDownstream.onNext({
-          meta: { storeId: 30, serverId: 130 }
+          meta: { storeId: 30, serverId: 130, action: 'save' }
         });
 
         scheduler.start();
 
-        expect(testSubModel._serverItems).toEqual([5156, 128, 30]);
+        expect(testSubModel._serverItems).toEqual([5156, 128, 130]);
         expect(testSubModel._storeItems.length).toBe(0);
 
         done();
       });
     });
 
-    xit('should get known data with existing storeID from the data model downstream', function(done) {
+    it('should get known data with existing storeID from the data model downstream', function(done) {
       testInContext(function(deps) {
 
         // Set the entries of the sub model
@@ -505,14 +514,14 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
         scheduler.start();
 
         expect(testSubModel._storeItems.length).toBe(1);
-        expect(testSubModel.storeItems[0]).toBe(5156);
+        expect(testSubModel._storeItems[0]).toBe(5156);
         expect(dbHandlerUpstreamList.length).toBe(0);
 
         done();
       });
     });
 
-    xit('should get the runtime id from the data model', function(done) {
+    it('should get the runtime id from the data model', function(done) {
       testInContext(function(deps) {
         spyOn(testModel, 'getNextRuntimeId').and.returnValue(9000);
         var nextId = testSubModel.getNextRuntimeId();
@@ -522,7 +531,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get a new item on the upstream', function(done) {
+    it('should get a new item on the upstream', function(done) {
       testInContext(function(deps) {
 
         // Set the entries of the sub model
@@ -548,12 +557,12 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
         expect(serverHandlerUpstreamList.length).toBe(1);
         expect(serverHandlerUpstreamList[0]).toEqual({
-          meta: { serverId: 1230, storeId: 128 }
+          meta: { serverId: 1230, storeId: 128, action: 'save'}
         });
 
         expect(dbHandlerUpstreamList.length).toBe(1);
         expect(dbHandlerUpstreamList[0]).toEqual({
-          meta: { serverId: 123 },
+          meta: { storeId: 123 },
           data: {
             serverItems: [5156, 1280],
             storeItems: [128, 130],
@@ -565,7 +574,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should ignore an existing item on the upstream', function(done) {
+    it('should ignore an existing item on the upstream', function(done) {
       testInContext(function(deps) {
 
         // Set the entries of the sub model
@@ -592,7 +601,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should delete an existing item on the upstream', function(done) {
+    it('should delete an existing item on the upstream', function(done) {
       testInContext(function(deps) {
 
         // Set the entries of the sub model
@@ -604,7 +613,9 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
             meta: { serverId: 5156, storeId: 128, rtId: 1, action: 'delete' },
             data: { name: 'Luke Skywalker' }
           });
+        });
 
+        scheduler.scheduleWithAbsolute(20, function() {
           testSubModel.upStream.onNext({
             meta: { storeId: 50, rtId: 1, action: 'delete' },
             data: { name: 'Darth Vader' }
@@ -619,12 +630,12 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
         expect(serverHandlerUpstreamList.length).toBe(1);
         expect(serverHandlerUpstreamList[0]).toEqual({
-          meta: { serverId: 5156, storeId: 128, action: 'delete' }
+          meta: { serverId: 5156, action: 'delete' }
         });
 
         expect(dbHandlerUpstreamList.length).toBe(2);
         expect(dbHandlerUpstreamList[0]).toEqual({
-          meta: { serverId: 123 },
+          meta: { storeId: 123 },
           data: {
             serverItems: [5156, 1280],
             storeItems: [50],
@@ -632,7 +643,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
           }
         });
         expect(dbHandlerUpstreamList[1]).toEqual({
-          meta: { serverId: 123 },
+          meta: { storeId: 123 },
           data: {
             serverItems: [5156, 1280],
             storeItems: [],
@@ -644,8 +655,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
         scheduler.scheduleWithAbsolute(20, function() {
           serverHandlerDownstream.onNext({
-            meta: { serverId: 5156, storeId: 128, action: 'deletedPermanently' },
-            data: {}
+            meta: { serverId: 5156, storeId: 128, action: 'deletePermanently' }
           });
         });
 
@@ -653,7 +663,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
         expect(dbHandlerUpstreamList.length).toBe(3);
         expect(dbHandlerUpstreamList[2]).toEqual({
-          meta: { serverId: 123 },
+          meta: { storeId: 123 },
           data: {
             serverItems: [1280],
             storeItems: [],
@@ -665,7 +675,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should delete an unknown item on the upstream', function(done) {
+    it('should delete an unknown item on the upstream', function(done) {
       testInContext(function(deps) {
         scheduler.scheduleWithAbsolute(10, function() {
           testSubModel.upStream.onNext({
@@ -682,13 +692,13 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       });
     });
 
-    xit('should get the url of the model', function(done) {
+    it('should get the url of the model', function(done) {
       testInContext(function(deps) {
-        spyOn(testParentItem, 'getUrl').and.returnValue('http://hyphe.me/test/123');
-        var url = testSubModel.getUrl();
+        spyOn(testParentItem, 'getFullRoute').and.callThrough();
+        var url = testSubModel.getFullRoute();
 
-        expect(url).toBe('http://hyphe.me/test/123/informations');
-        expect(testparentItem.getUrl.calls.count()).toBe(1);
+        expect(url).toEqual(['http://hyphe.me', 'test', '123', 'informations']);
+        expect(testParentItem.getFullRoute.calls.count()).toBe(1);
         done();
       });
     });

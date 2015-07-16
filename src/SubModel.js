@@ -1,108 +1,278 @@
 'use strict';
 
-define('Model', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
-  'lodash'
-], function(harmonizedData, ServerHandler, dbHandlerFactory, _) {
+define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
+      'lodash'
+    ], function(harmonizedData, ServerHandler, dbHandlerFactory, _) {
 
-  /**
-   * Sets an option to its default value if undefined in custom options
-   * @param {Object} options     The options object
-   * @param {string} item        The key to the item of the options object
-   * @param {Object} modelSchema The schema of the model that contains the
-   *                             default values
-   */
-  function setOptionIfUndefined(options, item, modelSchema) {
-    if (_.isUndefined(options[item])) {
-      options[item] = modelSchema[item];
-    }
-  }
-
-  var SubModel = function SubModel(modelName, parentItem, model, options) {
-    var _this = this;
-
-    _this._modelName = modelName;
-    _this._model = model;
-    _this._options = options || {};
-
-    // Get the model of the parent item
-    var parentItemModel = parentItem.getModel();
-
-    // Set the options defined in the model schema if not manually overwritten
-    var modelSchema = harmonizedData._modelSchema[parentItemModel._modelName].subModels[modelName];
-    var thisOptions = _this._options;
-    setOptionIfUndefined(thisOptions, 'baseUrl', modelSchema);
-    setOptionIfUndefined(thisOptions, 'route', modelSchema);
-    setOptionIfUndefined(thisOptions, 'keys', modelSchema);
-    setOptionIfUndefined(thisOptions, 'storeName', modelSchema);
-
-    // TODO check if should be moved to modelSchema
-    if (_.isUndefined(thisOptions.serverOptions)) {
-      thisOptions.serverOptions = {};
-    }
-
-    // Set server- and database handlers
-    _this._serverHandler = new ServerHandler(_this.getUrl(), thisOptions.serverOptions);
-    _this._dbHandler = dbHandlerFactory.createDbHandler(thisOptions.storeName,
-      thisOptions.keys);
-
-    _this._serverHandler.downStream.subscribe(function(item) {
-      var rtId = item.meta.rtId;
-      var serverId = item.meta.serverId;
-      var storeId = item.meta.storeId;
-
-      var rtIdHashItem = _this._rtIdHash[rtId];
-      var serverIdHashItem = _this._serverIdHash[serverId];
-      var storeIdHashItem = _this._storeIdHash[storeId];
-
-      var hashItem = rtIdHashItem || serverIdHashItem || storeIdHashItem;
-
-      if (!_.isUndefined(hashItem)) {
-        if (!_.isUndefined(rtId) && _.isUndefined(rtIdHashItem)) {
-          _this._rtIdHash[rtId] = hashItem;
+      /**
+       * Sets an option to its default value if undefined in custom options
+       * @param {Object} options     The options object
+       * @param {string} item        The key to the item of the options object
+       * @param {Object} modelSchema The schema of the model that contains the
+       *                             default values
+       */
+      function setOptionIfUndefined(options, item, modelSchema) {
+        if (_.isUndefined(options[item])) {
+          options[item] = modelSchema[item];
         }
+      }
 
-        if (!_.isUndefined(serverId) && _.isUndefined(serverIdHashItem)) {
-          _this._serverIdHash[serverId] = hashItem;
-        }
+      var SubModel = function SubModel(modelName, parentItem, model, options) {
+        var _this = this;
 
-        if (!_.isUndefined(storeId) && _.isUndefined(storeIdHashItem)) {
-          _this._storeIdHash[storeId] = hashItem;
-        }
-      } else {
-        var modelItem = _this.model._serverIdHash[serverId];
-        var subModelItem = {
-          meta: {},
-          item: modelItem
+        _this._modelName = modelName;
+        _this._model = model;
+        _this._options = options || {};
+
+        _this.getParent = function() {
+          return parentItem;
         };
 
-        if (!_.isUndefined(rtId)) {
-          subModelItem.meta.rtId = rtId;
-          _this._rtIdHash[rtId] = subModelItem;
+        _this._gotServerData = false;
+        _this._gotDbData = false;
+
+        // Get the model of the parent item
+        var parentItemModel = parentItem.getModel();
+
+        // Set the options defined in the model schema if not manually overwritten
+        var modelSchema = harmonizedData._modelSchema[parentItemModel._modelName]
+          .subModels[modelName];
+        var thisOptions = _this._options;
+        setOptionIfUndefined(thisOptions, 'route', modelSchema);
+        setOptionIfUndefined(thisOptions, 'keys', modelSchema);
+        setOptionIfUndefined(thisOptions, 'storeName', modelSchema);
+
+        // TODO check if should be moved to modelSchema
+        if (_.isUndefined(thisOptions.serverOptions)) {
+          thisOptions.serverOptions = {};
         }
 
-        if (!_.isUndefined(serverId)) {
-          subModelItem.meta.serverId = serverId;
-          _this._serverIdHash[serverId] = subModelItem;
+        // Set server- and database handlers
+        _this._serverHandler = new ServerHandler(_this.getFullRoute(),
+          thisOptions.serverOptions);
+        _this._dbHandler = dbHandlerFactory.createDbHandler(thisOptions.storeName,
+          thisOptions.keys);
+
+        _this._serverHandler.downStream.subscribe(function(item) {
+          var serverId = item.meta.serverId;
+          var action = item.meta.action;
+          if (_.isUndefined(serverId)) {
+            // Server sends complete list of items
+            _this._serverItems = item.data;
+            _this._gotServerData = true;
+
+            // Only update database if db data already arrived
+            if (_this._gotDbData) {
+              _this._updateDb();
+            }
+
+            _this._sendAllItemsDownstream();
+          } else if (action === 'save') {
+            // Server sends only one item
+            _this._serverItems.push(serverId);
+            _this._storeItems.splice(_this._storeItems.indexOf(item.meta.storeId), 1);
+            _this._updateDb();
+            _this._sendItemDownstream('server', serverId);
+          } else if (action === 'deletePermanently') {
+            var serverItemPos = _this._serverItems.indexOf(serverId);
+            var deletedItemPos = _this._deletedItems.indexOf(serverId);
+            _this._serverItems.splice(serverItemPos, 1);
+            _this._deletedItems.splice(deletedItemPos, 1);
+            _this._updateDb();
+          }
+        });
+
+        // Public downstream
+        _this.downStream = new Rx.Subject();
+
+        _this._dbHandler.downStream.subscribe(function(item) {
+          // Don't update server items because server has updated it already
+          if (!_this._gotServerData) {
+            _this._serverItems = item.data.serverItems;
+          }
+
+          _this._storeItems = item.data.storeItems;
+          _this._deletedItems = item.data.deletedItems;
+
+          _this._gotDbData = true;
+
+          // Update database entry if item was received by the server
+          if (_this._gotServerData) {
+            _this._updateDb();
+          }
+
+          _this._sendAllItemsDownstream();
+        });
+
+        // Filter the items from the model downstream
+        _this._filterModelStream = model.downStream.filter(function(item) {
+          var serverItems = _this._serverItems;
+          var storeItems = _this._storeItems;
+
+          var serverId = item.meta.serverId;
+          var storeId = item.meta.storeId;
+
+          // Item is included in the submodel by the server id
+          if (!_.isUndefined(serverId) && _.includes(serverItems, serverId)) {
+            return true;
+          }
+
+          // Item is included in the submodel by the store id
+          if (!_.isUndefined(storeId) && _.includes(storeItems, storeId)) {
+            // Server ID is now available, so add to server
+            if (!_.isUndefined(serverId)) {
+              _this._addToServer(serverId, storeId);
+            }
+
+            return true;
+          }
+
+          return false;
+        });
+
+        // Do something with the filtered items
+        _this._filterModelStream.subscribe(_this.downStream);
+
+        // Public upstream
+        _this.upStream = new Rx.Subject();
+
+        _this.upStream.subscribe(function(item) {
+
+          var serverItems = _this._serverItems;
+          var storeItems = _this._storeItems;
+
+          var serverId = item.meta.serverId;
+          var storeId = item.meta.storeId;
+          var action = item.meta.action;
+
+          switch (action) {
+            case 'save':
+              if (!_.isUndefined(serverId) && !_.includes(serverItems, serverId)) {
+                _this._addToServer(serverId, storeId);
+              } else if (_.isUndefined(serverId) && !_.isUndefined(storeId) && !_.includes(storeItems, storeId)) {
+                _this._storeItems.push(storeId);
+                _this._updateDb();
+              }
+              break;
+            case 'delete':
+              if (!_.isUndefined(serverId) && _.includes(serverItems, serverId)) {
+                _this._removeFromServer(serverId);
+              } else if (!_.isUndefined(storeId) && _.includes(storeItems, storeId)) {
+                // Remove from store items list
+                _this._storeItems.splice(storeItems.indexOf(storeId), 1);
+                _this._updateDb();
+              }
+              break;
+          }
+        });
+
+        _this._serverItems = [];
+        _this._storeItems = [];
+        _this._deletedItems = [];
+
+        // Initially get data
+        _this._dbHandler.getEntry(parentItem.meta._storeId);
+        _this._serverHandler.fetch();
+      };
+
+      SubModel.prototype._updateDb = function () {
+        this._dbHandler.upStream.onNext({
+          meta: {
+            storeId: this.getParent().meta.storeId
+          }, data: {
+            storeItems: _.clone(this._storeItems),
+            serverItems: _.clone(this._serverItems),
+            deletedItems: _.clone(this._deletedItems)
+          }
+        });
+      };
+
+      SubModel.prototype._sendItemDownstream = function (idType, id) {
+        var modelItem = this._model['_' + idType + 'IdHash'][id];
+        if (!_.isUndefined(modelItem)) {
+          this.downStream.onNext({
+            meta: _.clone(modelItem.meta),
+            data: _.clone(modelItem.data)
+          });
+        }
+      };
+
+      SubModel.prototype._sendAllItemsDownstream = function () {
+        var i;
+        var modelItem;
+
+        // Get the server items that are not marked to be deleted
+        var serverItems = _.difference(this._serverItems, this._deletedItems);
+
+        // Add server items to downstream
+        for (i = 0; i < serverItems.length; i++) {
+          this._sendItemDownstream('server', serverItems[i]);
         }
 
-        if (!_.isUndefined(storeId)) {
-          subModelItem.meta.storeId = storeId;
-          _this._storeIdHash[storeId] = subModelItem;
+        // Add store items to downstream
+        for (i = 0; i < this._storeItems.length; i++) {
+          this._sendItemDownstream('store', serverItems[i]);
         }
-
       }
 
+      SubModel.prototype._addToServer = function (serverId, storeId) {
+        var storeItems = this._storeItems;
 
+        if (!_.isUndefined(storeId) && !_.includes(storeItems, storeId)) {
+          storeItems.push(storeId);
+        }
 
+        this._serverHandler.upStream.onNext({
+          meta: { storeId: storeId, serverId: serverId, action: 'save' }
+        });
+      };
 
-      if (!_.isUndefined(hashItem) && _.isUndefined(storeIdHashItem)) {
-        _this._storeIdHash[item.meta.storeId] = hashItem;
+      SubModel.prototype._removeFromServer = function (serverId) {
+        var storeItems = this._storeItems;
+
+        this._deletedItems.push(serverId);
+        this._serverHandler.upStream.onNext({
+          meta: { serverId: serverId, action: 'delete' }
+        });
+
+        this._updateDb();
+      };
+
+      SubModel.prototype.getFullRoute = function () {
+        return this.getParent().getFullRoute().concat([this._options.route]);
+      };
+
+      SubModel.prototype.getNextRuntimeId = function () {
+        return this._model.getNextRuntimeId();
+      };
+
+      SubModel.prototype.getItem = function (rtId) {
+        var item = this._model.getItem(rtId);
+        if (_.includes(this._serverItems, item.meta.serverId) || _.includes(this._storeItems, item.meta.storeId)) {
+          return item;
+        } else {
+          return undefined;
+        }
       }
+
+      SubModel.prototype.getItems = function (itemCb) {
+        var modelItem;
+        var i;
+        for (i = 0; i < this._serverItems.length; i++) {
+          modelItem = this._model._serverIdHash[this._serverItems[i]];
+          if (!_.isUndefined(modelItem)) {
+            itemCb(modelItem);
+          }
+        }
+
+        for (i = 0; i < this._storeItems.length; i++) {
+          modelItem = this._model._storeIdHash[this._storeItems[i]];
+          if (!_.isUndefined(modelItem)) {
+            itemCb(modelItem);
+          }
+        }
+      }
+
+      return SubModel;
 
     });
-
-  };
-
-  return SubModel;
-
-  });
