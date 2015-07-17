@@ -1,7 +1,7 @@
 'use strict';
 
 define(['Squire', 'lodash'], function(Squire, _) {
-  describe('ModelHandler', function() {
+  describe('modelHandler', function() {
 
     var injector;
     var modelHandler;
@@ -69,9 +69,9 @@ define(['Squire', 'lodash'], function(Squire, _) {
     });
 
     function testInContext(cb, options) {
-      injector.require(['ModelHandler', 'mocks'], function(ModelHandler, mocks) {
+      injector.require(['modelHandler', 'mocks'], function(__modelHandler__, mocks) {
 
-        modelHandler = ModelHandler;
+        modelHandler = __modelHandler__;
 
         cb({
           mocks: mocks.mocks

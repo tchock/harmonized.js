@@ -21,14 +21,12 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
        * Constructor for SubModel
        * @param {string} modelName      The name of the sub model
        * @param {ModelItem} parentItem  The item the sub model belongs to
-       * @param {Model} model           The model the sub model gets its items from
        * @param {Object} options        The options for the sub model (overwrites default)
        */
-      var SubModel = function SubModel(modelName, parentItem, model, options) {
+      var SubModel = function SubModel(modelName, parentItem, options) {
         var _this = this;
 
         _this._modelName = modelName;
-        _this._model = model;
         _this._options = options || {};
 
         _this.getParent = function() {
@@ -42,12 +40,14 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         var parentItemModel = parentItem.getModel();
 
         // Set the options defined in the model schema if not manually overwritten
-        var modelSchema = harmonizedData._modelSchema[parentItemModel._modelName]
-          .subModels[modelName];
+        var modelSchema = parentItemModel._subModelsSchema[modelName];
         var thisOptions = _this._options;
         setOptionIfUndefined(thisOptions, 'route', modelSchema);
         setOptionIfUndefined(thisOptions, 'keys', modelSchema);
         setOptionIfUndefined(thisOptions, 'storeName', modelSchema);
+
+        // Set the model from the sourceModel stated in the sub model schema
+        _this._model = modelHandler.getModel(modelSchema.sourceModel);
 
         // TODO check if should be moved to modelSchema
         if (_.isUndefined(thisOptions.serverOptions)) {

@@ -1,21 +1,22 @@
 'use strict';
 
 define('ServerHandler', ['ServerHandler/httpHandler',
-    'ServerHandler/socketHandler', 'rx'
+    'ServerHandler/socketHandler', 'helper/webStorage', 'rx'
   ],
-  function(httpHandler, socketHandler, Rx) {
+  function(httpHandler, socketHandler, webStorage, Rx) {
 
     /**
      * ServerHandler constructor
-     * @param  {string} baseUrl      The base url
-     * @param  {string} resourcePath The resource path on the base url
-     * @param  {Object} options      The options for the server handler
+     * @param  {Array} route      The route to the server resource, the
+     *                            first array entry is the base URL
+     * @param  {Object} options   The options for the server handler
      */
-    var ServerHandler = function(baseUrl, resourcePath, options) {
+    var ServerHandler = function(route, options) {
       var _this = this;
 
-      this._baseUrl = baseUrl;
-      this._resourcePath = resourcePath;
+      this._baseUrl = route.splice(0, 1)[0];
+      this._resourcePath = route;
+      this._fullUrl = this._buildUrl();
       this._options = options;
 
       // Public streams
@@ -29,6 +30,9 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       });
 
       this.downStream = new Rx.Subject();
+      this.downStream.subscribe(null, function(error) {
+        ServerHandler.errorStream.onNext(error);
+      });
 
       // Instance connection stream that gets input from
       // the global connection stream.
@@ -36,6 +40,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       this.connectionStream.subscribe(function(state) {
         _this.setConnectionState(state);
       });
+      this._connected = false;
 
       ServerHandler.connectionStream.subscribe(this.connectionStream);
 
@@ -45,12 +50,9 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       // newer versions.
       this._unpushedList = {};
 
-      // TODO implement last modified
-      this._lastModified = 0;
+      this._lastModified = webStorage.getWebStorage().getItem(
+        'harmonized_modified_' + this._options.modelName) || 0;
 
-      // Connection stuff
-      this._connectionStream = new Rx.Subject();
-      this._connected = false;
       this._protocol = null;
       var useProtocol;
       if (options.protocol === 'websocket') {
@@ -63,6 +65,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
     };
 
     ServerHandler.connectionStream = new Rx.Subject();
+    ServerHandler.errorStream = new Rx.Subject();
 
     /**
      * Sets the protocol to HTTP or WebSocket
@@ -82,7 +85,8 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
       if (protocol === 'http' && this._protocol !== httpHandler) {
         setTheProtocol(httpHandler);
-      } else if (protocol === 'websocket' && this._protocol !== socketHandler) {
+      } else if (protocol === 'websocket' && this._protocol !==
+        socketHandler) {
         setTheProtocol(socketHandler);
       }
     };
@@ -93,6 +97,15 @@ define('ServerHandler', ['ServerHandler/httpHandler',
     ServerHandler.prototype.fetch = function fetch() {
       this._protocol.fetch(this);
     };
+
+    /**
+     * Sends a custom HTTP request to the server
+     * @param  {Object} options The options for the request
+     * @return {Promise}        The promise of the custom request
+     */
+    ServerHandler.prototype.sendHttpRequest = function(options) {
+      return httpHandler.sendRequest(options, _this);
+    }
 
     /**
      * Pushes all unpushed data to the server
@@ -111,10 +124,9 @@ define('ServerHandler', ['ServerHandler/httpHandler',
     ServerHandler.prototype.setConnectionState = function setConnectionState(
       state) {
       if (state) {
-        this._connected = true;
-        this.pushAll();
+        this._protocol.connect(this);
       } else {
-        this._connected = false;
+        this._protocol.disconnect(this);
       }
     };
 
@@ -134,6 +146,22 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
       return serverItem;
     };
+
+    ServerHandler.prototype._buildUrl = function() {
+      var url = this._baseUrl + '/';
+
+      for (var i = 0; i < this._resourcePath.length; i++) {
+        url = url + this._resourcePath[i] + '/';
+      }
+
+      return url;
+    }
+
+    ServerHandler.prototype.setLastModified = function(lastModified) {
+      this._lastModified = lastModified;
+      webStorage.getWebStorage().setItem('harmonized_modified_' + this._options
+        .modelName, lastModified);
+    }
 
     return ServerHandler;
   });

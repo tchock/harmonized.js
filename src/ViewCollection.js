@@ -36,7 +36,8 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     collection.downStream.filter(function(item) {
       return _.isUndefined(collection._items[item.meta.rtId]);
     }).subscribe(function(item) {
-      new ViewItem(collection, item.data, item.meta, true);
+      var subData = collection._model._rtIDHash[item.meta.rtId].subData;
+      new ViewItem(collection, item.data, item.meta, subData, true);
     });
 
     // map the upstream to transform the data to the model format
@@ -52,7 +53,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
 
     // Get all model items
     model.getItems(function(item) {
-      new ViewItem(collection, item.data, item.meta, true);
+      new ViewItem(collection, item.data, item.meta, null, true);
     });
 
     return collection;
@@ -88,19 +89,26 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     var itemToAdd = this._model.getItem(rtId);
     var newViewItem;
     if (!_.isUndefined(itemToAdd)) {
-      var data = this._mapDownFn(itemToAdd.data);
-      newViewItem = new ViewItem(this, data, itemToAdd.meta, true);
+      var data = _.clone(this._mapDownFn(itemToAdd.data));
+      newViewItem = new ViewItem(this, data, itemToAdd.meta, itemToAdd.subData, true);
     }
 
     return newViewItem;
   };
 
   /**
+   * Gets data from the server
+   */
+  ViewCollection.prototype.fetch = function () {
+    this._model.getFromServer();
+  }
+
+  /**
    * Creates a new view item with reference to the collection
    * @return {ViewItem} The created view item
    */
   ViewCollection.prototype.new = function() {
-    return new ViewItem(this, {}, {});
+    return new ViewItem(this, {}, {}, null);
   };
 
   return ViewCollection;

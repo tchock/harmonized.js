@@ -1,6 +1,6 @@
 'use strict';
 
-define('ModelItem', ['rx'], function(Rx) {
+define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
 
   /**
    * Creates the action filter stream and subscribes the callback for the action
@@ -10,9 +10,10 @@ define('ModelItem', ['rx'], function(Rx) {
    * @param  {Function}       cb      The function to call when the action occurs
    */
   function createActionFilter(modelItem, stream, action) {
-    stream.filter(function(item) {
+    var filter = stream.filter(function(item) {
       return item.meta.action === action;
-    }).subscribe(function(item) {
+    });
+    modelItem['_' + action + 'StreamSub'] = filter.subscribe(function(item) {
       modelItem[action](item);
     });
   }
@@ -27,6 +28,13 @@ define('ModelItem', ['rx'], function(Rx) {
     var _this = this;
     _this.data = data || {};
     _this.meta = meta || {};
+    _this.subData = {};
+
+    for (var subModel in parentModel._subModelsSchema) {
+      if (parentModel._subModelsSchema.hasOwnProperty(subModel)) {
+        _this.subData[subModel] = new SubModel(subModel, _this);
+      }
+    }
 
     // Set the runtime ID
     // If runtime ID is set in metadata, let it stay that way.
@@ -73,6 +81,15 @@ define('ModelItem', ['rx'], function(Rx) {
     // Filter update streams for this item to be marked as deleted
     createActionFilter(_this, _this._updateStreams, 'delete');
 
+    // Initially send the item back downstream, so all associated views get
+    // informed of the new item
+    var initialSendMeta = _.clone(_this.meta);
+    initialSendMeta.action = 'save';
+    parentModel.downStream.onNext({
+      meta: initialSendMeta,
+      data: _.clone(_this.data)
+    });
+
     return _this;
   };
 
@@ -90,8 +107,8 @@ define('ModelItem', ['rx'], function(Rx) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
-    this.meta = item.meta;
-    this.data = item.data;
+    this.meta = _.clone(item.meta);
+    this.data = _.clone(item.data);
     return item;
   };
 
@@ -120,6 +137,11 @@ define('ModelItem', ['rx'], function(Rx) {
     if (!_.isUndefined(this.meta.storeId)) {
       delete parentModel._storeIdHash[this.meta.storeId];
     }
+
+    // Unsubscribe all streams
+    this._deletePermanentlyStreamSub.dispose();
+    this._deleteStreamSub.dispose();
+    this._saveStreamSub.dispose();
   };
 
   return ModelItem;

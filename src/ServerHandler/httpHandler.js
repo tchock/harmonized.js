@@ -8,7 +8,8 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
      * @param  {ServerHandler} serverHandler ServerHandler to set connection on
      */
     connect: function(serverHandler) {
-      serverHandler.setConnectionState(true);
+      serverHandler._connected = true;
+      serverHandler._pushAll();
     },
 
     /**
@@ -16,7 +17,7 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
      * @param  {ServerHandler} serverHandler ServerHandler to set connection on
      */
     disconnect: function(serverHandler) {
-      serverHandler.setConnectionState(false);
+      serverHandler._connected = false;
     },
 
     /**
@@ -26,16 +27,49 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
     fetch: function(serverHandler) {
       var httpOptions = {};
       if (harmonizedData._config.sendModifiedSince &&
-        serverHandler._lastModified != null) {
+        serverHandler._lastModified > 0) {
         httpOptions.headers = {
           'If-Modified-Since': serverHandler._lastModified
         };
       }
 
-      httpOptions.url = serverHandler._baseUrl + serverHandler._resourcePath;
+      httpOptions.url = serverHandler._fullUrl;
       httpOptions.method = 'GET';
 
-      harmonizedData._httpFunction(httpOptions);
+      harmonizedData._httpFunction(httpOptions).then(function(response) {
+        // Return last modified response
+        serverHandler._lastModified = response.header.lastModified;
+
+        // The returned content
+        var returnedItems = response.data;
+        var responseLenght = returnedItems.length;
+
+        // Go through all returned items
+        for (var i = 0; i < responseLenght; i++) {
+          var item = harmonizedData._createStreamItem(returnedItems[i], {
+            serverKey: serverHandler._options.serverKey
+          });
+
+          // Send item to the downstream
+          serverHandler.downStream.onNext(item);
+        }
+      }).catch(function(error) {
+        // Catch errors
+        serverHandler.downStream.onError(error);
+      });
+    },
+
+    /**
+     * Sends a request to the server
+     * @param  {ServerHandler} serverHandler  The server handler to get URL
+     * @param  {Request} httpOptions          The options for the request
+     * @return {Promise}                      The promise of the HTTP request
+     */
+    sendRequest: function(httpOptions, serverHandler) {
+      httpOptions.url = serverHandler._fullUrl;
+      httpOptions.method = httpOptions.method || 'GET';
+
+      return harmonizedData._httpFunction(httpOptions);
     },
 
     /**
@@ -50,7 +84,7 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
         httpOptions.params = serverHandler._options.params;
       }
 
-      httpOptions.url = serverHandler._baseUrl + serverHandler._resourcePath;
+      httpOptions.url = serverHandler._fullUrl;
 
       if (item.meta.action === 'delete') {
         httpOptions.method = 'DELETE';

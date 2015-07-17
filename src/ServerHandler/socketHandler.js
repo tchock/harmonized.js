@@ -8,7 +8,7 @@ define('ServerHandler/socketHandler', ['harmonizedData'], function(harmonizedDat
      * @param  {ServerHandler} serverHandler ServerHandler to set connection on
      */
     connect: function(serverHandler) {
-      // TODO implement http connect
+      // TODO implement socket connect
       // Wire with streams
     },
 
@@ -17,7 +17,7 @@ define('ServerHandler/socketHandler', ['harmonizedData'], function(harmonizedDat
      * @param  {ServerHandler} serverHandler ServerHandler to set connection on
      */
     disconnect: function(serverHandler) {
-      // TODO implement http disconnect
+      // TODO implement socket disconnect
       // Remove connection with streams
     },
 

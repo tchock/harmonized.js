@@ -76,6 +76,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     setOptionIfUndefined(thisOptions, 'keys', modelSchema);
     setOptionIfUndefined(thisOptions, 'storeName', modelSchema);
 
+    _this._subModelsSchema = modelSchema.subModels;
+
     // TODO check if should be moved to modelSchema
     if (_.isUndefined(thisOptions.serverOptions)) {
       thisOptions.serverOptions = {};
@@ -136,6 +138,12 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     _this._nextRuntimeId = 1;
 
+    // Get data from db and server
+    _this._dbHandler.getAllEntries();
+    if (harmonizedData._config.fetchAtStart) {
+      _this.getFromServer();
+    }
+
     return _this;
   };
 
@@ -166,6 +174,33 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
   Model.prototype.getFromServer = function() {
     this._serverHandler.fetch();
   };
+
+  /**
+   * Checks for items that are deleted on the server and removes them locally.
+   */
+  Model.prototype.checkForDeletedItems = function() {
+    var _this = this;
+    // TODO make params configurable
+    this._serverHandler.sendHttpRequest({
+      params: {
+        view: 'keys'
+      }
+    }).then(function(items) {
+      var deletedItemIds = _.difference(items, _this._serverIdHash.keys());
+      var keys = _this._options.keys;
+      for (var i = 0; i < deletedItemIds.length; i++) {
+
+        // Create the stream item
+        var currentItem = _this._serverIdHash[deletedItemIds[i]];
+        var streamItem = harmonizedData._createStreamItem(currentItem, keys);
+        streamItem.meta.action = 'deletePermanently';
+
+        // Send to the streams
+        _this.downStream.onNext(streamItem);
+        _this._dbHandler.upstream.onNext(streamItem);
+      }
+    });
+  }
 
   /**
    * Gets the next runtime ID for a new item

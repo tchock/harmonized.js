@@ -1,6 +1,6 @@
 'use strict';
 
-define('harmonizedData', function() {
+define('harmonizedData' ['lodash'], function(_) {
 
   var data = {}; // jshint ignore:line
 
@@ -11,7 +11,8 @@ define('harmonizedData', function() {
     },
     baseUrl: null,
     dbName: 'harmonizedDb',
-    sendModifiedSince: false
+    sendModifiedSince: false,
+    fetchAtStart: false
   };
 
   data._resourceSchema = {};
@@ -130,6 +131,11 @@ define('harmonizedData', function() {
         serverId: inputItem[keys.serverKey]
       }
     };
+
+    // Delete store Id if the key is undefined (e.g. when creating item at the server)
+    if (_.isUndefined(keys.storeKey)) {
+      delete item.meta.storeId;
+    }
 
     // Remove the metadata from the actual data
     delete inputItem[keys.storeKey];
