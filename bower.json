@@ -36,8 +36,7 @@
   ],
   "dependencies": {
     "rxjs": "~2.5.2",
-    "lodash": "3.0.0",
-    "jasmine-object-matchers": "~0.0.3"
+    "lodash": "3.0.0"
   },
   "overrides": {
     "rxjs": {
@@ -56,6 +55,7 @@
     "jasmine-ajax": "~3.1.1",
     "indexedDBmock": "git@bitbucket.org:hyphe/web-indexeddbmock.git",
     "jasmine-expect": "~1.22.3",
+    "jasmine-object-matchers": "~0.0.3",
     "requirejs": "~2.1.18",
     "squire": "~0.2.0",
     "sinon": "http://sinonjs.org/releases/sinon-1.9.0.js"
