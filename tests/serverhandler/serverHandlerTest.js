@@ -38,10 +38,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           spyOn(ServerHandler.prototype, '_setProtocol').and.callThrough();
 
           ServerHandler.connectionStream = new Rx.Subject();
-          sh = new ServerHandler('http://api.hyphe.me/',
-            'rest/resource/', {
-              serverKey: 'id'
-            });
+          sh = new ServerHandler(['http://api.hyphe.me/', 'rest',
+            'resource'
+          ], {
+            serverKey: 'id'
+          });
 
           pushList = [];
 
@@ -150,7 +151,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           function(done) {
             testInContext(function(deps) {
               sh._connected = true;
-              sh._protocol = deps.mocks.mocks['ServerHandler/httpHandler'];
+              sh._protocol = deps.mocks.mocks[
+                'ServerHandler/httpHandler'];
 
               scheduler.scheduleWithAbsolute(1, function() {
                 sh.upStream.onNext({
@@ -197,7 +199,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
                 387, 18
               ]);
 
-              expect(deps.mocks.mocks['ServerHandler/httpHandler'].push.calls.count())
+              expect(deps.mocks.mocks[
+                  'ServerHandler/httpHandler'].push.calls.count())
                 .toBe(
                   4);
               expect(pushList[0].meta.rtId).toBe(152);
@@ -227,15 +230,18 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
               });
 
               scheduler.scheduleWithAbsolute(5, function() {
-                deps.ServerHandler.connectionStream.onNext(true);
+                deps.ServerHandler.connectionStream.onNext(
+                  true);
               });
 
               scheduler.scheduleWithAbsolute(10, function() {
-                deps.ServerHandler.connectionStream.onNext(false);
+                deps.ServerHandler.connectionStream.onNext(
+                  false);
               });
 
               scheduler.scheduleWithAbsolute(15, function() {
-                deps.ServerHandler.connectionStream.onNext(true);
+                deps.ServerHandler.connectionStream.onNext(
+                  true);
               });
 
               expect(connectionState).toBeFalsy();
@@ -295,23 +301,30 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
         it('should be set to http on handler creation', function(done) {
           testInContext(function(deps) {
-            expect(deps.ServerHandler.prototype._setProtocol).toHaveBeenCalled();
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].connect).toHaveBeenCalled();
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/httpHandler']);
+            expect(deps.ServerHandler.prototype._setProtocol)
+              .toHaveBeenCalled();
+            expect(deps.mocks.mocks[
+              'ServerHandler/httpHandler'].connect).toHaveBeenCalled();
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/httpHandler']);
 
             done();
           });
         });
 
-        it('should be set to websocket on handler creation', function(done) {
+        it('should be set to websocket on handler creation', function(
+          done) {
           testInContext(function(deps) {
-            sh = new deps.ServerHandler('http://api.hyphe.me/',
-              'rest/resource/', {
+            sh = new deps.ServerHandler(
+              ['http://api.hyphe.me', 'rest', 'resource'], {
                 protocol: 'websocket'
               });
-            expect(deps.ServerHandler.prototype._setProtocol).toHaveBeenCalled();
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].connect).toHaveBeenCalled();
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/socketHandler']);
+            expect(deps.ServerHandler.prototype._setProtocol)
+              .toHaveBeenCalled();
+            expect(deps.mocks.mocks[
+              'ServerHandler/socketHandler'].connect).toHaveBeenCalled();
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/socketHandler']);
 
             done();
           });
@@ -319,24 +332,37 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
         it('should be set to http from http', function(done) {
           testInContext(function(deps) {
-            sh._protocol = deps.mocks.mocks['ServerHandler/httpHandler'];
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].connect.calls.count())
+            sh._protocol = deps.mocks.mocks[
+              'ServerHandler/httpHandler'];
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].connect.calls.count())
               .toBe(1);
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/httpHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/httpHandler']);
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/httpHandler']);
 
             sh._setProtocol('http');
 
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].connect.calls.count())
               .toBe(1);
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/httpHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].connect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/httpHandler']);
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/httpHandler']);
 
             done();
           });
@@ -344,28 +370,45 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
         it('should be set to websocket from http', function(done) {
           testInContext(function(deps) {
-            sh._protocol = deps.mocks.mocks['ServerHandler/httpHandler'];
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].connect.calls.count())
+            sh._protocol = deps.mocks.mocks[
+              'ServerHandler/httpHandler'];
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].connect.calls.count())
               .toBe(1);
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/httpHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].connect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/httpHandler']);
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/httpHandler']);
 
             sh._setProtocol('websocket');
 
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].connect.calls.count())
               .toBe(1);
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/httpHandler'].disconnect.calls
+                .count())
               .toBe(1);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].connect.calls
+                .count())
               .toBe(1);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/socketHandler']);
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/socketHandler']);
 
             done();
           });
@@ -373,28 +416,45 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
         it('should be set to http from websocket', function(done) {
           testInContext(function(deps) {
-            sh._protocol = deps.mocks.mocks['ServerHandler/socketHandler'];
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].connect.calls.count())
+            sh._protocol = deps.mocks.mocks[
+              'ServerHandler/socketHandler'];
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].connect.calls.count())
               .toBe(1);
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/httpHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].connect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/socketHandler']);
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/socketHandler']);
 
             sh._setProtocol('http');
 
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].connect.calls.count())
               .toBe(2);
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/httpHandler'].disconnect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].connect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].connect.calls
+                .count())
               .toBe(0);
-            expect(deps.mocks.mocks['ServerHandler/socketHandler'].disconnect.calls.count())
+            expect(deps.mocks.mocks[
+                  'ServerHandler/socketHandler'].disconnect.calls
+                .count())
               .toBe(1);
-            expect(sh._protocol).toBe(deps.mocks.mocks['ServerHandler/httpHandler']);
+            expect(sh._protocol).toBe(deps.mocks.mocks[
+              'ServerHandler/httpHandler']);
 
             done();
           });
@@ -406,12 +466,17 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
         it('should be fetched by the protocolHandler', function(done) {
           testInContext(function(deps) {
-            sh._protocol = deps.mocks.mocks['ServerHandler/httpHandler'];
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].fetch.calls.count()).toBe(
-              0);
+            sh._protocol = deps.mocks.mocks[
+              'ServerHandler/httpHandler'];
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].fetch.calls.count())
+              .toBe(
+                0);
             sh.fetch();
-            expect(deps.mocks.mocks['ServerHandler/httpHandler'].fetch.calls.count()).toBe(
-              1);
+            expect(deps.mocks.mocks[
+                'ServerHandler/httpHandler'].fetch.calls.count())
+              .toBe(
+                1);
             done();
           });
         });

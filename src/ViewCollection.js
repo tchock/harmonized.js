@@ -36,7 +36,10 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     collection.downStream.filter(function(item) {
       return _.isUndefined(collection._items[item.meta.rtId]);
     }).subscribe(function(item) {
-      var subData = collection._model._rtIDHash[item.meta.rtId].subData;
+      console.log(collection._model._rtIdHash);
+      console.log('id', item.meta.rtId);
+      var subData = collection._model._rtIdHash[item.meta.rtId].subData;
+      console.log(item.meta);
       new ViewItem(collection, item.data, item.meta, subData, true);
     });
 
@@ -89,8 +92,8 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     var itemToAdd = this._model.getItem(rtId);
     var newViewItem;
     if (!_.isUndefined(itemToAdd)) {
-      var data = _.clone(this._mapDownFn(itemToAdd.data));
-      newViewItem = new ViewItem(this, data, itemToAdd.meta, itemToAdd.subData, true);
+      var data = this._mapDownFn(_.clone(itemToAdd.data));
+      newViewItem = new ViewItem(this, data, _.clone(itemToAdd.meta), itemToAdd.subData, true);
     }
 
     return newViewItem;

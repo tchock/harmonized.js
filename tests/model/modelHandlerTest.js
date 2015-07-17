@@ -16,6 +16,9 @@ define(['Squire', 'lodash'], function(Squire, _) {
     };
 
     var harmonizedDataMock = {
+      _config: {
+        fetchAtStart: false,
+      },
       _modelSchema: {
         planes: {
           storeName: 'flugzeuge',
@@ -163,40 +166,6 @@ define(['Squire', 'lodash'], function(Squire, _) {
         modelHandler.getFromServer();
         expect(modelHandler._modelList.testModel.getFromServer.calls.count()).toBe(1);
         expect(modelHandler._modelList.otherModel.getFromServer.calls.count()).toBe(1);
-
-        done();
-      });
-    });
-
-    it('should set the state of all models to offline', function(done) {
-      testInContext(function(deps) {
-        modelHandler._modelList = {
-          testModel: new ModelMock('testModel'),
-          otherModel: new ModelMock('otherModel')
-        };
-
-        modelHandler.setOffline();
-        expect(modelHandler._globalConnectionState).toBeFalsy();
-        expect(modelHandler.getConnectionState()).toBeFalsy();
-        expect(modelHandler._modelList.testModel.setOffline.calls.count()).toBe(1);
-        expect(modelHandler._modelList.otherModel.setOffline.calls.count()).toBe(1);
-
-        done();
-      });
-    });
-
-    it('should set the state of all models to online', function(done) {
-      testInContext(function(deps) {
-        modelHandler._modelList = {
-          testModel: new ModelMock('testModel'),
-          otherModel: new ModelMock('otherModel')
-        };
-
-        modelHandler.setOnline();
-        expect(modelHandler._globalConnectionState).toBeTruthy();
-        expect(modelHandler.getConnectionState()).toBeTruthy();
-        expect(modelHandler._modelList.testModel.setOnline.calls.count()).toBe(1);
-        expect(modelHandler._modelList.otherModel.setOnline.calls.count()).toBe(1);
 
         done();
       });

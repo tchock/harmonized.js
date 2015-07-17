@@ -10,8 +10,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
     var upStreamItems;
     var downStreamItems;
 
-    var ViewItemMock = function ViewItemMock(parent, data, meta,
-      addToCollection) {
+    var ViewItemMock = function ViewItemMock(parent, data, meta, subData, addToCollection) {
       this.getCollection = function() {
         return parent;
       };
@@ -21,6 +20,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       }
 
       this._meta = meta;
+      this._subData = subData;
 
       if (addToCollection) {
         parent.push(this);
@@ -190,9 +190,15 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
     it('should create a new view item from downstream', function(done) {
       testInContext(function(deps) {
+        testModel._rtIdHash = {
+          125: {
+            subData: 'hello'
+          }
+        };
+
         var newViewItem = new ViewItemMock(testViewCollection, {}, {
           rtId: 123
-        });
+        }, null);
         testViewCollection._items[123] = newViewItem;
         testViewCollection.push(newViewItem);
 
@@ -216,6 +222,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
           'Han Solo');
         expect(testViewCollection[1]._meta.rtId).toBe(125);
 
+        expect(testViewCollection[1]._subData).toBe('hello');
+
         done();
       });
     });
@@ -223,6 +231,15 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
     it('should create a view collection without map functions',
       function(done) {
         testInContext(function() {
+          testModel._rtIdHash = {
+            123: {
+              subData: 'hello'
+            },
+            125: {
+              subData: 'there'
+            }
+          };
+
           testViewCollection.downStream.subscribe(function(item) {
             downStreamItems.push(item);
           });
@@ -282,7 +299,6 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
     it('should create a view collection with map functions', function(
       done) {
       testInContext(function(deps) {
-
         testViewCollection = new deps.ViewCollection(testModel,
           function(item) {
             var newItem = {};
@@ -299,6 +315,15 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
             newItem.exactDept = item.gdp / 100 * item.dept;
             return newItem;
           });
+
+        testModel._rtIdHash = {
+          123: {
+            subData: 'hello'
+          },
+          125: {
+            subData: 'there'
+          }
+        };
 
         testViewCollection.downStream.subscribe(function(item) {
           downStreamItems.push(item);

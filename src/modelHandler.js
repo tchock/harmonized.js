@@ -17,6 +17,10 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
           modelHandler._modelList[modelName] = new Model(modelName,
             currentSchema);
         }
+
+        if (harmonizedData._config.fetchAtStart) {
+          modelHandler.getFromServer();
+        }
       },
 
       /**

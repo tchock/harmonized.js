@@ -52,7 +52,12 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
       this.getModel = function() {
         return {
-          _modelName: 'test'
+          _modelName: 'test',
+          _subModelsSchema: {
+            informations: {
+              sourceModel: 'test'
+            }
+          }
         }
       },
 
@@ -79,6 +84,12 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       this.downStream = serverHandlerDownstream;
       this.fetch = jasmine.createSpy();
     };
+
+    var modelHandlerMock = {
+      getModel: function(modelName) {
+        return testModel;
+      }
+    }
 
     var dbHandlerFactoryMock = {};
     dbHandlerFactoryMock.createDbHandler = function createDbHandler(storeName,
@@ -162,6 +173,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
       //injector.mock('ModelItem', ModelItemMock);
       injector.mock('dbHandlerFactory', dbHandlerFactoryMock);
       injector.mock('ServerHandler', ServerHandlerMock);
+      injector.mock('modelHandler', modelHandlerMock);
       injector.mock('harmonizedData', harmonizedDataMock);
     });
 
@@ -170,7 +182,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
         testModel = new ModelMock('test');
         testParentItem = new ModelItemMock();
-        testSubModel = new SubModel('informations', testParentItem, testModel);
+        testSubModel = new SubModel('informations', testParentItem);
 
         cb({
           SubModel: SubModel,
@@ -189,7 +201,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
     it('should create a new submodel with options', function(done) {
       testInContext(function(deps) {
-        testSubModel = new deps.SubModel('informations', testParentItem, testModel, {
+        testSubModel = new deps.SubModel('informations', testParentItem, {
           route: 'othertest',
           testOption: 'blub'
         });
@@ -208,7 +220,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
     it('should initially get data from the database AND server', function(done) {
       testInContext(function(deps) {
-        testSubModel = new deps.SubModel('informations', testParentItem, testModel);
+        testSubModel = new deps.SubModel('informations', testParentItem);
 
         // Check if the db data will be immediatly fetched
         expect(testSubModel._dbHandler.getAllEntries.calls.count()).toBe(0);
@@ -283,11 +295,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
 
     it('should get data from the server', function(done) {
       testInContext(function(deps) {
-        testSubModel = new deps.SubModel('informations', testParentItem, testModel, {
-          serverMapFn: function(item) {
-            return item.meta.serverId;
-          }
-        });
+        testSubModel = new deps.SubModel('informations', testParentItem);
         testSubModel._gotDbData = true;
         testSubModel._serverItems = [1025];
 

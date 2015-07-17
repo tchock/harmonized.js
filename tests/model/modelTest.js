@@ -74,7 +74,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           _storeName: storeName,
           _keys: keys,
           upStream: dbHandlerUpstream,
-          downStream: dbHandlerDownstream
+          downStream: dbHandlerDownstream,
+          getAllEntries: jasmine.createSpy()
         };
       };
 

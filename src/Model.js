@@ -140,9 +140,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // Get data from db and server
     _this._dbHandler.getAllEntries();
-    if (harmonizedData._config.fetchAtStart) {
-      _this.getFromServer();
-    }
 
     return _this;
   };
