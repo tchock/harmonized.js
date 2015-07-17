@@ -5,6 +5,48 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
     describe('HTTP handler', function() {
 
       var scheduler;
+      var receivedOptions;
+
+      var fakeHttpFn = function(options) {
+        receivedOptions = options;
+        var returnedPromise = {
+          then: function(fn) {
+            returnedPromise.thenFn = fn;
+            return returnedPromise;
+          },
+
+          catch: function(fn) {
+            returnedPromise.catchFn = fn;
+            return returnedPromise;
+          }
+        };
+        var returnedData = {};
+
+        switch (options.method) {
+          case 'POST':
+            returnedData = _.clone(options.data);
+            break;
+          case 'PUT':
+            returnedData = _.clone(options.data);
+            break;
+          case 'DELETE':
+            returnedData = '';
+            break;
+        }
+
+        setTimeout(function() {
+          if (_.isObject(options.params) && options.params
+            .shouldFail === true) {
+            returnedPromise.catchFn({
+              status: 500
+            });
+          } else {
+            returnedPromise.thenFn(returnedData);
+          }
+        }, 10);
+
+        return returnedPromise;
+      };
 
       beforeEach(function() {
         // Scheduler to mock the RxJS timing
@@ -28,7 +70,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             _connected: false,
             setConnectionState: function(state) {
               sh._connected = state;
-            }
+            },
+            pushAll: jasmine.createSpy()
           };
 
           scheduler.scheduleWithAbsolute(5, function() {
@@ -36,10 +79,12 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           });
 
           expect(sh._connected).toBeFalsy();
+          expect(sh.pushAll.calls.count()).toBe(0);
 
           scheduler.start();
 
           expect(sh._connected).toBeTruthy();
+          expect(sh.pushAll.calls.count()).toBe(1);
         });
 
       });
@@ -70,20 +115,15 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
 
       describe('fetch function', function() {
         var sh;
-        var receivedOptions;
 
         beforeEach(function() {
           receivedOptions = null;
 
-          spyOn(harmonizedData, '_httpFunction').and.callFake(
-            function(options) {
-              receivedOptions = options;
-            });
+          spyOn(harmonizedData, '_httpFunction').and.callFake(fakeHttpFn);
 
           sh = {
             downStream: new Rx.Subject(),
-            _baseUrl: 'http://www.hyphe.me/',
-            _resourcePath: 'test/resource/',
+            _fullUrl: 'http://www.hyphe.me/test/resource/',
             _options: {}
           };
         });
@@ -130,59 +170,17 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
       describe('push function', function() {
 
         var sh;
-        var receivedOptions;
         var postItem;
         var putItem;
         var deleteItem;
 
         beforeEach(function() {
           receivedOptions = null;
-          spyOn(harmonizedData, '_httpFunction').and.callFake(
-            function(options) {
-              receivedOptions = options;
-              var returnedPromise = {
-                then: function(fn) {
-                  returnedPromise.thenFn = fn;
-                  return returnedPromise;
-                },
-
-                catch: function(fn) {
-                  returnedPromise.catchFn = fn;
-                  return returnedPromise;
-                }
-              };
-              var returnedData = {};
-
-              switch (options.method) {
-                case 'POST':
-                  returnedData = _.clone(options.data);
-                  break;
-                case 'PUT':
-                  returnedData = _.clone(options.data);
-                  break;
-                case 'DELETE':
-                  returnedData = '';
-                  break;
-              }
-
-              setTimeout(function() {
-                if (_.isObject(options.params) && options.params
-                  .shouldFail === true) {
-                  returnedPromise.catchFn({
-                    status: 500
-                  });
-                } else {
-                  returnedPromise.thenFn(returnedData);
-                }
-              }, 10);
-
-              return returnedPromise;
-            });
+          spyOn(harmonizedData, '_httpFunction').and.callFake(fakeHttpFn);
 
           sh = {
             downStream: new Rx.Subject(),
-            _baseUrl: 'http://www.hyphe.me/',
-            _resourcePath: 'test/resource/',
+            _fullUrl: 'http://www.hyphe.me/test/resource/',
             _options: {},
             _unpushedList: {}
           };

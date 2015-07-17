@@ -15,7 +15,7 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
     var _this = this;
 
     // If item is user created (by the collections .new() method), this is false
-    _this._wasAlreadySynced = (subData !== null);
+    _this._wasAlreadySynced = (subData !== null && subData !== undefined);
 
     /**
      * Gets the collection of the item
@@ -63,7 +63,7 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
       _this[key] = data[key];
     }
 
-    if (subData !== null) {
+    if (subData !== null && subData !== undefined) {
       _this._addSubCollections(subData);
     }
 
@@ -156,6 +156,7 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
 
     // Add sub model view collections to the item if not happened before
     if (!this._wasAlreadySynced) {
+      console.log(this.getCollection());
       var subData = this.getCollection()._model.getItem(this._meta.rtId).subData;
       this._addSubCollections(subData);
       this._wasAlreadySynced = true;
@@ -198,9 +199,12 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
    * @return {boolean}          If true, the property is a dataentry
    */
   ViewItem.prototype._isPropertyData = function(property) {
-    return this.hasOwnProperty(property) && property !== '_meta' &&
-      property !== 'getCollection' && property !== '_streams' && !_.includes(
-        this._subDataList, property);
+    return this.hasOwnProperty(property) &&
+      property !== '_meta' &&
+      property !== 'getCollection' &&
+      property !== '_streams' &&
+      property !== '_wasAlreadySynced' &&
+      !_.includes(this._subDataList, property);
   };
 
   /**
@@ -209,7 +213,8 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
    * @param {Object} subData object containing the sub data of the model item
    */
   ViewItem.prototype._addSubCollections = function (subData) {
-    this._subDataList = subData.keys();
+    console.log(subData);
+    this._subDataList = Object.keys(subData);
     for (var subModel in subData) {
       if (subData.hasOwnProperty(subModel)) {
         _this[subModel] = new ViewCollection(subData[subModel]);

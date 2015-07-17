@@ -1,6 +1,6 @@
 'use strict';
 
-define('harmonizedData' ['lodash'], function(_) {
+define('harmonizedData', ['lodash'], function(_) {
 
   var data = {}; // jshint ignore:line
 

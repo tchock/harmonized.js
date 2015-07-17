@@ -61,8 +61,12 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
             expect(sh._connected).toBeFalsy();
             expect(sh.pushAll).not.toHaveBeenCalled();
             sh.setConnectionState(true);
-            expect(sh._connected).toBeTruthy();
-            expect(sh.pushAll).toHaveBeenCalled();
+            expect(sh._protocol.connect.calls.count()).toBe(2);
+
+            // Test if already connected
+            sh._connected = true;
+            sh.setConnectionState(true);
+            expect(sh._protocol.connect.calls.count()).toBe(2);
 
             done();
           });
@@ -75,7 +79,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
             expect(sh._connected).toBeTruthy();
             expect(sh.pushAll).not.toHaveBeenCalled();
             sh.setConnectionState(false);
-            expect(sh._connected).toBeFalsy();
+            expect(sh._protocol.connect.calls.count()).toBe(1);
+            expect(sh._protocol.disconnect.calls.count()).toBe(1);
             expect(sh.pushAll).not.toHaveBeenCalled();
 
             done();

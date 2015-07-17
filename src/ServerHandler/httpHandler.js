@@ -9,7 +9,7 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
      */
     connect: function(serverHandler) {
       serverHandler._connected = true;
-      serverHandler._pushAll();
+      serverHandler.pushAll();
     },
 
     /**

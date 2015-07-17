@@ -123,11 +123,14 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      */
     ServerHandler.prototype.setConnectionState = function setConnectionState(
       state) {
-      if (state) {
-        this._protocol.connect(this);
-      } else {
-        this._protocol.disconnect(this);
+      if (this._connected !== state) {
+        if (state) {
+          this._protocol.connect(this);
+        } else {
+          this._protocol.disconnect(this);
+        }
       }
+
     };
 
     /**

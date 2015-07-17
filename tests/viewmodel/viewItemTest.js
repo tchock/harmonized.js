@@ -28,6 +28,11 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       collection._model = {
         getNextRuntimeId: function() {
           return 1;
+        },
+        getItem: function() {
+          return {
+            subData: {}
+          };
         }
       };
 
@@ -53,7 +58,8 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       var itemPropertyCount = 0;
       for (var item in viewItem) {
         if (viewItem.hasOwnProperty(item) && item !== '_meta' &&
-          item !== 'getCollection' && item !== '_streams') {
+          item !== 'getCollection' && item !== '_streams' &&
+          item !== '_wasAlreadySynced') {
           itemPropertyCount++;
         }
       }
@@ -81,7 +87,8 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       var itemPropertyCount = 0;
       for (var item in viewItem) {
         if (viewItem.hasOwnProperty(item) && item !== '_meta' &&
-          item !== 'getCollection' && item !== '_streams') {
+          item !== 'getCollection' && item !== '_streams' &&
+          item !== '_wasAlreadySynced') {
           itemPropertyCount++;
         }
       }
@@ -101,12 +108,12 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
     it(
       'should create a view item that will add itself immediatly to its collection',
       function(done) {
-        var viewItem = new ViewItem(testViewCollection, {}, {}, true);
+        var viewItem = new ViewItem(testViewCollection, {}, {}, null, true);
         expect(testViewCollection.length).toBe(0);
 
         viewItem = new ViewItem(testViewCollection, {}, {
           rtId: 1000
-        }, true);
+        }, null, true);
         expect(testViewCollection.length).toBe(1);
         expect(testViewCollection[0]).toBe(viewItem);
         expect(testViewCollection._items[1000]).toBe(viewItem);
@@ -240,7 +247,7 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         evil: false
       }, {
         rtId: 123
-      });
+      }, {});
       testViewCollection.push(viewItem);
       testViewCollection._items[123] = viewItem;
 

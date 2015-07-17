@@ -55,7 +55,13 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
           _modelName: 'test',
           _subModelsSchema: {
             informations: {
-              sourceModel: 'test'
+              storeName: 'test_informations',
+              route: 'informations',
+              sourceModel: 'test',
+              keys: {
+                serverKey: 'id',
+                storeKey: '_id'
+              }
             }
           }
         }
