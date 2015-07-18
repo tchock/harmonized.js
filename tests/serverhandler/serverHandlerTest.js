@@ -1,7 +1,7 @@
 'use strict';
 
-define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
-  function(Squire, sinon, _, Rx, RxTest) {
+define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
+  function(Squire, sinon, _, Rx, RxTest, mockWebStorage) {
     describe('ServerHandler', function() {
 
       var injector;
@@ -23,11 +23,18 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           push: jasmine.createSpy().and.callFake(
             function(item, handler) {
               pushList.push(item);
-            })
+            }),
+
+          sendRequest: jasmine.createSpy().and.returnValue('blub')
         });
         injector.mock('ServerHandler/socketHandler', {
           connect: jasmine.createSpy(),
           disconnect: jasmine.createSpy()
+        });
+        injector.mock('helper/webStorage', {
+          getWebStorage: function() {
+            return mockWebStorage.localStorage;
+          }
         });
       });
 
@@ -41,7 +48,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           sh = new ServerHandler(['http://api.hyphe.me/', 'rest',
             'resource'
           ], {
-            serverKey: 'id'
+            serverKey: 'id',
+            modelName: 'test'
           });
 
           pushList = [];
@@ -300,6 +308,28 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
             });
           });
 
+          it('should pass through errors to the error stream', function(done) {
+            testInContext(function(deps) {
+
+              var errorStreamItems = [];
+              deps.ServerHandler.errorStream.subscribe(function(error) {
+                errorStreamItems.push(error);
+              });
+
+              scheduler.scheduleWithAbsolute(5, function() {
+                sh.downStream.onError({
+                  message: 'this is an urgent error!'
+                });
+              });
+
+              scheduler.start();
+
+              expect(errorStreamItems.length).toBe(1);
+              expect(errorStreamItems[0].message).toBe('this is an urgent error!');
+
+              done();
+            });
+          });
       });
 
       describe('protocol', function() {
@@ -614,6 +644,46 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
               done();
             });
           });
+      });
+
+      it('should send a http request', function(done) {
+        testInContext(function(deps) {
+          var returnedValue = sh.sendHttpRequest({
+            method: 'GET'
+          });
+
+          // Should have called the mock sendRequest of the httpHandler
+          expect(returnedValue).toBe('blub');
+
+          done();
+        });
+      });
+
+      it('should get the last modified value at the beginning', function(done) {
+        testInContext(function(deps) {
+          mockWebStorage.localStorageContent.harmonized_modified_testo = 123;
+          sh = new deps.ServerHandler(['http://hyphe.me', 'testi'], {
+            serverKey: 'id',
+            modelName: 'testo'
+          });
+
+          expect(sh._lastModified).toBe(123);
+
+          done();
+        });
+      });
+
+      it('should set the last modified value', function(done) {
+        testInContext(function(deps) {
+          expect(sh._lastModified).toBe(0);
+
+          sh.setLastModified(9001);
+
+          expect(sh._lastModified).toBe(9001);
+          expect(mockWebStorage.localStorageContent.harmonized_modified_test).toBe(9001);
+
+          done();
+        });
       });
 
     });

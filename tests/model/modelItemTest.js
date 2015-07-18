@@ -1,6 +1,6 @@
 'use strict';
 
-define(['rx', 'rx.testing', 'ModelItem'], function(Rx, RxTest, ModelItem) {
+define(['Squire', 'rx', 'rx.testing', 'ModelItem'], function(Squire, Rx, RxTest, ModelItem) {
   describe('ModelItem', function() {
 
     var testModelMock;
@@ -352,6 +352,25 @@ define(['rx', 'rx.testing', 'ModelItem'], function(Rx, RxTest, ModelItem) {
         expect(testModelMock._rtIdHash[12]).toBeUndefined();
 
         done();
+      });
+
+      it('should create a new item with submodels', function(done) {
+        var injector = new Squire();
+        var subModelSpy = jasmine.createSpy();
+        injector.mock('SubModel', subModelSpy);
+        injector.require(['ModelItem'], function(ModelItem) {
+          testModelMock._subModelsSchema = {
+            testSub: {},
+            otherTestSub: {}
+          };
+          testModelItem = new ModelItem(testModelMock, {}, {});
+
+          expect(subModelSpy.calls.count()).toBe(2);
+          expect(_.size(testModelItem.subData)).toBe(2);
+          expect(Object.keys(testModelItem.subData)).toEqual(['testSub', 'otherTestSub']);
+
+          done();
+        });
       });
 
   });

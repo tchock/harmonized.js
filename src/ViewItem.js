@@ -1,6 +1,7 @@
 'use strict';
 
-define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
+define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
+  ViewCollection) {
 
   /**
    * Constructor of the ViewItem
@@ -156,7 +157,6 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
 
     // Add sub model view collections to the item if not happened before
     if (!this._wasAlreadySynced) {
-      console.log(this.getCollection());
       var subData = this.getCollection()._model.getItem(this._meta.rtId).subData;
       this._addSubCollections(subData);
       this._wasAlreadySynced = true;
@@ -212,12 +212,11 @@ define('ViewItem', ['lodash', 'rx'], function(_, Rx) {
    * of the model item
    * @param {Object} subData object containing the sub data of the model item
    */
-  ViewItem.prototype._addSubCollections = function (subData) {
-    console.log(subData);
+  ViewItem.prototype._addSubCollections = function(subData) {
     this._subDataList = Object.keys(subData);
     for (var subModel in subData) {
       if (subData.hasOwnProperty(subModel)) {
-        _this[subModel] = new ViewCollection(subData[subModel]);
+        this[subModel] = new ViewCollection(subData[subModel]);
       }
     }
   }

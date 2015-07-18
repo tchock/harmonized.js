@@ -36,10 +36,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     collection.downStream.filter(function(item) {
       return _.isUndefined(collection._items[item.meta.rtId]);
     }).subscribe(function(item) {
-      console.log(collection._model._rtIdHash);
-      console.log('id', item.meta.rtId);
       var subData = collection._model._rtIdHash[item.meta.rtId].subData;
-      console.log(item.meta);
       new ViewItem(collection, item.data, item.meta, subData, true);
     });
 

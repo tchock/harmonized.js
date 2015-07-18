@@ -1,7 +1,7 @@
 'use strict';
-define('dbHandlerFactory', ['DbHandler/IndexedDbHandler',
+define('dbHandlerFactory', ['harmonizedData', 'DbHandler/IndexedDbHandler',
   'DbHandler/WebSqlHandler'
-], function(IndexedDbHandler, WebSqlHandler) {
+], function(harmonizedData, IndexedDbHandler, WebSqlHandler) {
 
   /**
    * Initiates the dbHandlerFactory
@@ -32,15 +32,6 @@ define('dbHandlerFactory', ['DbHandler/IndexedDbHandler',
     } else {
       return undefined;
     }
-  };
-
-  /**
-   * Gets the database structure
-   * @return {Object} the database structure
-   */
-  dbHandlerFactory._getDbStructure = function getDbStructure() {
-    // TODO extract db structure from resource definition
-    return {};
   };
 
   /* istanbul ignore next */

@@ -58,6 +58,8 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
           itemCb(hash[item]);
         }
       };
+
+      this.getFromServer = jasmine.createSpy();
     };
 
     beforeEach(function() {
@@ -389,5 +391,13 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       });
     });
 
+    it('should should fetch data from the server', function(done) {
+      testInContext(function() {
+        testViewCollection.fetch();
+
+        expect(testViewCollection._model.getFromServer.calls.count()).toBe(1);        
+        done();
+      });
+    });
   });
 });

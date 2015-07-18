@@ -23,11 +23,25 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
         var returnedData = {};
 
         switch (options.method) {
+          case 'GET':
+            returnedData = {
+              header: {
+                lastModified: 1234
+              },
+              data: [
+                123, 124, 125
+              ]
+            };
+            break;
           case 'POST':
-            returnedData = _.clone(options.data);
+            returnedData = {
+              data: _.clone(options.data)
+            };
             break;
           case 'PUT':
-            returnedData = _.clone(options.data);
+            returnedData = {
+              data: _.clone(options.data)
+            };
             break;
           case 'DELETE':
             returnedData = '';
@@ -129,11 +143,26 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
         });
 
         it('should fetch all data', function() {
+          var fetchedItems = [];
+          sh.downStream.subscribe(function(item) {
+            fetchedItems.push(item);
+          });
+
           httpHandler.fetch(sh);
           expect(receivedOptions).toEqual({
             method: 'GET',
             url: 'http://www.hyphe.me/test/resource/'
           });
+          expect(harmonizedData._httpFunction.calls.count()).toBe(1);
+
+          jasmine.clock().tick(11);
+
+          scheduler.start();
+
+          expect(fetchedItems.length).toBe(3);
+          expect(fetchedItems[0].data).toBe(123);
+          expect(fetchedItems[1].data).toBe(124);
+          expect(fetchedItems[2].data).toBe(125);
         });
 
         it('should fetch data with "modified-since header"', function() {
@@ -164,6 +193,29 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               url: 'http://www.hyphe.me/test/resource/'
             });
           });
+
+        it('should fail at fetching data', function() {
+          var fetchedItems = [];
+          var fetchedErrors = [];
+          sh.downStream.subscribe(function(item) {
+            fetchedItems.push(item);
+          }, function(err) {
+            fetchedErrors.push(err);
+          });
+
+          sh._options.params = {
+            shouldFail: true
+          };
+
+          httpHandler.fetch(sh);
+
+          jasmine.clock().tick(11);
+          scheduler.start();
+
+          expect(fetchedItems.length).toBe(0);
+          expect(fetchedErrors.length).toBe(1);
+          expect(fetchedErrors[0].status).toBe(500);
+        });
 
       });
 
@@ -452,6 +504,41 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(returnedError.status).toBe(500);
           expect(sh._unpushedList[12]).toEqual(postItem);
         });
+
+      });
+
+      it('should send a custom request', function() {
+        spyOn(harmonizedData, '_httpFunction').and.callFake(fakeHttpFn);
+        var sh = {
+          downStream: new Rx.Subject(),
+          _downStreamSubscribe: null,
+          _connected: false,
+          _fullUrl: 'http://hyphe.me/blub'
+        };
+
+        var insertedOptions = {
+          blub: 'blib'
+        };
+
+        httpHandler.sendRequest(insertedOptions, sh);
+
+        expect(receivedOptions).toEqual({
+          method: 'GET',
+          url: 'http://hyphe.me/blub',
+          blub: 'blib'
+        });
+
+        httpHandler.sendRequest({
+          method: 'POST',
+          hello: 'dave'
+        }, sh);
+
+        expect(receivedOptions).toEqual({
+          method: 'POST',
+          url: 'http://hyphe.me/blub',
+          hello: 'dave'
+        });
+
 
       });
 

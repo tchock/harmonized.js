@@ -30,7 +30,9 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       });
 
       this.downStream = new Rx.Subject();
-      this.downStream.subscribe(null, function(error) {
+      this.downStream.subscribe(
+        /* istanbul ignore next */
+        function(item) {}, function(error) {
         ServerHandler.errorStream.onNext(error);
       });
 
@@ -104,7 +106,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      * @return {Promise}        The promise of the custom request
      */
     ServerHandler.prototype.sendHttpRequest = function(options) {
-      return httpHandler.sendRequest(options, _this);
+      return httpHandler.sendRequest(options, this);
     }
 
     /**

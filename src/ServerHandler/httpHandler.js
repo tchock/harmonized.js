@@ -26,6 +26,11 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
      */
     fetch: function(serverHandler) {
       var httpOptions = {};
+
+      if (_.isObject(serverHandler._options.params)) {
+        httpOptions.params = serverHandler._options.params;
+      }
+
       if (harmonizedData._config.sendModifiedSince &&
         serverHandler._lastModified > 0) {
         httpOptions.headers = {

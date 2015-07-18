@@ -2,7 +2,7 @@
 
 define(['harmonizedData'], function(harmonizedData) {
 
-  describe('Harmonized', function() {
+  describe('harmonizedData', function() {
 
     it('should throw an error when calling the unchanged _httpFunction',
       function() {
@@ -249,6 +249,19 @@ define(['harmonizedData'], function(harmonizedData) {
         expect(streamItem).toEqual(expectedStreamItem);
         expect(streamItem.data).toEqual(inputItem);
         expect(streamItem.data).not.toBe(inputItem);
+      });
+
+      it('should create a stream item with no store key', function() {
+        inputItem._id = '1234';
+        inputItem.id = '4321';
+
+        var streamItem = harmonizedData._createStreamItem(inputItem, {
+          serverKey: 'id'
+        });
+
+        expect(streamItem.meta.storeId).toBeUndefined();
+        expect(streamItem.data._id).toBe('1234');
+        expect(streamItem.data.id).toBeUndefined();
       });
 
     });

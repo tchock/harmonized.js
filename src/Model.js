@@ -183,18 +183,30 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         view: 'keys'
       }
     }).then(function(items) {
-      var deletedItemIds = _.difference(items, _this._serverIdHash.keys());
+      // Get to know the locally known server ids
+      var localServerIds = [];
+      for (var serverId in _this._serverIdHash) {
+        if (_this._serverIdHash.hasOwnProperty(serverId)) {
+          localServerIds.push(parseInt(serverId));
+        }
+      }
+
+      var deletedItemIds = _.difference(localServerIds, items);
+
       var keys = _this._options.keys;
       for (var i = 0; i < deletedItemIds.length; i++) {
 
         // Create the stream item
         var currentItem = _this._serverIdHash[deletedItemIds[i]];
-        var streamItem = harmonizedData._createStreamItem(currentItem, keys);
+        var streamItem = {
+          meta: _.clone(currentItem.meta),
+          data: _.clone(currentItem.data)
+        };
         streamItem.meta.action = 'deletePermanently';
 
         // Send to the streams
         _this.downStream.onNext(streamItem);
-        _this._dbHandler.upstream.onNext(streamItem);
+        _this._dbHandler.upStream.onNext(streamItem);
       }
     });
   }
@@ -211,8 +223,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * Gets the full URL to the resource of the server
    * @return {String} URL to the resource of the server
    */
-  Model.prototype.getUrl = function() {
-    return this._options.baseUrl + this._options.route;
+  Model.prototype.getFullRoute = function() {
+    return [this._options.baseUrl, this._options.route];
   };
 
   return Model;

@@ -61,10 +61,17 @@ define(['Squire', 'lodash'], function(Squire, _) {
       }
     };
 
+    var dbHandlerFactoryMock = {
+      _DbHandler: {
+        deleteDb: jasmine.createSpy()
+      }
+    };
+
     beforeEach(function() {
       injector = new Squire();
       injector.mock('Model', ModelMock);
       injector.mock('harmonizedData', harmonizedDataMock);
+      injector.mock('dbHandlerFactory', dbHandlerFactoryMock);
     });
 
     afterEach(function() {
@@ -166,6 +173,30 @@ define(['Squire', 'lodash'], function(Squire, _) {
         modelHandler.getFromServer();
         expect(modelHandler._modelList.testModel.getFromServer.calls.count()).toBe(1);
         expect(modelHandler._modelList.otherModel.getFromServer.calls.count()).toBe(1);
+
+        done();
+      });
+    });
+
+    it('should fetch data of all models at start', function(done) {
+      testInContext(function(deps) {
+        harmonizedDataMock._config.fetchAtStart = true;
+        modelHandler.init();
+
+        expect(modelHandler._modelList.planes.getFromServer.calls.count()).toBe(1);
+        expect(modelHandler._modelList.chemtrails.getFromServer.calls.count()).toBe(1);
+
+        harmonizedDataMock._config.fetchAtStart = false;
+        done();
+      });
+    });
+
+    it('should destroy the whole model structure and delete the db', function(done) {
+      testInContext(function(deps) {
+        modelHandler.destroy();
+
+        expect(modelHandler._modelList).toEqual({});
+        expect(dbHandlerFactoryMock._DbHandler.deleteDb.calls.count()).toBe(1);
 
         done();
       });

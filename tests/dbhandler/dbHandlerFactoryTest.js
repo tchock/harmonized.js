@@ -103,34 +103,6 @@ define(['Squire', 'sinon'], function(Squire, sinon) {
       });
     });
 
-    xit('should find the right store definitions', function(done) {
-      injector.store('dbHandlerFactory');
-      injector.require(['dbHandlerFactory', 'mocks'], function(
-        dbHandlerFactory, mocks) {
-        var struct = dbHandlerFactory._getDbStructure();
-        /*
-        expect(localDb.getSearchProperties('testDb', 'test').length).toEqual(0);
-        expect(localDb.getSearchProperties('testDb', 'newtest').length).toEqual(1);
-        expect(localDb.getSearchProperties('testDb', 'othertest').length).toEqual(2);
-        */
-        // TODO check if the store definitions are right
-        // TODO Check if content of search properties array is correct
-
-        done();
-      });
-    });
-
-    xit('should get server and store key names', function(done) {
-      injector.store('dbHandlerFactory');
-      injector.require(['dbHandlerFactory', 'mocks'], function(
-        dbHandlerFactory, mocks) {
-        // TODO check for correct server and store keys
-        done();
-      });
-
-    });
-
-
   });
 
 });

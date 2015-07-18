@@ -31,7 +31,11 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         },
         getItem: function() {
           return {
-            subData: {}
+            subData: {
+              otherTestSub: {
+                _modelName: 'otherTestSub'
+              }
+            }
           };
         }
       };
@@ -447,6 +451,65 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       });
 
       done();
+    });
+
+    it('should add sub view collections after creation of item', function(done) {
+      var injector = new Squire();
+      injector.mock('ViewCollection', ViewCollectionMock);
+      injector.require(['ViewItem'], function(ViewItem) {
+        var subModel = {
+          _modelName: 'testSub'
+        };
+
+        var viewItem = new ViewItem(testViewCollection, {
+          name: 'Han Solo',
+          evil: false
+        }, {
+          rtId: 123
+        }, {
+          'testSub': subModel
+        });
+
+        expect(viewItem.testSub instanceof Array).toBeTruthy();
+
+        done();
+      });
+    });
+
+    it('should add sub view collections after first save response', function(done) {
+      var injector = new Squire();
+      injector.mock('ViewCollection', ViewCollectionMock);
+      injector.require(['ViewItem'], function(ViewItem) {
+
+        var viewItem = new ViewItem(testViewCollection, {
+          name: 'Han Solo',
+          evil: false
+        }, {
+          rtId: 123
+        });
+
+        expect(viewItem.testSub).toBeUndefined();
+
+        scheduler.scheduleWithAbsolute(1, function() {
+          testViewCollection.downStream.onNext({
+            data: {
+              name: 'Han Solo',
+              evil: false
+            },
+            meta: {
+              rtId: 123,
+              action: 'save'
+            }
+          });
+        });
+
+        scheduler.start();
+
+        expect(viewItem._wasAlreadySynced).toBeTruthy();
+        expect(viewItem.otherTestSub instanceof Array).toBeTruthy();
+
+        done();
+      });
     });
 
   });

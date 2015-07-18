@@ -1,7 +1,7 @@
 'use strict';
 
-define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
-  function(Squire, sinon, _, Rx, RxTest) {
+define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
+  function(Squire, sinon, _, Rx, RxTest, harmonizedData) {
     describe('Model', function() {
 
       var testModel;
@@ -17,6 +17,34 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
       var serverHandlerUpstream;
       var serverHandlerDownstream;
+      var returnedData;
+
+      var fakeHttpFn = function(options) {
+        var returnedPromise = {
+          then: function(fn) {
+            returnedPromise.thenFn = fn;
+            return returnedPromise;
+          },
+
+          catch: function(fn) {
+            returnedPromise.catchFn = fn;
+            return returnedPromise;
+          }
+        };
+
+        setTimeout(function() {
+          if (_.isObject(options.params) && options.params
+            .shouldFail === true) {
+            returnedPromise.catchFn({
+              status: 500
+            });
+          } else {
+            returnedPromise.thenFn(returnedData);
+          }
+        }, 10);
+
+        return returnedPromise;
+      };
 
       var ModelItemMock = function ModelItemMock(model, data, meta) {
         this.getModel = function() {
@@ -57,6 +85,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
         this.upStream = serverHandlerUpstream;
         this.downStream = serverHandlerDownstream;
         this.fetch = jasmine.createSpy();
+        this.sendHttpRequest = fakeHttpFn;
       };
 
       var dbHandlerFactoryMock = {};
@@ -80,10 +109,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
       };
 
       var harmonizedDataMock = {
+        _createStreamItem: harmonizedData._createStreamItem,
         _modelSchema: {
           test: {
             storeName: 'test',
-            baseUrl: 'http://www.testserver.de/',
+            baseUrl: 'http://www.testserver.de',
             route: 'test',
             keys: {
               serverKey: 'id',
@@ -92,7 +122,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           },
           explicitTest: {
             storeName: 'test',
-            baseUrl: 'http://www.testserver.de/',
+            baseUrl: 'http://www.testserver.de',
             route: 'test',
             keys: {
               serverKey: 'id',
@@ -112,7 +142,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
       beforeEach(function() {
         expectedOptions = {
-          baseUrl: 'http://www.testserver.de/',
+          baseUrl: 'http://www.testserver.de',
           route: 'test',
           keys: {
             serverKey: 'id',
@@ -121,6 +151,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
           storeName: 'test',
           serverOptions: {}
         };
+
+        returnedData = undefined;
       });
 
       beforeEach(function() {
@@ -555,9 +587,64 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing'],
 
       it('should get the itemUrl with serverId given', function(done) {
         testInContext(function(deps) {
-          var modelUrl = testModel.getUrl();
-          expect(modelUrl).toBe('http://www.testserver.de/test');
+          var modelUrl = testModel.getFullRoute();
+          expect(modelUrl).toEqual(['http://www.testserver.de', 'test']);
 
+          done();
+        });
+      });
+
+      it('should check server for deleted items and delete them', function(done) {
+        testInContext(function(deps) {
+
+          var downstreamItems = [];
+          testModel.downStream.subscribe(function(item) {
+            downstreamItems.push(item);
+          });
+
+          jasmine.clock().install();
+
+          testModel._serverIdHash = {
+            100: {
+              meta: {
+                serverId: 100,
+                storeId: 1
+              }
+            },
+            363: {
+              meta: {
+                serverId: 363,
+                storeId: 2
+              }
+            },
+
+            // This item should be deleted!
+            400: {
+              meta: {
+                serverId: 400,
+                storeId: 3
+              }
+            }
+          };
+
+          // 400 is not available on the server, so we know that 400 should be
+          // deleted
+          returnedData = [100, 200, 300, 363];
+
+          testModel.checkForDeletedItems();
+
+          // Tick, so the "server response" comes!
+          jasmine.clock().tick(11);
+          scheduler.start();
+
+          expect(dbHandlerUpstreamList.length).toBe(1);
+          expect(dbHandlerUpstreamList[0].meta.serverId).toBe(400);
+          expect(dbHandlerUpstreamList[0].meta.action).toBe('deletePermanently');
+
+          expect(downstreamItems.length).toBe(1);
+          expect(downstreamItems[0]).toEqual(dbHandlerUpstreamList[0]);
+
+          jasmine.clock().uninstall();
           done();
         });
       });
