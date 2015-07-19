@@ -1,8 +1,7 @@
 {
   "name": "harmonized.js",
   "description": "Reactive Javascript Data Model",
-  "license": "MIT",
-  "version": "0.0.1",
+  "version": "0.5.0",
   "main": "./harmonized.js",
   "authors": [
     "Simon Jentsch <sjentsch@hyphe.me>"
@@ -32,7 +31,9 @@
     "index.html",
     "karma.conf.js",
     "npm-debug.log",
-    "package.json"
+    "package.json",
+    "main.js",
+    "test-main.js"
   ],
   "dependencies": {
     "rxjs": "~2.5.2",

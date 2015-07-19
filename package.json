@@ -1,7 +1,7 @@
 {
   "name": "harmonized.js",
-  "description": "Reactive Javascript Data Model ",
-  "version": "0.0.1",
+  "description": "Reactive Javascript Data Model",
+  "version": "0.5.0",
   "homepage": "http://www.hyphe.me",
   "author": "Simon Jentsch",
   "devDependencies": {
