@@ -459,6 +459,11 @@ define('harmonizedData', ['lodash'], function(_) {
     throw new Error('No http function was added');
   };
 
+  /**
+   * The view update hook. It is called every time the view is updated
+   */
+  data._viewUpdateCb = function() {};
+
   data.dbVersion = 1;
 
   /**
@@ -2213,8 +2218,8 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
 
 
 
-define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
-  ViewCollection) {
+define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
+  function(_, Rx, ViewCollection, harmonizedData) {
 
   /**
    * Constructor of the ViewItem
@@ -2286,6 +2291,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
       _this._meta.addedToCollection = true;
       viewCollection.push(_this);
       viewCollection._items[_this._meta.rtId] = _this;
+      harmonizedData._viewUpdateCb();
     }
 
   };
@@ -2374,6 +2380,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
       this._addSubCollections(subData);
       this._wasAlreadySynced = true;
     }
+
+    harmonizedData._viewUpdateCb();
   };
 
   /**
@@ -2404,6 +2412,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
 
     this._streams.saveDownStreamSub.dispose();
     this._streams.deleteDownStreamSub.dispose();
+    harmonizedData._viewUpdateCb();
   };
 
   /**
@@ -2569,13 +2578,19 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
 
       /**
        * Sets the http function and the optional config
-       * @param  {Function} httpFunction The http function for server calls
-       * @param  {Object} [config]       The harmonized config
+       * @param  {Function} httpFunction    The http function for server calls
+       * @param  {Object}   [config]        The harmonized config
+       * @param  {Function} [viewUpdateCb]  The callback that is called whenever
+       *                                    something in the view is updated
        */
-      setup: function(httpFunction, config) {
+      setup: function(httpFunction, config, viewUpdateCb) {
         harmonizedData._httpFunction = httpFunction;
         if (_.isObject(config)) {
           _.extend(harmonizedData._config, config);
+        }
+
+        if (_.isFunction(viewUpdateCb)) {
+          harmonizedData._viewUpdateCb = viewUpdateCb;
         }
       },
 
