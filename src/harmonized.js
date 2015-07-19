@@ -15,18 +15,24 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
       /**
        * Sets the http function and the optional config
        * @param  {Function} httpFunction    The http function for server calls
-       * @param  {Object}   [config]        The harmonized config
        * @param  {Function} [viewUpdateCb]  The callback that is called whenever
        *                                    something in the view is updated
        */
-      setup: function(httpFunction, config, viewUpdateCb) {
+      setup: function(httpFunction, viewUpdateCb) {
         harmonizedData._httpFunction = httpFunction;
-        if (_.isObject(config)) {
-          _.extend(harmonizedData._config, config);
-        }
 
         if (_.isFunction(viewUpdateCb)) {
           harmonizedData._viewUpdateCb = viewUpdateCb;
+        }
+      },
+
+      /**
+       * Sets the config
+       * @param  {Object} config The configuration (or partial configuration)
+       */
+      setConfig: function(config) {
+        if (_.isObject(config)) {
+          _.extend(harmonizedData._config, config);
         }
       },
 
