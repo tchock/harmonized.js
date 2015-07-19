@@ -26,6 +26,11 @@ define('harmonizedData', ['lodash'], function(_) {
     throw new Error('No http function was added');
   };
 
+  /**
+   * The view update hook. It is called every time the view is updated
+   */
+  data._viewUpdateCb = function() {};
+
   data.dbVersion = 1;
 
   /**

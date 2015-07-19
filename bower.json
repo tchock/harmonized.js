@@ -58,6 +58,7 @@
     "jasmine-object-matchers": "~0.0.3",
     "requirejs": "~2.1.18",
     "squire": "~0.2.0",
-    "sinon": "http://sinonjs.org/releases/sinon-1.9.0.js"
+    "sinon": "http://sinonjs.org/releases/sinon-1.9.0.js",
+    "almond": "~0.3.1"
   }
 }

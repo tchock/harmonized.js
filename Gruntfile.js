@@ -15,20 +15,17 @@ module.exports = function(grunt) {
     requirejs: {
       compile: {
         options: {
-          appDir: "src/",
-          baseUrl: ".",
-          dir: "/",
-          optimize: 'uglify',
-          mainConfigFile:'./requrejs-conf.js',
-          modules:[
-            {
-              name:'MyModule'
-            }
-          ],
-          logLevel: 0,
-          findNestedDependencies: true,
-          fileExclusionRegExp: /^\./,
-          inlineText: true
+          baseUrl: "src/",
+          out: 'harmonized.js',
+          //name: 'harmonized',
+          name: '../bower_components/almond/almond',
+          optimize: 'none',
+          mainConfigFile:'./main.js',
+          paths: {
+            'lodash': 'empty:',
+            'rx': 'empty:',
+            'rx.async': 'empty:',
+          }
         }
       }
     },
@@ -79,21 +76,12 @@ module.exports = function(grunt) {
       tmp: '.tmp'
     },
 
-    concat: {
-      build: {
-        src: [
-          'src/**/*.js'
-        ],
-        dest: 'harmonized.js'
-      }
-    },
-
     uglify: {
       options: {
-        preserveComments: 'some'
+        preserveComments: 'none'
       },
       build: {
-        src: '<%= concat.build.dest %>',
+        src: '<%= requirejs.compile.options.out %>',
         dest: 'harmonized.min.js'
       }
     },
@@ -167,7 +155,7 @@ module.exports = function(grunt) {
   });
 
   // JS distribution task
-  grunt.registerTask('dist-js', ['concat', 'uglify:build']);
+  grunt.registerTask('dist-js', ['requirejs', 'uglify:build']);
 
   // Full distribution task
   grunt.registerTask('dist', ['jscs', 'clean:dist', 'dist-js']);

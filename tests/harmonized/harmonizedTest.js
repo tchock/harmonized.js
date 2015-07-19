@@ -81,10 +81,14 @@ define(['Squire', 'rx', 'rx.testing',], function(Squire, Rx, RxTest) {
           bye: 'dave'
         });
 
+        var updateCb = function() {
+          var a = 'hello';
+        };
+
         deps.harmonized.setup('testFn', {
           test: true,
           hallo: 'david'
-        });
+        }, updateCb);
 
         expect(harmonizedDataMock._config).toEqual({
           hallo: 'david',
@@ -93,6 +97,7 @@ define(['Squire', 'rx', 'rx.testing',], function(Squire, Rx, RxTest) {
         });
 
         expect(harmonizedDataMock._httpFunction).toBe('testFn');
+        expect(harmonizedDataMock._viewUpdateCb).toBe(updateCb);
 
         done();
       });

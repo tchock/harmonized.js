@@ -1,7 +1,7 @@
 'use strict';
 
-define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
-  ViewCollection) {
+define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
+  function(_, Rx, ViewCollection, harmonizedData) {
 
   /**
    * Constructor of the ViewItem
@@ -73,6 +73,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
       _this._meta.addedToCollection = true;
       viewCollection.push(_this);
       viewCollection._items[_this._meta.rtId] = _this;
+      harmonizedData._viewUpdateCb();
     }
 
   };
@@ -161,6 +162,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
       this._addSubCollections(subData);
       this._wasAlreadySynced = true;
     }
+
+    harmonizedData._viewUpdateCb();
   };
 
   /**
@@ -191,6 +194,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection'], function(_, Rx,
 
     this._streams.saveDownStreamSub.dispose();
     this._streams.deleteDownStreamSub.dispose();
+    harmonizedData._viewUpdateCb();
   };
 
   /**
