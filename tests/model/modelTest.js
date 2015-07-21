@@ -84,12 +84,17 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
 
         this.upStream = serverHandlerUpstream;
         this.downStream = serverHandlerDownstream;
-        this.fetch = jasmine.createSpy();
+        this.fetch = jasmine.createSpy().and.callFake(function(cb) {
+          if (_.isFunction(cb)) {
+            cb();
+          }
+        });
         this.sendHttpRequest = fakeHttpFn;
       };
 
       var dbHandlerFactoryMock = {
         _DbHandler: {
+          _db: null,
           _connectionStream: new Rx.Subject()
         }
       };
@@ -108,11 +113,16 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           _keys: keys,
           upStream: dbHandlerUpstream,
           downStream: dbHandlerDownstream,
-          getAllEntries: jasmine.createSpy()
+          getAllEntries: jasmine.createSpy().and.callFake(function(cb) {
+            cb();
+          })
         };
       };
 
       var harmonizedDataMock = {
+        _config: {
+          fetchAtStart: false
+        },
         _createStreamItem: harmonizedData._createStreamItem,
         _modelSchema: {
           test: {
@@ -183,25 +193,58 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
 
       it('should create a model without options', function(done) {
         testInContext(function(deps) {
+          dbHandlerFactoryMock._DbHandler._db = true;
+          spyOn(deps.Model.prototype, '_dbReadyCb').and.stub();
           testModel = new deps.Model('explicitTest');
           expect(testModel._options).toEqual(expectedOptions);
 
-          /*expect(testModel.downStream instanceof Rx.Subject).toBeTruthy();
-          expect(testModel.upStream instanceof Rx.Subject).toBeTruthy();*/
+          expect(testModel._dbHandler.getAllEntries).toHaveBeenCalled();
+          expect(testModel._dbReadyCb).toHaveBeenCalled();
+
+          dbHandlerFactoryMock._DbHandler._db = null;
           done();
         });
       });
 
       it('should create a model with options', function(done) {
         testInContext(function(deps) {
+          dbHandlerFactoryMock._DbHandler._db = true;
+          harmonizedDataMock._config.fetchAtStart = true;
+          spyOn(deps.Model.prototype, 'pushChanges').and.stub();
           testModel = new deps.Model('explicitTest', {
             route: 'othertest',
             testOption: 'blub'
           });
+
           var overwrittenExpectedOptions = _.clone(expectedOptions);
           overwrittenExpectedOptions.route = 'othertest';
           overwrittenExpectedOptions.testOption = 'blub';
           expect(testModel._options).toEqual(overwrittenExpectedOptions);
+
+          expect(testModel._dbHandler.getAllEntries).toHaveBeenCalled();
+          expect(testModel.pushChanges).toHaveBeenCalled();
+
+          harmonizedDataMock._config.fetchAtStart = false;
+          dbHandlerFactoryMock._DbHandler._db = null;
+          done();
+        });
+      });
+
+      it('should get all items from the database after a connect', function(done) {
+        testInContext(function(deps) {
+
+          testModel = new deps.Model('explicitTest', {
+            route: 'othertest',
+            testOption: 'blub'
+          });
+
+          spyOn(testModel, '_dbReadyCb').and.stub();
+
+          dbHandlerFactoryMock._DbHandler._connectionStream.onNext(true);
+
+          expect(testModel._dbHandler.getAllEntries).toHaveBeenCalled();
+          expect(testModel._dbReadyCb).toHaveBeenCalled();
+
           done();
         });
       });
@@ -643,6 +686,70 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           expect(downstreamItems[0]).toEqual(dbHandlerUpstreamList[0]);
 
           jasmine.clock().uninstall();
+          done();
+        });
+      });
+
+      it('should get new items from the upstream', function(done) {
+        testInContext(function(deps) {
+          testModel._rtIdHash[123] = true;
+
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel.upStream.onNext({
+              meta: {
+                rtId: 123
+              },
+              data: {
+                name: 'Terry Gilliam'
+              }
+            })
+          });
+
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel.upStream.onNext({
+              meta: {
+                rtId: 124
+              },
+              data: {
+                name: 'Terry Gilliam'
+              }
+            })
+          });
+
+          expect(_.size(testModel._rtIdHash)).toBe(1);
+
+          scheduler.start();
+
+          expect(_.size(testModel._rtIdHash)).toBe(2);
+
+          expect(testModel._rtIdHash[124] instanceof ModelItemMock).toBeTruthy();
+          expect(testModel._rtIdHash[124].meta.rtId).toBe(124);
+          expect(testModel._rtIdHash[124].data.name).toBe('Terry Gilliam');
+
+          done();
+        });
+      });
+
+      it('should push changes to the server', function(done) {
+        testInContext(function(deps) {
+          expect(serverHandlerUpstreamList.length).toBe(0);
+
+          testModel._storeIdHash = {
+            123: { meta: { storeId: 123 } },
+            124: { meta: { storeId: 124, serverId: 5000 } },
+            125: { meta: { storeId: 125, serverId: 5000, deleted: true } },
+            126: { meta: { storeId: 126, deleted: true } },
+          };
+
+          testModel.pushChanges();
+
+          expect(serverHandlerUpstreamList.length).toBe(3);
+          expect(serverHandlerUpstreamList[0].meta.action).toBe('save');
+          expect(serverHandlerUpstreamList[0].meta.storeId).toBe(123);
+          expect(serverHandlerUpstreamList[1].meta.action).toBe('delete');
+          expect(serverHandlerUpstreamList[1].meta.storeId).toBe(125);
+          expect(serverHandlerUpstreamList[2].meta.action).toBe('save');
+          expect(serverHandlerUpstreamList[2].meta.storeId).toBe(126);
           done();
         });
       });

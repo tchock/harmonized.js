@@ -151,7 +151,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             fetchedItems.push(item);
           });
 
-          httpHandler.fetch(sh);
+          var calledCb = false;
+          httpHandler.fetch(sh, function() {
+            calledCb = true;
+          });
           expect(receivedOptions).toEqual({
             method: 'GET',
             url: 'http://www.hyphe.me/test/resource/'
@@ -166,6 +169,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(fetchedItems[0].data).toBe(123);
           expect(fetchedItems[1].data).toBe(124);
           expect(fetchedItems[2].data).toBe(125);
+          expect(calledCb).toBeTruthy();
         });
 
         it('should fetch data with "modified-since header"', function() {
@@ -181,6 +185,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               'If-Modified-Since': 1234
             }
           });
+
+          jasmine.clock().tick(11);
         });
 
         it(
