@@ -17,10 +17,6 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
           modelHandler._modelList[modelName] = new Model(modelName,
             currentSchema);
         }
-
-        if (harmonizedData._config.fetchAtStart) {
-          modelHandler.getFromServer();
-        }
       },
 
       /**
@@ -46,7 +42,7 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
       pushAll: function pushAll() {
         var modelList = modelHandler._modelList;
         for (var modelName in modelList) {
-          modelList[modelName].pushAll();
+          modelList[modelName]._serverHandler.pushAll();
         }
       },
 

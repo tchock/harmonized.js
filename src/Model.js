@@ -37,7 +37,9 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         knownItem.meta.serverId = knownItem.meta.serverId || item.meta
           .serverId;
         knownItem.meta.storeId = knownItem.meta.storeId || item.meta.storeId;
-        item.meta = _.clone(knownItem.meta);
+
+        // Add known data to item
+        _.extend(item.meta, knownItem.meta);
 
         // Add to server ID hash if server ID is known and item not in hash
         if (!_.isUndefined(item.meta.serverId) && _.isUndefined(model
@@ -80,14 +82,30 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // TODO check if should be moved to modelSchema
     if (_.isUndefined(thisOptions.serverOptions)) {
-      thisOptions.serverOptions = {};
+      thisOptions.serverOptions = {
+        serverKey: thisOptions.keys.serverKey
+      };
     }
 
     // Set server- and database handlers
-    _this._serverHandler = new ServerHandler(thisOptions.baseUrl,
-      thisOptions.route, thisOptions.serverOptions);
+    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.serverOptions);
     _this._dbHandler = dbHandlerFactory.createDbHandler(thisOptions.storeName,
       thisOptions.keys);
+
+    dbHandlerFactory._DbHandler._connectionStream.subscribe(function(state) {
+      if (state === true) {
+        _this._dbHandler.getAllEntries(function() {
+          _this._dbReadyCb();
+        });
+      }
+    });
+
+    if (dbHandlerFactory._DbHandler._db !== null) {
+      _this._dbHandler.getAllEntries(function() {
+        _this._dbReadyCb();
+      });
+    }
+
 
     // The downstreams with map function to add not added hash ids
     _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this));
@@ -100,6 +118,13 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // Public upstream
     _this.upStream = new Rx.Subject();
+
+    // Create a stream for data received from the upstream not yet in the model
+    _this.upStream.filter(function(item) {
+      return _.isUndefined(_this._rtIdHash[item.meta.rtId]);
+    }).subscribe(function(item) {
+      new ModelItem(_this, item.data, item.meta);
+    });
 
     // public upstream => serverHandler upstream & dbHandler upstream
     _this.upStream.subscribe(_this._serverHandler.upStream);
@@ -114,21 +139,17 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // Only add already existing model items to the public downstream
     _this._existingItemDownStream = _this._downStream.filter(function(item) {
-      return !_.isUndefined(item.meta.rtId);
+      return !_.isUndefined(item.meta.rtId) && !item.meta.deleted;
     });
 
     _this._existingItemDownStream.subscribe(_this.downStream);
 
-    // Create a stream for data not yet in the model
+    // Create a stream for data received from the downstream not yet in the model
     _this._downStream.filter(function(item) {
-      return _.isUndefined(item.meta.rtId);
+      return _.isUndefined(item.meta.rtId) && !item.meta.deleted;
     }).subscribe(function(item) {
       var newModel = new ModelItem(_this, item.data, item.meta);
       item.meta = _.clone(newModel.meta);
-
-      // Send to downstream to update views and database upstream to save
-      _this.downStream.onNext(item);
-      _this.upStream.onNext(item);
     });
 
     // Hashs for ModelItems
@@ -139,7 +160,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._nextRuntimeId = 1;
 
     // Get data from db and server
-    _this._dbHandler.getAllEntries();
 
     return _this;
   };
@@ -165,11 +185,52 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
   };
 
   /**
+   * This function will be called after the database query got all items!
+   * This is useful to only ask for the server entries if the database
+   * items are ready.
+   */
+  Model.prototype._dbReadyCb = function() {
+    if (harmonizedData._config.fetchAtStart) {
+      this.getFromServer(function() {
+        this.pushChanges();
+      });
+    }
+  }
+
+  Model.prototype.pushChanges = function () {
+    // Push the items to the server that have to be saved
+    for (var storeId in this._storeIdHash) {
+      var currentItem = this._storeIdHash[storeId];
+      if (this._storeIdHash.hasOwnProperty(storeId)) {
+        var itemMeta = _.clone(currentItem.meta);
+        var itemData = _.clone(currentItem.data);
+
+        if (_.isUndefined(currentItem.meta.serverId)) {
+
+          delete itemMeta.serverId;
+          itemMeta.action = 'save';
+
+          this._serverHandler.upStream.onNext({
+            meta: itemMeta,
+            data: itemData
+          });
+        } else if (currentItem.meta.deleted) {
+          itemMeta.action = 'delete';
+          this._serverHandler.upStream.onNext({
+            meta: itemMeta,
+            data: itemData
+          });
+        }
+      }
+    }
+  }
+
+  /**
    * Request a fetch of data from the server. The requested data will be pushed
    * to the ServerHandler downstream
    */
-  Model.prototype.getFromServer = function() {
-    this._serverHandler.fetch();
+  Model.prototype.getFromServer = function(cb) {
+    this._serverHandler.fetch(cb);
   };
 
   /**

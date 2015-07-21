@@ -27,13 +27,15 @@ define('ServerHandler', ['ServerHandler/httpHandler',
         } else {
           _this._protocol.push(item, _this);
         }
-      });
+      }, function(err) {});
 
       this.downStream = new Rx.Subject();
       this.downStream.subscribe(
         /* istanbul ignore next */
-        function(item) {}, function(error) {
-        ServerHandler.errorStream.onNext(error);
+        function(item) {
+        }, function(error) {
+          //ServerHandler.errorStream.onNext(error);
+
       });
 
       // Instance connection stream that gets input from
@@ -78,11 +80,11 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
       function setTheProtocol(newProtocol) {
         if (_this._protocol !== null) {
-          _this._protocol.disconnect();
+          _this._protocol.disconnect(_this);
         }
 
         _this._protocol = newProtocol;
-        _this._protocol.connect();
+        _this._protocol.connect(_this);
       }
 
       if (protocol === 'http' && this._protocol !== httpHandler) {
@@ -96,8 +98,8 @@ define('ServerHandler', ['ServerHandler/httpHandler',
     /**
      * Fetches the data from the server
      */
-    ServerHandler.prototype.fetch = function fetch() {
-      this._protocol.fetch(this);
+    ServerHandler.prototype.fetch = function fetch(cb) {
+      this._protocol.fetch(this, cb);
     };
 
     /**
@@ -134,6 +136,14 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       }
 
     };
+
+    /**
+     * Broadcasts an error globally to the error stream
+     * @param  {Error} error The error to broadcast
+     */
+    ServerHandler.prototype._broadcastError = function (error) {
+      ServerHandler.errorStream.onNext(error);
+    }
 
     /**
      * Creates a server item in the form to send to the server

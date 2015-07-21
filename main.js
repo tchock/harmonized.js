@@ -10,6 +10,7 @@ require.config({
   paths: {
     'rx': '../bower_components/rxjs/dist/rx.lite',
     'rx.async': '../bower_components/rxjs/dist/rx.async',
+    'lodash': '../bower_components/lodash/lodash'
   },
 
   shim: {

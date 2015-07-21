@@ -1,3 +1,10 @@
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+      define([], factory);
+    } else {
+      root.libGlobalName = factory();
+    }
+}(this, function () {
 /**
  * @license almond 0.3.1 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
  * Available via the MIT or new BSD license.
@@ -496,16 +503,17 @@ define('harmonizedData', ['lodash'], function(_) {
     for (var item in schema) {
       currentModel = schema[item];
       if (!_.isObject(currentModel.keys)) {
-        currentModel.keys = data._config.defaultKeys;
+        var defaultKeys = _.clone(this._config.defaultKeys);
+        currentModel.keys = defaultKeys;
       } else {
         keys = currentModel.keys;
 
         if (_.isUndefined(keys.serverKey)) {
-          keys.serverKey = data._config.defaultKeys.serverKey;
+          keys.serverKey = this._config.defaultKeys.serverKey;
         }
 
         if (_.isUndefined(keys.storeKey)) {
-          keys.storeKey = data._config.defaultKeys.storeKey;
+          keys.storeKey = this._config.defaultKeys.storeKey;
         }
       }
 
@@ -515,6 +523,14 @@ define('harmonizedData', ['lodash'], function(_) {
         }
 
         currentModel.storeName = storeNamePrefix + item;
+      }
+
+      if (_.isUndefined(currentModel.route)) {
+        currentModel.route = item;
+      }
+
+      if (_.isUndefined(currentModel.baseUrl)) {
+        currentModel.baseUrl = data._config.baseUrl;
       }
 
       subModels = currentModel.subModels;
@@ -562,11 +578,12 @@ define('harmonizedData', ['lodash'], function(_) {
    * @return {Object}           The stream item
    */
   data._createStreamItem = function(inputItem, keys) {
-    inputItem = _.clone(inputItem);
+    inputItem = _.clone(inputItem) || {};
     var item = {
       meta: {
         storeId: inputItem[keys.storeKey],
-        serverId: inputItem[keys.serverKey]
+        serverId: inputItem[keys.serverKey],
+        deleted: !!inputItem._deleted
       }
     };
 
@@ -578,6 +595,7 @@ define('harmonizedData', ['lodash'], function(_) {
     // Remove the metadata from the actual data
     delete inputItem[keys.storeKey];
     delete inputItem[keys.serverKey];
+    delete inputItem._deleted;
 
     item.data = inputItem;
 
@@ -590,7 +608,7 @@ define('harmonizedData', ['lodash'], function(_) {
 
 
 
-define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData) {
+define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmonizedData, _) {
   return {
 
     /**
@@ -614,7 +632,7 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
      * Fetches data from the server via HTTP
      * @param  {ServerHandler} serverHandler ServerHandler to set last modified
      */
-    fetch: function(serverHandler) {
+    fetch: function(serverHandler, cb) {
       var httpOptions = {};
 
       if (_.isObject(serverHandler._options.params)) {
@@ -644,13 +662,17 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
           var item = harmonizedData._createStreamItem(returnedItems[i], {
             serverKey: serverHandler._options.serverKey
           });
+          item.meta.action = 'save';
 
           // Send item to the downstream
           serverHandler.downStream.onNext(item);
         }
+        if (_.isFunction(cb)) {
+          cb();
+        }
       }).catch(function(error) {
         // Catch errors
-        serverHandler.downStream.onError(error);
+        serverHandler._broadcastError(error);
       });
     },
 
@@ -697,16 +719,22 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
       }
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
-        item.data = returnItem;
+        var tempItem = harmonizedData._createStreamItem(returnItem.data, {
+          serverKey: serverHandler._options.serverKey
+        });
+
+        item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
         if (item.meta.action === 'delete') {
+
           item.meta.action = 'deletePermanently';
+          item.meta.deleted = true;
         }
 
         serverHandler.downStream.onNext(item);
       }).catch(function(error) {
         serverHandler._unpushedList[item.meta.rtId] = item;
-        serverHandler.downStream.onError(error);
-      });
+        serverHandler._broadcastError(error);
+      })
     }
   };
 });
@@ -853,13 +881,15 @@ define('ServerHandler', ['ServerHandler/httpHandler',
         } else {
           _this._protocol.push(item, _this);
         }
-      });
+      }, function(err) {});
 
       this.downStream = new Rx.Subject();
       this.downStream.subscribe(
         /* istanbul ignore next */
-        function(item) {}, function(error) {
-        ServerHandler.errorStream.onNext(error);
+        function(item) {
+        }, function(error) {
+          //ServerHandler.errorStream.onNext(error);
+
       });
 
       // Instance connection stream that gets input from
@@ -904,11 +934,11 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
       function setTheProtocol(newProtocol) {
         if (_this._protocol !== null) {
-          _this._protocol.disconnect();
+          _this._protocol.disconnect(_this);
         }
 
         _this._protocol = newProtocol;
-        _this._protocol.connect();
+        _this._protocol.connect(_this);
       }
 
       if (protocol === 'http' && this._protocol !== httpHandler) {
@@ -922,8 +952,8 @@ define('ServerHandler', ['ServerHandler/httpHandler',
     /**
      * Fetches the data from the server
      */
-    ServerHandler.prototype.fetch = function fetch() {
-      this._protocol.fetch(this);
+    ServerHandler.prototype.fetch = function fetch(cb) {
+      this._protocol.fetch(this, cb);
     };
 
     /**
@@ -960,6 +990,14 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       }
 
     };
+
+    /**
+     * Broadcasts an error globally to the error stream
+     * @param  {Error} error The error to broadcast
+     */
+    ServerHandler.prototype._broadcastError = function (error) {
+      ServerHandler.errorStream.onNext(error);
+    }
 
     /**
      * Creates a server item in the form to send to the server
@@ -1008,15 +1046,17 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
    * @param {Object} keys                                 The store and server keys
    */
   var DbHandler = function DbHandler(dbHandler, storeName, keys) {
+    var _this = this;
+
     this._storeName = storeName;
     this._keys = keys;
 
     // Public streams
-    this.downstream = new Rx.Subject();
-    this.upstream = new Rx.Subject();
+    this.downStream = new Rx.Subject();
+    this.upStream = new Rx.Subject();
 
     // Internal pausable upstream
-    this._upstream = this.upstream.pausableBuffered(dbHandler._connectionStream);
+    this._upStream = this.upStream.pausableBuffered(dbHandler._connectionStream);
 
     // Directly connect to the server if necessary
     if (!dbHandler._db && dbHandler._isConnecting === false) {
@@ -1025,27 +1065,40 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     }
 
     // Save upstream
-    this._saveUpstream = this._upstream.filter(function(item) {
+    this._saveUpstream = this._upStream.filter(function(item) {
       return item.meta.action === 'save';
     });
 
-    this._saveDownstream = this._saveUpstream.map(this.put);
-    this._saveSubscribe = this._saveDownstream.subscribe(this.downstream);
+    this._saveDownstream = this._saveUpstream.flatMap(function(item) {
+      return _this.put(item);
+    });
+    this._saveSubscribe = this._saveDownstream.subscribe(this.downStream);
 
     // Delete upstream
-    this._deleteUpstream = this._upstream.filter(function(item) {
+    this._deleteUpstream = this._upStream.filter(function(item) {
       return item.meta.action === 'delete';
     });
 
-    this._deletePermanentlyUpstream = this._upstream.filter(function(item) {
+    this._deleteDownstream = this._deleteUpstream.flatMap(function(item) {
+      if (_.isUndefined(item.meta.serverId)) {
+        return _this.remove(item);
+      } else {
+        return _this.put(item);
+      }
+    });
+
+    this._deleteSubscribe = this._deleteDownstream.subscribe(this.downStream);
+
+    // Delete permanently upstream
+    this._deletePermanentlyUpstream = this._upStream.filter(function(item) {
       return item.meta.action === 'deletePermanently';
     });
 
-    this._deleteDownstream = this._deleteUpstream.map(this.put);
-    this._deleteSubscribe = this._deleteDownstream.subscribe(this.downstream);
-
-    this._deletePermanentlyDownstream = this._deletePermanentlyUpstream.map(this.remove);
-    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downstream);
+    this._deletePermanentlyDownstream = this._deletePermanentlyUpstream.map(function(item) {
+      _this.remove(item);
+      return item;
+    });
+    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downStream);
 
     // Initially get the metadata
     this._metaStorageName = 'harmonizedMeta_' + this._storeName;
@@ -1101,7 +1154,7 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
 
 
 
-define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData', 'rx'], function(DbHandler, harmonizedData, Rx) {
+define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData', 'rx', 'lodash'], function(DbHandler, harmonizedData, Rx, _) {
 
   /**
    * The IndexedDbHandler constructor
@@ -1157,30 +1210,32 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     };
 
     request.onerror = function(e) {
-      dbHandler._connectionStream.onError(new Error(e.error.name));
+      dbHandler._connectionStream.onError(new Error(e.target.error.name));
       dbHandler._isConnecting = false;
     };
 
     // DB needs upgrade
     request.onupgradeneeded = function(e) {
-      var db = e.result;
+      var db = e.target.result;
       var schema = harmonizedData.getDbSchema();
       var currentStore;
       var i;
 
       // Remove all stores items
-      for (i = db.objectStoreNames.length - 1; i >= 0; i--) {
-        currentStore = db.objectStoreNames[i];
-        db.deleteObjectStore(currentStore);
+      if (!_.isUndefined(db)) {
+        for (i = db.objectStoreNames.length - 1; i >= 0; i--) {
+          currentStore = db.objectStoreNames[i];
+          db.deleteObjectStore(currentStore);
+        }
       }
 
       for (var store in schema) {
         currentStore = schema[store];
         var objectStore = db.createObjectStore(store, {
-          keyPath: currentStore.storeId,
+          keyPath: currentStore.storeKey,
           autoIncrement: true
         });
-        objectStore.createIndex('serverId', currentStore.serverId, {
+        objectStore.createIndex('serverId', currentStore.serverKey, {
           unique: true,
           multiEntry: false
         });
@@ -1219,7 +1274,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
   /**
    * Get all entries from the database and put it in the downstream
    */
-  IndexedDbHandler.prototype.getAllEntries = function() {
+  IndexedDbHandler.prototype.getAllEntries = function(cb) {
     var _this = this;
 
     var store = IndexedDbHandler._db.transaction([_this._storeName])
@@ -1231,14 +1286,28 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       cursor = e.target.result;
       if (cursor) {
         var cursorItem = cursor.value;
-        _this.downstream.onNext(harmonizedData._createStreamItem(cursorItem,
-          _this._keys));
+        var newItem = harmonizedData._createStreamItem(cursorItem,
+          _this._keys);
+
+        // Set the action depending on the deletion status
+        if (newItem.meta.deleted) {
+          newItem.meta.action = 'delete';
+        } else {
+          newItem.meta.action = 'save';
+        }
+
+        _this.downStream.onNext(newItem);
         cursor.continue();
+      } else {
+        // No item left, so call the callback!
+        if (_.isFunction(cb)) {
+          cb();
+        }
       }
     };
 
     // Error handling
-    cursor.onerror = _this.downstream.onError;
+    cursor.onerror = _this.downStream.onError;
   };
 
   /**
@@ -1296,7 +1365,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     var transaction = dbHandler._db.transaction([_this._storeName],
       'readwrite');
     transaction.onerror = function(e) {
-      putStream.onError(new Error(e.error.name));
+      putStream.onError(new Error(e.target.error.name));
     };
 
     var objectStore = transaction.objectStore(_this._storeName);
@@ -1329,6 +1398,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
 
     request.onsuccess = function() {
       item.meta.deleted = true;
+      item.meta.action = 'deletePermanently';
       removeStream.onNext(item);
       removeStream.onCompleted();
     };
@@ -1395,7 +1465,7 @@ define('dbHandlerFactory', ['harmonizedData', 'DbHandler/IndexedDbHandler',
    */
   dbHandlerFactory._getIndexedDb = function getIndexedDb() {
     if (window.indexedDB && _.isFunction(IndexedDbHandler)) {
-      return window.indexedDb;
+      return window.indexedDB;
     }
 
     return null;
@@ -1414,6 +1484,9 @@ define('dbHandlerFactory', ['harmonizedData', 'DbHandler/IndexedDbHandler',
 
     return null;
   };
+
+  // initialize one time
+  dbHandlerFactory();
 
   return dbHandlerFactory;
 });
@@ -1872,6 +1945,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    */
   ModelItem.prototype.save = function(item) {
     this.meta = _.clone(item.meta);
+    delete this.meta.action;
     this.data = _.clone(item.data);
     return item;
   };
@@ -1950,7 +2024,9 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         knownItem.meta.serverId = knownItem.meta.serverId || item.meta
           .serverId;
         knownItem.meta.storeId = knownItem.meta.storeId || item.meta.storeId;
-        item.meta = _.clone(knownItem.meta);
+
+        // Add known data to item
+        _.extend(item.meta, knownItem.meta);
 
         // Add to server ID hash if server ID is known and item not in hash
         if (!_.isUndefined(item.meta.serverId) && _.isUndefined(model
@@ -1993,14 +2069,30 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // TODO check if should be moved to modelSchema
     if (_.isUndefined(thisOptions.serverOptions)) {
-      thisOptions.serverOptions = {};
+      thisOptions.serverOptions = {
+        serverKey: thisOptions.keys.serverKey
+      };
     }
 
     // Set server- and database handlers
-    _this._serverHandler = new ServerHandler(thisOptions.baseUrl,
-      thisOptions.route, thisOptions.serverOptions);
+    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.serverOptions);
     _this._dbHandler = dbHandlerFactory.createDbHandler(thisOptions.storeName,
       thisOptions.keys);
+
+    dbHandlerFactory._DbHandler._connectionStream.subscribe(function(state) {
+      if (state === true) {
+        _this._dbHandler.getAllEntries(function() {
+          _this._dbReadyCb();
+        });
+      }
+    });
+
+    if (dbHandlerFactory._DbHandler._db !== null) {
+      _this._dbHandler.getAllEntries(function() {
+        _this._dbReadyCb();
+      });
+    }
+
 
     // The downstreams with map function to add not added hash ids
     _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this));
@@ -2013,6 +2105,13 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // Public upstream
     _this.upStream = new Rx.Subject();
+
+    // Create a stream for data received from the upstream not yet in the model
+    _this.upStream.filter(function(item) {
+      return _.isUndefined(_this._rtIdHash[item.meta.rtId]);
+    }).subscribe(function(item) {
+      new ModelItem(_this, item.data, item.meta);
+    });
 
     // public upstream => serverHandler upstream & dbHandler upstream
     _this.upStream.subscribe(_this._serverHandler.upStream);
@@ -2027,21 +2126,17 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // Only add already existing model items to the public downstream
     _this._existingItemDownStream = _this._downStream.filter(function(item) {
-      return !_.isUndefined(item.meta.rtId);
+      return !_.isUndefined(item.meta.rtId) && !item.meta.deleted;
     });
 
     _this._existingItemDownStream.subscribe(_this.downStream);
 
-    // Create a stream for data not yet in the model
+    // Create a stream for data received from the downstream not yet in the model
     _this._downStream.filter(function(item) {
-      return _.isUndefined(item.meta.rtId);
+      return _.isUndefined(item.meta.rtId) && !item.meta.deleted;
     }).subscribe(function(item) {
       var newModel = new ModelItem(_this, item.data, item.meta);
       item.meta = _.clone(newModel.meta);
-
-      // Send to downstream to update views and database upstream to save
-      _this.downStream.onNext(item);
-      _this.upStream.onNext(item);
     });
 
     // Hashs for ModelItems
@@ -2052,7 +2147,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._nextRuntimeId = 1;
 
     // Get data from db and server
-    _this._dbHandler.getAllEntries();
 
     return _this;
   };
@@ -2078,11 +2172,52 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
   };
 
   /**
+   * This function will be called after the database query got all items!
+   * This is useful to only ask for the server entries if the database
+   * items are ready.
+   */
+  Model.prototype._dbReadyCb = function() {
+    if (harmonizedData._config.fetchAtStart) {
+      this.getFromServer(function() {
+        this.pushChanges();
+      });
+    }
+  }
+
+  Model.prototype.pushChanges = function () {
+    // Push the items to the server that have to be saved
+    for (var storeId in this._storeIdHash) {
+      var currentItem = this._storeIdHash[storeId];
+      if (this._storeIdHash.hasOwnProperty(storeId)) {
+        var itemMeta = _.clone(currentItem.meta);
+        var itemData = _.clone(currentItem.data);
+
+        if (_.isUndefined(currentItem.meta.serverId)) {
+
+          delete itemMeta.serverId;
+          itemMeta.action = 'save';
+
+          this._serverHandler.upStream.onNext({
+            meta: itemMeta,
+            data: itemData
+          });
+        } else if (currentItem.meta.deleted) {
+          itemMeta.action = 'delete';
+          this._serverHandler.upStream.onNext({
+            meta: itemMeta,
+            data: itemData
+          });
+        }
+      }
+    }
+  }
+
+  /**
    * Request a fetch of data from the server. The requested data will be pushed
    * to the ServerHandler downstream
    */
-  Model.prototype.getFromServer = function() {
-    this._serverHandler.fetch();
+  Model.prototype.getFromServer = function(cb) {
+    this._serverHandler.fetch(cb);
   };
 
   /**
@@ -2163,10 +2298,6 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
           modelHandler._modelList[modelName] = new Model(modelName,
             currentSchema);
         }
-
-        if (harmonizedData._config.fetchAtStart) {
-          modelHandler.getFromServer();
-        }
       },
 
       /**
@@ -2192,7 +2323,7 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
       pushAll: function pushAll() {
         var modelList = modelHandler._modelList;
         for (var modelName in modelList) {
-          modelList[modelName].pushAll();
+          modelList[modelName]._serverHandler.pushAll();
         }
       },
 
@@ -2263,8 +2394,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
     // Subscription for the delete downstream
     _this._streams.deleteDownStream = viewCollection.downStream.filter(
       function(item) {
-        return item.meta.rtId === _this._meta.rtId && (item.meta.action ===
-          'delete' || item.meta.action === 'deletePermanently');
+        return item.meta.rtId === _this._meta.rtId && ( (item.meta.action ===
+          'delete' || item.meta.action === 'deletePermanently' ));
       });
 
     // Subscription for the delete downstream
@@ -2308,6 +2439,15 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       this._meta.rtId = this.getCollection()._model.getNextRuntimeId();
     }
 
+    // Add item to collection if not yet in it
+    if (this._meta.addedToCollection === false) {
+      this._meta.addedToCollection = true;
+      var viewCollection = this.getCollection();
+      viewCollection.push(this);
+      viewCollection._items[this._meta.rtId] = this;
+      harmonizedData._viewUpdateCb();
+    }
+
     itemMeta.rtId = this._meta.rtId;
 
     if (!_.isUndefined(this._meta.serverId)) {
@@ -2339,12 +2479,6 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
    */
   ViewItem.prototype.save = function() {
     this._sendItemToUpStream('save');
-    if (!this._meta.addedToCollection) {
-      var collection = this.getCollection();
-      collection.push(this);
-      collection._items[this._meta.rtId] = this;
-      this._meta.addedToCollection = true;
-    }
   };
 
   /**
@@ -2376,7 +2510,9 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
     // Add sub model view collections to the item if not happened before
     if (!this._wasAlreadySynced) {
-      var subData = this.getCollection()._model.getItem(this._meta.rtId).subData;
+      var model = this.getCollection()._model;
+      var modelItem = model.getItem(this._meta.rtId);
+      var subData = modelItem.subData;
       this._addSubCollections(subData);
       this._wasAlreadySynced = true;
     }
@@ -2665,3 +2801,11 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
 
 
 require(["harmonized"]);
+  define('lodash', function() {
+    return _;
+  });
+  define('rx', function() {
+    return Rx;
+  });
+  window.harmonized = require('harmonized');
+}));

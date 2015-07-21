@@ -307,29 +307,6 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               done();
             });
           });
-
-          it('should pass through errors to the error stream', function(done) {
-            testInContext(function(deps) {
-
-              var errorStreamItems = [];
-              deps.ServerHandler.errorStream.subscribe(function(error) {
-                errorStreamItems.push(error);
-              });
-
-              scheduler.scheduleWithAbsolute(5, function() {
-                sh.downStream.onError({
-                  message: 'this is an urgent error!'
-                });
-              });
-
-              scheduler.start();
-
-              expect(errorStreamItems.length).toBe(1);
-              expect(errorStreamItems[0].message).toBe('this is an urgent error!');
-
-              done();
-            });
-          });
       });
 
       describe('protocol', function() {
@@ -681,6 +658,27 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
           expect(sh._lastModified).toBe(9001);
           expect(mockWebStorage.localStorageContent.harmonized_modified_test).toBe(9001);
+
+          done();
+        });
+      });
+
+      it('should set the last modified value', function(done) {
+        testInContext(function(deps) {
+          var testError = new Error('blub');
+          var errorStreamItems = [];
+          deps.ServerHandler.errorStream.subscribe(function(error) {
+            errorStreamItems.push(error);
+          });
+
+          scheduler.scheduleWithAbsolute(10, function() {
+            sh._broadcastError(testError);
+          });
+
+          scheduler.start();
+
+          expect(errorStreamItems.length).toBe(1);
+          expect(errorStreamItems[0]).toBe(testError);
 
           done();
         });

@@ -42,7 +42,7 @@ define('dbHandlerFactory', ['harmonizedData', 'DbHandler/IndexedDbHandler',
    */
   dbHandlerFactory._getIndexedDb = function getIndexedDb() {
     if (window.indexedDB && _.isFunction(IndexedDbHandler)) {
-      return window.indexedDb;
+      return window.indexedDB;
     }
 
     return null;
@@ -61,6 +61,9 @@ define('dbHandlerFactory', ['harmonizedData', 'DbHandler/IndexedDbHandler',
 
     return null;
   };
+
+  // initialize one time
+  dbHandlerFactory();
 
   return dbHandlerFactory;
 });

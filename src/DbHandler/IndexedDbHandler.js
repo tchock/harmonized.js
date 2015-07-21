@@ -1,6 +1,6 @@
 'use strict';
 
-define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData', 'rx'], function(DbHandler, harmonizedData, Rx) {
+define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData', 'rx', 'lodash'], function(DbHandler, harmonizedData, Rx, _) {
 
   /**
    * The IndexedDbHandler constructor
@@ -56,30 +56,32 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     };
 
     request.onerror = function(e) {
-      dbHandler._connectionStream.onError(new Error(e.error.name));
+      dbHandler._connectionStream.onError(new Error(e.target.error.name));
       dbHandler._isConnecting = false;
     };
 
     // DB needs upgrade
     request.onupgradeneeded = function(e) {
-      var db = e.result;
+      var db = e.target.result;
       var schema = harmonizedData.getDbSchema();
       var currentStore;
       var i;
 
       // Remove all stores items
-      for (i = db.objectStoreNames.length - 1; i >= 0; i--) {
-        currentStore = db.objectStoreNames[i];
-        db.deleteObjectStore(currentStore);
+      if (!_.isUndefined(db)) {
+        for (i = db.objectStoreNames.length - 1; i >= 0; i--) {
+          currentStore = db.objectStoreNames[i];
+          db.deleteObjectStore(currentStore);
+        }
       }
 
       for (var store in schema) {
         currentStore = schema[store];
         var objectStore = db.createObjectStore(store, {
-          keyPath: currentStore.storeId,
+          keyPath: currentStore.storeKey,
           autoIncrement: true
         });
-        objectStore.createIndex('serverId', currentStore.serverId, {
+        objectStore.createIndex('serverId', currentStore.serverKey, {
           unique: true,
           multiEntry: false
         });
@@ -118,7 +120,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
   /**
    * Get all entries from the database and put it in the downstream
    */
-  IndexedDbHandler.prototype.getAllEntries = function() {
+  IndexedDbHandler.prototype.getAllEntries = function(cb) {
     var _this = this;
 
     var store = IndexedDbHandler._db.transaction([_this._storeName])
@@ -130,14 +132,28 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       cursor = e.target.result;
       if (cursor) {
         var cursorItem = cursor.value;
-        _this.downstream.onNext(harmonizedData._createStreamItem(cursorItem,
-          _this._keys));
+        var newItem = harmonizedData._createStreamItem(cursorItem,
+          _this._keys);
+
+        // Set the action depending on the deletion status
+        if (newItem.meta.deleted) {
+          newItem.meta.action = 'delete';
+        } else {
+          newItem.meta.action = 'save';
+        }
+
+        _this.downStream.onNext(newItem);
         cursor.continue();
+      } else {
+        // No item left, so call the callback!
+        if (_.isFunction(cb)) {
+          cb();
+        }
       }
     };
 
     // Error handling
-    cursor.onerror = _this.downstream.onError;
+    cursor.onerror = _this.downStream.onError;
   };
 
   /**
@@ -195,7 +211,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     var transaction = dbHandler._db.transaction([_this._storeName],
       'readwrite');
     transaction.onerror = function(e) {
-      putStream.onError(new Error(e.error.name));
+      putStream.onError(new Error(e.target.error.name));
     };
 
     var objectStore = transaction.objectStore(_this._storeName);
@@ -228,6 +244,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
 
     request.onsuccess = function() {
       item.meta.deleted = true;
+      item.meta.action = 'deletePermanently';
       removeStream.onNext(item);
       removeStream.onCompleted();
     };

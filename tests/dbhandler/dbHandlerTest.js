@@ -116,6 +116,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             name: 'Mike Hansen'
           },
           meta: {
+            serverId: 123,
             action: 'delete'
           }
         }, {
@@ -160,33 +161,33 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
         function scheduleData() {
           scheduler.scheduleWithAbsolute(1, function() {
             explicitDbHandler._connectionStream.onNext(true);
-            dbHandler.upstream.onNext(streamInputs[0]);
+            dbHandler.upStream.onNext(streamInputs[0]);
           });
 
           scheduler.scheduleWithAbsolute(10, function() {
-            dbHandler.upstream.onNext(streamInputs[1]);
+            dbHandler.upStream.onNext(streamInputs[1]);
           });
 
           scheduler.scheduleWithAbsolute(45, function() {
-            dbHandler.upstream.onNext(streamInputs[2]);
+            dbHandler.upStream.onNext(streamInputs[2]);
           });
 
           scheduler.scheduleWithAbsolute(60, function() {
-            dbHandler.upstream.onNext(streamInputs[3]);
+            dbHandler.upStream.onNext(streamInputs[3]);
           });
 
           scheduler.scheduleWithAbsolute(70, function() {
-            dbHandler.upstream.onNext(streamInputs[4]);
+            dbHandler.upStream.onNext(streamInputs[4]);
           });
         }
 
         function scheduleIgnorableData() {
           scheduler.scheduleWithAbsolute(15, function() {
-            dbHandler.upstream.onNext(ignorableInputs[0]);
+            dbHandler.upStream.onNext(ignorableInputs[0]);
           });
 
           scheduler.scheduleWithAbsolute(55, function() {
-            dbHandler.upstream.onNext(ignorableInputs[1]);
+            dbHandler.upStream.onNext(ignorableInputs[1]);
           });
         }
 
@@ -194,13 +195,6 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
         beforeEach(function() {
           // Scheduler to mock the RxJS timing
           scheduler = new RxTest.TestScheduler();
-
-          // Mock the subject to let it use the scheduler
-          // TODO is that code needed??? Find it out!!!!
-          // var OriginalSubject = Rx.Subject;
-          // spyOn(Rx, 'Subject').and.callFake(function() {
-          //  return new OriginalSubject(scheduler.createObserver(), scheduler.createHotObservable());
-          // });
 
           // Rebuild explicitDbHandler to include mock subject
           explicitDbHandler = {
@@ -236,11 +230,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           spyOn(deps.MockDbHandler, 'mockRemove').and.callThrough();
 
           // Subscribe streams to push to respective output arrays
-          dbHandler._upstream.subscribe(function(item) {
+          dbHandler._upStream.subscribe(function(item) {
             upstreamOutputs.push(item);
           });
 
-          dbHandler.downstream.subscribe(function(item) {
+          dbHandler.downStream.subscribe(function(item) {
             downstreamOutputs.push(item);
           });
 
@@ -320,7 +314,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               expectedStreamOutputs);
 
             // Test if map functions were called
-            expect(deps.MockDbHandler.mockRemove).not.toHaveBeenCalled();
+            expect(deps.MockDbHandler.mockRemove.calls.count()).toBe(1);
             expect(deps.MockDbHandler.mockPut).toHaveBeenCalled();
 
             done();

@@ -11,6 +11,8 @@ module.exports = function(config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['jasmine', 'requirejs'],
 
+
+
     // list of files / patterns to load in the browser
     files: [{
         pattern: 'bower_components/squire/src/Squire.js',
@@ -81,6 +83,7 @@ module.exports = function(config) {
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
     reporters: ['spec' /*,  'coverage'*/ ],
+
 
     // web server port
     port: 9876,

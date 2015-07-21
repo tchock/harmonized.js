@@ -9,15 +9,17 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
    * @param {Object} keys                                 The store and server keys
    */
   var DbHandler = function DbHandler(dbHandler, storeName, keys) {
+    var _this = this;
+
     this._storeName = storeName;
     this._keys = keys;
 
     // Public streams
-    this.downstream = new Rx.Subject();
-    this.upstream = new Rx.Subject();
+    this.downStream = new Rx.Subject();
+    this.upStream = new Rx.Subject();
 
     // Internal pausable upstream
-    this._upstream = this.upstream.pausableBuffered(dbHandler._connectionStream);
+    this._upStream = this.upStream.pausableBuffered(dbHandler._connectionStream);
 
     // Directly connect to the server if necessary
     if (!dbHandler._db && dbHandler._isConnecting === false) {
@@ -26,27 +28,40 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     }
 
     // Save upstream
-    this._saveUpstream = this._upstream.filter(function(item) {
+    this._saveUpstream = this._upStream.filter(function(item) {
       return item.meta.action === 'save';
     });
 
-    this._saveDownstream = this._saveUpstream.map(this.put);
-    this._saveSubscribe = this._saveDownstream.subscribe(this.downstream);
+    this._saveDownstream = this._saveUpstream.flatMap(function(item) {
+      return _this.put(item);
+    });
+    this._saveSubscribe = this._saveDownstream.subscribe(this.downStream);
 
     // Delete upstream
-    this._deleteUpstream = this._upstream.filter(function(item) {
+    this._deleteUpstream = this._upStream.filter(function(item) {
       return item.meta.action === 'delete';
     });
 
-    this._deletePermanentlyUpstream = this._upstream.filter(function(item) {
+    this._deleteDownstream = this._deleteUpstream.flatMap(function(item) {
+      if (_.isUndefined(item.meta.serverId)) {
+        return _this.remove(item);
+      } else {
+        return _this.put(item);
+      }
+    });
+
+    this._deleteSubscribe = this._deleteDownstream.subscribe(this.downStream);
+
+    // Delete permanently upstream
+    this._deletePermanentlyUpstream = this._upStream.filter(function(item) {
       return item.meta.action === 'deletePermanently';
     });
 
-    this._deleteDownstream = this._deleteUpstream.map(this.put);
-    this._deleteSubscribe = this._deleteDownstream.subscribe(this.downstream);
-
-    this._deletePermanentlyDownstream = this._deletePermanentlyUpstream.map(this.remove);
-    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downstream);
+    this._deletePermanentlyDownstream = this._deletePermanentlyUpstream.map(function(item) {
+      _this.remove(item);
+      return item;
+    });
+    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downStream);
 
     // Initially get the metadata
     this._metaStorageName = 'harmonizedMeta_' + this._storeName;

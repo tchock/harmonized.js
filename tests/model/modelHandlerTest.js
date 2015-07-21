@@ -9,8 +9,10 @@ define(['Squire', 'lodash'], function(Squire, _) {
     var ModelMock = function ModelMock(modelName, options) {
       this._modelName = modelName;
       this._options = options;
+      this._serverHandler = {
+        pushAll: jasmine.createSpy()
+      };
       this.getFromServer =  jasmine.createSpy();
-      this.pushAll = jasmine.createSpy();
       this.setOnline = jasmine.createSpy();
       this.setOffline = jasmine.createSpy();
     };
@@ -156,8 +158,8 @@ define(['Squire', 'lodash'], function(Squire, _) {
         };
 
         modelHandler.pushAll();
-        expect(modelHandler._modelList.testModel.pushAll.calls.count()).toBe(1);
-        expect(modelHandler._modelList.otherModel.pushAll.calls.count()).toBe(1);
+        expect(modelHandler._modelList.testModel._serverHandler.pushAll.calls.count()).toBe(1);
+        expect(modelHandler._modelList.otherModel._serverHandler.pushAll.calls.count()).toBe(1);
 
         done();
       });
@@ -174,19 +176,6 @@ define(['Squire', 'lodash'], function(Squire, _) {
         expect(modelHandler._modelList.testModel.getFromServer.calls.count()).toBe(1);
         expect(modelHandler._modelList.otherModel.getFromServer.calls.count()).toBe(1);
 
-        done();
-      });
-    });
-
-    it('should fetch data of all models at start', function(done) {
-      testInContext(function(deps) {
-        harmonizedDataMock._config.fetchAtStart = true;
-        modelHandler.init();
-
-        expect(modelHandler._modelList.planes.getFromServer.calls.count()).toBe(1);
-        expect(modelHandler._modelList.chemtrails.getFromServer.calls.count()).toBe(1);
-
-        harmonizedDataMock._config.fetchAtStart = false;
         done();
       });
     });

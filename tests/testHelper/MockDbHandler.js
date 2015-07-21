@@ -1,17 +1,17 @@
 'use strict';
 
-define('MockDbHandler', ['DbHandler/BaseHandler'], function(DbHandler) {
+define('MockDbHandler', ['DbHandler/BaseHandler', 'rx'], function(DbHandler, Rx) {
 
   var MockDbHandler = function MockDbHandler() {
     DbHandler.apply(this, arguments);
   };
 
   MockDbHandler.mockPut = function(item) {
-    return item;
+    return new Rx.Observable.of(item);
   };
 
   MockDbHandler.mockRemove = function(item) {
-    return item;
+    return new Rx.Observable.of(item);
   };
 
   MockDbHandler.prototype = Object.create(DbHandler.prototype);

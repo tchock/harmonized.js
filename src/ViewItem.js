@@ -45,8 +45,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
     // Subscription for the delete downstream
     _this._streams.deleteDownStream = viewCollection.downStream.filter(
       function(item) {
-        return item.meta.rtId === _this._meta.rtId && (item.meta.action ===
-          'delete' || item.meta.action === 'deletePermanently');
+        return item.meta.rtId === _this._meta.rtId && ( (item.meta.action ===
+          'delete' || item.meta.action === 'deletePermanently' ));
       });
 
     // Subscription for the delete downstream
@@ -90,6 +90,15 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       this._meta.rtId = this.getCollection()._model.getNextRuntimeId();
     }
 
+    // Add item to collection if not yet in it
+    if (this._meta.addedToCollection === false) {
+      this._meta.addedToCollection = true;
+      var viewCollection = this.getCollection();
+      viewCollection.push(this);
+      viewCollection._items[this._meta.rtId] = this;
+      harmonizedData._viewUpdateCb();
+    }
+
     itemMeta.rtId = this._meta.rtId;
 
     if (!_.isUndefined(this._meta.serverId)) {
@@ -121,12 +130,6 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
    */
   ViewItem.prototype.save = function() {
     this._sendItemToUpStream('save');
-    if (!this._meta.addedToCollection) {
-      var collection = this.getCollection();
-      collection.push(this);
-      collection._items[this._meta.rtId] = this;
-      this._meta.addedToCollection = true;
-    }
   };
 
   /**
@@ -158,7 +161,9 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
     // Add sub model view collections to the item if not happened before
     if (!this._wasAlreadySynced) {
-      var subData = this.getCollection()._model.getItem(this._meta.rtId).subData;
+      var model = this.getCollection()._model;
+      var modelItem = model.getItem(this._meta.rtId);
+      var subData = modelItem.subData;
       this._addSubCollections(subData);
       this._wasAlreadySynced = true;
     }

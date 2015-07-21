@@ -88,7 +88,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
         this.sendHttpRequest = fakeHttpFn;
       };
 
-      var dbHandlerFactoryMock = {};
+      var dbHandlerFactoryMock = {
+        _DbHandler: {
+          _connectionStream: new Rx.Subject()
+        }
+      };
       dbHandlerFactoryMock.createDbHandler = function createDbHandler(storeName,
         keys) {
 
@@ -149,7 +153,9 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             storeKey: '_id'
           },
           storeName: 'test',
-          serverOptions: {}
+          serverOptions: {
+            serverKey: 'id'
+          }
         };
 
         returnedData = undefined;
@@ -377,7 +383,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           scheduler.scheduleWithAbsolute(1, function() {
             testModel._serverHandler.downStream.onNext({
               meta: {
-                serverId: 1000
+                serverId: 1000,
+                action: 'save'
               },
               data: {
                 name: 'John Cleese'
@@ -389,7 +396,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           scheduler.scheduleWithAbsolute(10, function() {
             testModel._serverHandler.downStream.onNext({
               meta: {
-                serverId: 1025
+                serverId: 1025,
+                action: 'save'
               },
               data: {
                 name: 'Terry Gilliam'
@@ -401,18 +409,21 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
 
           expect(_.size(testModel._storeIdHash)).toBe(0);
           expect(_.size(testModel._rtIdHash)).toBe(2);
+          expect(_.size(testModel._serverIdHash)).toBe(2);
 
           var john = {name: 'John Cleese'};
           expect(testModel._serverIdHash[1000].data).toEqual(john);
           expect(testModel._serverIdHash[1000].meta).toEqual({
             serverId: 1000,
-            rtId: 1
+            rtId: 1,
+            action: 'save'
           });
 
           var terry = {name: 'Terry Gilliam'};
           var terryMeta = {
             serverId: 1025,
-            rtId: 2
+            rtId: 2,
+            action: 'save'
           };
 
           // Check terry to be correctly saved
@@ -420,16 +431,10 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           expect(testModel._serverIdHash[1025].data).toEqual(terry);
           expect(testModel._serverIdHash[1025].meta).toEqual(terryMeta);
 
-          // Check if data are passed to the database upstream
-          expect(serverHandlerUpstreamList.length).toEqual(2);
-          expect(dbHandlerUpstreamList.length).toEqual(2);
-          expect(dbHandlerUpstreamList[0].data).toEqual(john);
-          expect(dbHandlerUpstreamList[0].meta).toEqual({
-            serverId: 1000,
-            rtId: 1
-          });
-          expect(dbHandlerUpstreamList[1].data).toEqual(terry);
-          expect(dbHandlerUpstreamList[1].meta).toEqual(terryMeta);
+          // New Items should always be send to the server through the new item.
+          // So the upstream item lists should be empty.
+          expect(serverHandlerUpstreamList.length).toEqual(0);
+          expect(dbHandlerUpstreamList.length).toEqual(0);
 
           expect(dbHandlerUpstreamList).toEqual(serverHandlerUpstreamList);
 
@@ -569,15 +574,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           expect(testModel._storeIdHash[2].meta).toEqual(terryMeta);
 
           // Check if data are passed to the database upstream
-          expect(dbHandlerUpstreamList.length).toEqual(2);
-          expect(serverHandlerUpstreamList.length).toEqual(2);
-          expect(serverHandlerUpstreamList[0].data).toEqual(john);
-          expect(serverHandlerUpstreamList[0].meta).toEqual({
-            storeId: 1,
-            rtId: 1
-          });
-          expect(serverHandlerUpstreamList[1].data).toEqual(terry);
-          expect(serverHandlerUpstreamList[1].meta).toEqual(terryMeta);
+          expect(dbHandlerUpstreamList.length).toEqual(0);
+          expect(serverHandlerUpstreamList.length).toEqual(0);
 
           expect(dbHandlerUpstreamList).toEqual(serverHandlerUpstreamList);
 

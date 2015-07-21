@@ -76,19 +76,22 @@ define(['Squire', 'rx', 'rx.testing',], function(Squire, Rx, RxTest) {
         deps.harmonized.setup('blub');
 
         expect(harmonizedDataMock._httpFunction).toBe('blub');
-        expect(harmonizedDataMock._config).toEqual({
-          hallo: 'dave',
-          bye: 'dave'
-        });
 
         var updateCb = function() {
           var a = 'hello';
         };
 
-        deps.harmonized.setup('testFn', {
+        deps.harmonized.setup('testFn', updateCb);
+
+        expect(harmonizedDataMock._config).toEqual({
+          hallo: 'dave',
+          bye: 'dave'
+        });
+
+        deps.harmonized.setConfig({
           test: true,
           hallo: 'david'
-        }, updateCb);
+        });
 
         expect(harmonizedDataMock._config).toEqual({
           hallo: 'david',

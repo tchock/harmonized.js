@@ -61,8 +61,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
       beforeEach(function() {
         spyOn(harmonizedData, 'getDbSchema').and.returnValue({
           testStore: {
-            storeId: '_id',
-            serverId: 'id'
+            storeKey: '_id',
+            serverKey: 'id'
           }
         });
       });
@@ -464,7 +464,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
 
         scheduler.scheduleWithAbsolute(0, function() {
           dbHandler.getAllEntries();
-          dbHandler.downstream.subscribe(function(item) {
+          dbHandler.downStream.subscribe(function(item) {
             getItems.push(item);
           });
 
@@ -476,7 +476,9 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         expect(getItems).toEqual([{
           meta: {
             storeId: 1,
-            serverId: undefined
+            serverId: undefined,
+            deleted: false,
+            action: 'save'
           },
           data: {
             firstname: 'Igor',
@@ -485,7 +487,9 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         }, {
           meta: {
             storeId: 2,
-            serverId: undefined
+            serverId: undefined,
+            deleted: false,
+            action: 'save'
           },
           data: {
             firstname: 'Igor',
@@ -494,7 +498,9 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         }, {
           meta: {
             storeId: 3,
-            serverId: undefined
+            serverId: undefined,
+            deleted: false,
+            action: 'save'
           },
           data: {
             firstname: 'Igor',
@@ -512,7 +518,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
 
         scheduler.scheduleWithAbsolute(0, function() {
           getStream = dbHandler.getAllEntries();
-          dbHandler.downstream.subscribe(function(item) {
+          dbHandler.downStream.subscribe(function(item) {
             getItems.push(item);
           });
 
@@ -579,7 +585,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         expect(removeItems[0]).toEqual({
           meta: {
             deleted: true,
-            storeId: 2
+            storeId: 2,
+            action: 'deletePermanently'
           },
           data: {
             firstname: 'Igor',

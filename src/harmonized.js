@@ -91,7 +91,9 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
       createViewModel: function(modelName, mapUpFn, mapDownFn) {
         var model = modelHandler.getModel(modelName);
         return new ViewCollection(model, mapUpFn, mapDownFn);
-      }
+      },
+
+      errorStream: ServerHandler.errorStream;
 
     };
 

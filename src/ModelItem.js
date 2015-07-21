@@ -109,6 +109,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    */
   ModelItem.prototype.save = function(item) {
     this.meta = _.clone(item.meta);
+    delete this.meta.action;
     this.data = _.clone(item.data);
     return item;
   };

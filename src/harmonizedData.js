@@ -63,16 +63,17 @@ define('harmonizedData', ['lodash'], function(_) {
     for (var item in schema) {
       currentModel = schema[item];
       if (!_.isObject(currentModel.keys)) {
-        currentModel.keys = data._config.defaultKeys;
+        var defaultKeys = _.clone(this._config.defaultKeys);
+        currentModel.keys = defaultKeys;
       } else {
         keys = currentModel.keys;
 
         if (_.isUndefined(keys.serverKey)) {
-          keys.serverKey = data._config.defaultKeys.serverKey;
+          keys.serverKey = this._config.defaultKeys.serverKey;
         }
 
         if (_.isUndefined(keys.storeKey)) {
-          keys.storeKey = data._config.defaultKeys.storeKey;
+          keys.storeKey = this._config.defaultKeys.storeKey;
         }
       }
 
@@ -82,6 +83,14 @@ define('harmonizedData', ['lodash'], function(_) {
         }
 
         currentModel.storeName = storeNamePrefix + item;
+      }
+
+      if (_.isUndefined(currentModel.route)) {
+        currentModel.route = item;
+      }
+
+      if (_.isUndefined(currentModel.baseUrl)) {
+        currentModel.baseUrl = data._config.baseUrl;
       }
 
       subModels = currentModel.subModels;
@@ -129,11 +138,12 @@ define('harmonizedData', ['lodash'], function(_) {
    * @return {Object}           The stream item
    */
   data._createStreamItem = function(inputItem, keys) {
-    inputItem = _.clone(inputItem);
+    inputItem = _.clone(inputItem) || {};
     var item = {
       meta: {
         storeId: inputItem[keys.storeKey],
-        serverId: inputItem[keys.serverKey]
+        serverId: inputItem[keys.serverKey],
+        deleted: !!inputItem._deleted
       }
     };
 
@@ -145,6 +155,7 @@ define('harmonizedData', ['lodash'], function(_) {
     // Remove the metadata from the actual data
     delete inputItem[keys.storeKey];
     delete inputItem[keys.serverKey];
+    delete inputItem._deleted;
 
     item.data = inputItem;
 

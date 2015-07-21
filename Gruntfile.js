@@ -25,6 +25,10 @@ module.exports = function(grunt) {
             'lodash': 'empty:',
             'rx': 'empty:',
             'rx.async': 'empty:',
+          },
+          wrap: {
+            startFile: '.wrap-start.frag',
+            endFile: '.wrap-end.frag'
           }
         }
       }

@@ -1,6 +1,6 @@
 'use strict';
 
-define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData) {
+define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmonizedData, _) {
   return {
 
     /**
@@ -24,7 +24,7 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
      * Fetches data from the server via HTTP
      * @param  {ServerHandler} serverHandler ServerHandler to set last modified
      */
-    fetch: function(serverHandler) {
+    fetch: function(serverHandler, cb) {
       var httpOptions = {};
 
       if (_.isObject(serverHandler._options.params)) {
@@ -54,13 +54,17 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
           var item = harmonizedData._createStreamItem(returnedItems[i], {
             serverKey: serverHandler._options.serverKey
           });
+          item.meta.action = 'save';
 
           // Send item to the downstream
           serverHandler.downStream.onNext(item);
         }
+        if (_.isFunction(cb)) {
+          cb();
+        }
       }).catch(function(error) {
         // Catch errors
-        serverHandler.downStream.onError(error);
+        serverHandler._broadcastError(error);
       });
     },
 
@@ -107,16 +111,22 @@ define('ServerHandler/httpHandler', ['harmonizedData'], function(harmonizedData)
       }
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
-        item.data = returnItem;
+        var tempItem = harmonizedData._createStreamItem(returnItem.data, {
+          serverKey: serverHandler._options.serverKey
+        });
+
+        item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
         if (item.meta.action === 'delete') {
+
           item.meta.action = 'deletePermanently';
+          item.meta.deleted = true;
         }
 
         serverHandler.downStream.onNext(item);
       }).catch(function(error) {
         serverHandler._unpushedList[item.meta.rtId] = item;
-        serverHandler.downStream.onError(error);
-      });
+        serverHandler._broadcastError(error);
+      })
     }
   };
 });

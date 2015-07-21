@@ -1,6 +1,6 @@
 'use strict';
 
-define(['harmonizedData'], function(harmonizedData) {
+define(['harmonizedData', 'lodash'], function(harmonizedData, _) {
 
   describe('harmonizedData', function() {
 
@@ -204,7 +204,8 @@ define(['harmonizedData'], function(harmonizedData) {
           },
           meta: {
             storeId: undefined,
-            serverId: undefined
+            serverId: undefined,
+            deleted: false
           }
         };
 
@@ -219,7 +220,8 @@ define(['harmonizedData'], function(harmonizedData) {
         inputItem.id = '4321';
         expectedStreamItem.meta = {
           storeId: '1234',
-          serverId: '4321'
+          serverId: '4321',
+          deleted: false
         };
 
         var streamItem = harmonizedData._createStreamItem(inputItem,

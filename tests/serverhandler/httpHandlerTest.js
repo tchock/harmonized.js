@@ -10,6 +10,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
       var fakeHttpFn = function(options) {
         receivedOptions = options;
         var returnedPromise = {
+
           then: function(fn) {
             returnedPromise.thenFn = fn;
             return returnedPromise;
@@ -44,7 +45,9 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             };
             break;
           case 'DELETE':
-            returnedData = '';
+            returnedData = {
+              data: null
+            };
             break;
         }
 
@@ -197,10 +200,13 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
         it('should fail at fetching data', function() {
           var fetchedItems = [];
           var fetchedErrors = [];
+
+          sh._broadcastError = jasmine.createSpy().and.callFake(function(err) {
+            fetchedErrors.push(err);
+          });
+
           sh.downStream.subscribe(function(item) {
             fetchedItems.push(item);
-          }, function(err) {
-            fetchedErrors.push(err);
           });
 
           sh._options.params = {
@@ -469,7 +475,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               action: 'deletePermanently',
               rtId: 12,
               serverId: 4103,
-              storeId: 11
+              storeId: 11,
+              deleted: true
             },
             data: deleteItem.data
           });
@@ -483,13 +490,13 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           var returnedItem = null;
           var returnedError = null;
 
+          sh._broadcastError = jasmine.createSpy().and.callFake(function(err) {
+            returnedError = err;
+          });
+
           sh.downStream.subscribe(
             function(item) {
               returnedItem = item;
-            },
-
-            function(error) {
-              returnedError = error;
             });
 
           scheduler.scheduleWithAbsolute(5, function() {
@@ -503,6 +510,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(returnedItem).toBe(null);
           expect(returnedError.status).toBe(500);
           expect(sh._unpushedList[12]).toEqual(postItem);
+
+          expect(sh._broadcastError.calls.count()).toBe(1);
         });
 
       });
