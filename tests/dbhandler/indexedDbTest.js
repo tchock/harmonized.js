@@ -449,7 +449,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
           2: {
             firstname: 'Igor',
             lastname: 'Mortison',
-            _id: 2
+            _id: 2,
+            _deleted: true
           },
           3: {
             firstname: 'Igor',
@@ -462,8 +463,11 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
           1, 2, 3
         ];
 
+        var calledCb = false;
         scheduler.scheduleWithAbsolute(0, function() {
-          dbHandler.getAllEntries();
+          dbHandler.getAllEntries(function() {
+            calledCb = true;
+          });
           dbHandler.downStream.subscribe(function(item) {
             getItems.push(item);
           });
@@ -488,8 +492,8 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
           meta: {
             storeId: 2,
             serverId: undefined,
-            deleted: false,
-            action: 'save'
+            deleted: true,
+            action: 'delete'
           },
           data: {
             firstname: 'Igor',
@@ -507,6 +511,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
             lastname: 'Igorov'
           }
         }]);
+        expect(calledCb).toBeTruthy();
       });
 
       it('should get all entries from an empty table', function() {
@@ -528,6 +533,104 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         scheduler.start();
 
         expect(getItems).toEqual([]);
+      });
+
+      it('should get a single entries from the database', function() {
+        var getStream;
+        var getItems = [];
+
+        jasmine.clock().tick(2);
+        expect(IndexedDbHandler._db).not.toBe(null);
+
+        // Add data to the mocked indexeddb
+        indexedDBmock.mockDbs.harmonizedDb.objectStores[0].__data = {
+          1: {
+            firstname: 'Igor',
+            lastname: 'Igorson',
+            _id: 1
+          },
+          2: {
+            firstname: 'Igor',
+            lastname: 'Mortison',
+            _id: 2
+          },
+          3: {
+            firstname: 'Igor',
+            lastname: 'Igorov',
+            _id: 3
+          }
+        }
+
+        scheduler.scheduleWithAbsolute(0, function() {
+          getStream = dbHandler.getEntry(2);
+          dbHandler.downStream.subscribe(function(item) {
+            getItems.push(item);
+          });
+
+          jasmine.clock().tick(3);
+        });
+
+        scheduler.start();
+
+        expect(getItems).toEqual([{
+          meta: {
+            storeId: 2,
+            serverId: undefined,
+            deleted: false
+          },
+          data: {
+            firstname: 'Igor',
+            lastname: 'Mortison'
+          }
+        }]);
+
+      });
+
+      it('should get a unknown single entries from the database', function() {
+        var getStream;
+        var getItems = [];
+        var getErrors = [];
+
+        jasmine.clock().tick(2);
+        expect(IndexedDbHandler._db).not.toBe(null);
+
+        // Add data to the mocked indexeddb
+        indexedDBmock.mockDbs.harmonizedDb.objectStores[0].__data = {
+          1: {
+            firstname: 'Igor',
+            lastname: 'Igorson',
+            _id: 1
+          },
+          2: {
+            firstname: 'Igor',
+            lastname: 'Mortison',
+            _id: 2
+          },
+          3: {
+            firstname: 'Igor',
+            lastname: 'Igorov',
+            _id: 3
+          }
+        }
+
+        scheduler.scheduleWithAbsolute(0, function() {
+          getStream = dbHandler.getEntry(4);
+          dbHandler.downStream.subscribe(function(item) {
+            getItems.push(item);
+          }, function(error) {
+            getErrors.push(error);
+          });
+
+          jasmine.clock().tick(3);
+        });
+
+        scheduler.start();
+
+        expect(getItems).toEqual([]);
+        expect(getErrors.length).toBe(1);
+        expect(getErrors[0] instanceof Error).toBeTruthy();
+        expect(getErrors[0].message).toBe('Item with id 4 not found in database');
+
       });
 
       it('should remove the second entry', function() {
