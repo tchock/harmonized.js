@@ -190,9 +190,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * items are ready.
    */
   Model.prototype._dbReadyCb = function() {
+    var _this = this;
     if (harmonizedData._config.fetchAtStart) {
-      this.getFromServer(function() {
-        this.pushChanges();
+      _this.getFromServer(function() {
+        _this.pushChanges();
       });
     }
   }
