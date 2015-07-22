@@ -1310,6 +1310,27 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     cursor.onerror = _this.downStream.onError;
   };
 
+  IndexedDbHandler.prototype.getEntry = function (key) {
+    var _this = this;
+
+    var transaction = IndexedDbHandler._db.transaction([_this._storeName]);
+    var objectStore = transaction.objectStore(_this._storeName);
+    var request = objectStore.get(key);
+
+    request.onerror = _this.downStream.onError
+
+    request.onsuccess = function() {
+      if (!_.isUndefined(request.result)) {
+        var newItem = harmonizedData._createStreamItem(request.result,
+          _this._keys);
+        _this.downStream.onNext(newItem);
+      } else {
+        _this.downStream.onError(new Error('Item with id ' + key + ' not found in database'));
+      }
+
+    };
+  };
+
   /**
    * Write an item to the database
    * @param  {Object} item  Item that has to be written to the database
@@ -2177,9 +2198,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * items are ready.
    */
   Model.prototype._dbReadyCb = function() {
+    var _this = this;
     if (harmonizedData._config.fetchAtStart) {
-      this.getFromServer(function() {
-        this.pushChanges();
+      _this.getFromServer(function() {
+        _this.pushChanges();
       });
     }
   }
