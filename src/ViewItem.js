@@ -203,6 +203,13 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
   };
 
   /**
+   * Resets the item to the model entry
+   */
+  ViewItem.prototype.reset = function () {
+    this.getCollection()._model.getItem(this._meta.rtId);
+  }
+
+  /**
    * Checks if a given property is a dataentry of the item
    * @param  {string} property  Property to test for dataentry
    * @return {boolean}          If true, the property is a dataentry

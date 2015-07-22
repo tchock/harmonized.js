@@ -245,6 +245,22 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       done();
     });
 
+    it('should reset an entry', function(done) {
+      spyOn(testViewCollection._model, 'getItem').and.stub();
+      var viewItem = new ViewItem(testViewCollection, {
+        name: 'Han Solo',
+        evil: false
+      }, {
+        rtId: 123
+      });
+
+      viewItem.reset();
+
+      expect(testViewCollection._model.getItem).toHaveBeenCalled();
+
+      done();
+    });
+
     it('should be updated from the downstream', function(done) {
       var viewItem = new ViewItem(testViewCollection, {
         name: 'Han Solo',
