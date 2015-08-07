@@ -43,7 +43,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     _this.meta.rtId = _this.meta.rtId || parentModel.getNextRuntimeId();
 
     var filterThisItem = function(item) {
-      return item.meta.rtId === _this.meta.rtId;
+      return item.meta.rtId === _this.meta.rtId && !_this.meta.deleted;
     };
 
     // filtered streams to the streams of the model

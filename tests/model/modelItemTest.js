@@ -155,8 +155,7 @@ define(['Squire', 'rx', 'rx.testing', 'ModelItem'], function(Squire, Rx, RxTest,
         done();
       });
 
-    it(
-      'should update an item with update from existingItemDownStream',
+    it('should update an item with update from existingItemDownStream',
       function(done) {
         var otherModelItem = new ModelItem(testModelMock, {
           name: 'Günther'
@@ -205,6 +204,41 @@ define(['Squire', 'rx', 'rx.testing', 'ModelItem'], function(Squire, Rx, RxTest,
         expect(testModelItem.meta.serverId).toBe(9001);
         expect(otherModelItem.data.name).toBe(
           'Günther Kastenfrosch');
+
+        done();
+      });
+
+    it('should not update an locally deleted item with update from existingItemDownStream',
+      function(done) {
+        var otherModelItem = new ModelItem(testModelMock, {
+          name: 'Günther'
+        }, {
+          serverId: 1,
+          storeId: 123,
+          rtId: 12,
+          deleted: true
+        });
+
+        scheduler.scheduleWithAbsolute(10, function() {
+          testModelMock._existingItemDownStream.onNext({
+            data: {
+              name: 'Günther Kastenfrosch'
+            },
+            meta: {
+              serverId: 1,
+              rtId: 12,
+              storeId: 123,
+              action: 'save'
+            }
+          });
+        });
+
+        expect(otherModelItem.data.name).toBe('Günther');
+
+        scheduler.start();
+
+        expect(otherModelItem.data.name).toBe('Günther');
+        expect(otherModelItem.meta.deleted).toBeTruthy();
 
         done();
       });
