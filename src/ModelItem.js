@@ -109,7 +109,6 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
-    console.log('item save');
     this.meta = _.clone(item.meta);
     delete this.meta.action;
     this.data = _.clone(item.data);
@@ -129,7 +128,6 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.deletePermanently = function(item) {
-
     var parentModel = this.getModel();
 
     delete parentModel._rtIdHash[this.meta.rtId];

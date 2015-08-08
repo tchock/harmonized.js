@@ -118,12 +118,8 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
         item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
         if (item.meta.action === 'delete') {
-          item = _.clone(item);
-          console.log('delete perm');
-
           item.meta.action = 'deletePermanently';
           item.meta.deleted = true;
-          console.log(JSON.stringify(item));
         }
 
         serverHandler.downStream.onNext(item);

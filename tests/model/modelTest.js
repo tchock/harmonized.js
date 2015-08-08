@@ -336,14 +336,16 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             name: 'John Cleese'
           }, {
             storeId: 12,
-            rtId: 12
+            rtId: 12,
+            deleted: false
           });
 
           new ModelItemMock(testModel, {
             name: 'Terry Gilliam'
           }, {
             serverId: 1025,
-            storeId: 13
+            storeId: 13,
+            deleted: false
           });
 
           // Add first entry to the server downstream
@@ -353,7 +355,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
               meta: {
                 serverId: 1000,
                 storeId: 12,
-                rtId: 12
+                rtId: 12,
+                deleted: false
               },
               data: {
                 name: 'John Cleese'
@@ -367,7 +370,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             testModel._serverHandler.downStream.onNext({
               meta: {
                 serverId: 1025,
-                storeId: 13
+                storeId: 13,
+                deleted: false
               },
               data: {
                 name: 'Terry Gilliam'
@@ -390,7 +394,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           var terryMeta = {
             serverId: 1025,
             storeId: 13,
-            rtId: 1
+            rtId: 1,
+            deleted: false
           };
 
           // Check terry to be correctly saved
@@ -410,7 +415,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           expect(dbHandlerUpstreamList[0].meta).toEqual({
             serverId: 1000,
             storeId: 12,
-            rtId: 12
+            rtId: 12,
+            deleted: false
           });
           expect(dbHandlerUpstreamList[1].data).toEqual(terry);
           expect(dbHandlerUpstreamList[1].meta).toEqual(terryMeta);
@@ -492,14 +498,16 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           }, {
             serverId: 1000,
             storeId: 12,
-            rtId: 12
+            rtId: 12,
+            deleted: false
           });
 
           new ModelItemMock(testModel, {
             name: 'Terry Gilliam'
           }, {
             serverId: 1025,
-            rtId: 13
+            rtId: 13,
+            deleted: false
           });
 
           // Add first entry to the server downstream
@@ -508,7 +516,9 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
               meta: {
                 serverId: 1000,
                 storeId: 12,
-                rtId: 12
+                rtId: 12,
+                action: 'save',
+                deleted: false
               },
               data: {
                 name: 'John Cleese'
@@ -522,7 +532,9 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
               meta: {
                 serverId: 1025,
                 storeId: 13,
-                rtId: 13
+                rtId: 13,
+                action: 'save',
+                deleted: false
               },
               data: {
                 name: 'Terry Gilliam'
@@ -544,7 +556,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           var terryMeta = {
             serverId: 1025,
             storeId: 13,
-            rtId: 13
+            rtId: 13,
+            deleted: false
           };
 
           // Check terry to be correctly saved
