@@ -36,7 +36,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
         }, function(error) {
           //ServerHandler.errorStream.onNext(error);
 
-      });
+        });
 
       // Instance connection stream that gets input from
       // the global connection stream.
@@ -44,6 +44,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       this.connectionStream.subscribe(function(state) {
         _this.setConnectionState(state);
       });
+
       this._connected = false;
 
       ServerHandler.connectionStream.subscribe(this.connectionStream);
@@ -141,7 +142,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      * Broadcasts an error globally to the error stream
      * @param  {Error} error The error to broadcast
      */
-    ServerHandler.prototype._broadcastError = function (error) {
+    ServerHandler.prototype._broadcastError = function broadcastError(error) {
       ServerHandler.errorStream.onNext(error);
     }
 

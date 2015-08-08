@@ -27,6 +27,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   function downStreamMap(model) {
     return function(item) {
+      console.log('item storeid: ' + item.meta.storeId);
+      console.log(JSON.stringify(item));
 
       var knownItem = model._rtIdHash[item.meta.rtId] || model._serverIdHash[
         item.meta.serverId] || model._storeIdHash[item.meta.storeId];
@@ -37,6 +39,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         knownItem.meta.serverId = knownItem.meta.serverId || item.meta
           .serverId;
         knownItem.meta.storeId = knownItem.meta.storeId || item.meta.storeId;
+        knownItem.meta.deleted = item.meta.deleted || knownItem.meta.deleted;
+        knownItem.meta.action = item.meta.action || knownItem.meta.action;
 
         // Add known data to item
         _.extend(item.meta, knownItem.meta);
@@ -66,6 +70,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   var Model = function Model(modelName, options) {
     var _this = this;
+
+    _this.randomId = Math.round(Math.random() * 100000);
 
     _this._modelName = modelName;
     _this._options = options || {};
@@ -106,10 +112,32 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       });
     }
 
+    _this._serverHandler.downStream.subscribe(function(item) {
+      console.log('server item sub');
+      console.log(JSON.stringify(item));
+    });
 
     // The downstreams with map function to add not added hash ids
-    _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this));
-    _this._dbDownStream = _this._dbHandler.downStream.map(downStreamMap(_this));
+    _this._serverDownStream = _this._serverHandler.downStream.map(function(item) {
+      console.log('server downstream');
+      if (item.meta.action === 'deletePermanently') {
+        console.log('delete perm in server ds');
+      }
+
+      return item;
+    }).map(downStreamMap(_this));
+
+    _this._dbHandler.downStream.subscribe(function(item) {
+      console.log('sub db ds on model');
+      console.log(JSON.stringify(item));
+    });
+
+    _this._dbDownStream = _this._dbHandler.downStream.map(function(item) {
+      console.log('db downstream on model ' + _this.randomId);
+      console.log(JSON.stringify(item));
+      console.log('vvvvv');
+      return item;
+    }).map(downStreamMap(_this));
 
     // Add already available items to the database
     _this._serverDownStream.filter(function(item) {
@@ -134,21 +162,27 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this.downStream = new Rx.Subject();
 
     // Internal downstream merged from the database and server downstreams
-    _this._downStream = new Rx.Observable.merge(_this._serverDownStream,
+    _this._downStream = Rx.Observable.merge(_this._serverDownStream,
       _this._dbDownStream);
 
     // Only add already existing model items to the public downstream
     _this._existingItemDownStream = _this._downStream.filter(function(item) {
-      return !_.isUndefined(item.meta.rtId) && !item.meta.deleted;
+      return !_.isUndefined(item.meta.rtId);
+    });
+
+    _this._existingItemDownStream.subscribe(function(item) {
+      console.log('existing item downstream');
+      console.log(JSON.stringify(item));
     });
 
     _this._existingItemDownStream.subscribe(_this.downStream);
 
     // Create a stream for data received from the downstream not yet in the model
     _this._downStream.filter(function(item) {
-      return _.isUndefined(item.meta.rtId) && !item.meta.deleted;
+      return _.isUndefined(item.meta.rtId);
     }).subscribe(function(item) {
       var newModel = new ModelItem(_this, item.data, item.meta);
+      console.log('new item?');
       item.meta = _.clone(newModel.meta);
     });
 
@@ -198,11 +232,11 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     }
   }
 
-  Model.prototype.pushChanges = function () {
+  Model.prototype.pushChanges = function() {
     // Push the items to the server that have to be saved
     for (var storeId in this._storeIdHash) {
-      var currentItem = this._storeIdHash[storeId];
       if (this._storeIdHash.hasOwnProperty(storeId)) {
+        var currentItem = this._storeIdHash[storeId];
         var itemMeta = _.clone(currentItem.meta);
         var itemData = _.clone(currentItem.data);
 
@@ -217,6 +251,9 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
           });
         } else if (currentItem.meta.deleted) {
           itemMeta.action = 'delete';
+          console.log('delete this:');
+          console.log(currentItem);
+          console.log('----');
           this._serverHandler.upStream.onNext({
             meta: itemMeta,
             data: itemData
@@ -239,6 +276,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   Model.prototype.checkForDeletedItems = function() {
     var _this = this;
+
     // TODO make params configurable
     this._serverHandler.sendHttpRequest({
       params: {

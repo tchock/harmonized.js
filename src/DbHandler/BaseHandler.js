@@ -35,7 +35,11 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     this._saveDownstream = this._saveUpstream.flatMap(function(item) {
       return _this.put(item);
     });
-    this._saveSubscribe = this._saveDownstream.subscribe(this.downStream);
+
+    this._saveSubscribe = this._saveDownstream.map(function(item) {
+      console.log('db save downstream');
+      return item;
+    }).subscribe(this.downStream);
 
     // Delete upstream
     this._deleteUpstream = this._upStream.filter(function(item) {
@@ -50,7 +54,10 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
       }
     });
 
-    this._deleteSubscribe = this._deleteDownstream.subscribe(this.downStream);
+    this._deleteSubscribe = this._deleteDownstream.map(function(item) {
+      console.log('db delete downstream');
+      return item;
+    }).subscribe(this.downStream);
 
     // Delete permanently upstream
     this._deletePermanentlyUpstream = this._upStream.filter(function(item) {
@@ -58,10 +65,15 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     });
 
     this._deletePermanentlyDownstream = this._deletePermanentlyUpstream.map(function(item) {
+      console.log('delete perm in db');
       _this.remove(item);
       return item;
     });
-    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downStream);
+
+    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.map(function(item) {
+      console.log('db delete perm downstream');
+      return item;
+    }).subscribe(this.downStream);
 
     // Initially get the metadata
     this._metaStorageName = 'harmonizedMeta_' + this._storeName;

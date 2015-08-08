@@ -667,6 +667,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           // Send item to the downstream
           serverHandler.downStream.onNext(item);
         }
+
         if (_.isFunction(cb)) {
           cb();
         }
@@ -725,9 +726,12 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
         item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
         if (item.meta.action === 'delete') {
+          item = _.clone(item);
+          console.log('delete perm');
 
           item.meta.action = 'deletePermanently';
           item.meta.deleted = true;
+          console.log(JSON.stringify(item));
         }
 
         serverHandler.downStream.onNext(item);
@@ -890,7 +894,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
         }, function(error) {
           //ServerHandler.errorStream.onNext(error);
 
-      });
+        });
 
       // Instance connection stream that gets input from
       // the global connection stream.
@@ -898,6 +902,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       this.connectionStream.subscribe(function(state) {
         _this.setConnectionState(state);
       });
+
       this._connected = false;
 
       ServerHandler.connectionStream.subscribe(this.connectionStream);
@@ -995,7 +1000,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      * Broadcasts an error globally to the error stream
      * @param  {Error} error The error to broadcast
      */
-    ServerHandler.prototype._broadcastError = function (error) {
+    ServerHandler.prototype._broadcastError = function broadcastError(error) {
       ServerHandler.errorStream.onNext(error);
     }
 
@@ -1072,7 +1077,11 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     this._saveDownstream = this._saveUpstream.flatMap(function(item) {
       return _this.put(item);
     });
-    this._saveSubscribe = this._saveDownstream.subscribe(this.downStream);
+
+    this._saveSubscribe = this._saveDownstream.map(function(item) {
+      console.log('db save downstream');
+      return item;
+    }).subscribe(this.downStream);
 
     // Delete upstream
     this._deleteUpstream = this._upStream.filter(function(item) {
@@ -1087,7 +1096,10 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
       }
     });
 
-    this._deleteSubscribe = this._deleteDownstream.subscribe(this.downStream);
+    this._deleteSubscribe = this._deleteDownstream.map(function(item) {
+      console.log('db delete downstream');
+      return item;
+    }).subscribe(this.downStream);
 
     // Delete permanently upstream
     this._deletePermanentlyUpstream = this._upStream.filter(function(item) {
@@ -1095,10 +1107,15 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     });
 
     this._deletePermanentlyDownstream = this._deletePermanentlyUpstream.map(function(item) {
+      console.log('delete perm in db');
       _this.remove(item);
       return item;
     });
-    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downStream);
+
+    this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.map(function(item) {
+      console.log('db delete perm downstream');
+      return item;
+    }).subscribe(this.downStream);
 
     // Initially get the metadata
     this._metaStorageName = 'harmonizedMeta_' + this._storeName;
@@ -1296,6 +1313,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
           newItem.meta.action = 'save';
         }
 
+        console.log('db get all entries downstream - id: ' + newItem.meta.storeId);
         _this.downStream.onNext(newItem);
         cursor.continue();
       } else {
@@ -1310,7 +1328,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     cursor.onerror = _this.downStream.onError;
   };
 
-  IndexedDbHandler.prototype.getEntry = function (key) {
+  IndexedDbHandler.prototype.getEntry = function(key) {
     var _this = this;
 
     var transaction = IndexedDbHandler._db.transaction([_this._storeName]);
@@ -1323,6 +1341,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       if (!_.isUndefined(request.result)) {
         var newItem = harmonizedData._createStreamItem(request.result,
           _this._keys);
+        console.log('db get entry downstream');
         _this.downStream.onNext(newItem);
       } else {
         _this.downStream.onError(new Error('Item with id ' + key + ' not found in database'));
@@ -1679,6 +1698,7 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
             _this._storeItems.push(storeId);
             _this._updateDb();
           }
+
           break;
         case 'delete':
           if (!_.isUndefined(serverId) && _.includes(serverItems,
@@ -1690,6 +1710,7 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
             _this._storeItems.splice(storeItems.indexOf(storeId), 1);
             _this._updateDb();
           }
+
           break;
       }
     });
@@ -1870,6 +1891,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     var filter = stream.filter(function(item) {
       return item.meta.action === action;
     });
+
     modelItem['_' + action + 'StreamSub'] = filter.subscribe(function(item) {
       modelItem[action](item);
     });
@@ -1900,7 +1922,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     _this.meta.rtId = _this.meta.rtId || parentModel.getNextRuntimeId();
 
     var filterThisItem = function(item) {
-      return item.meta.rtId === _this.meta.rtId;
+      return item.meta.rtId === _this.meta.rtId && !_this.meta.deleted;
     };
 
     // filtered streams to the streams of the model
@@ -1965,6 +1987,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
+    console.log('item save');
     this.meta = _.clone(item.meta);
     delete this.meta.action;
     this.data = _.clone(item.data);
@@ -2035,6 +2058,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   function downStreamMap(model) {
     return function(item) {
+      console.log('item storeid: ' + item.meta.storeId);
+      console.log(JSON.stringify(item));
 
       var knownItem = model._rtIdHash[item.meta.rtId] || model._serverIdHash[
         item.meta.serverId] || model._storeIdHash[item.meta.storeId];
@@ -2045,6 +2070,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         knownItem.meta.serverId = knownItem.meta.serverId || item.meta
           .serverId;
         knownItem.meta.storeId = knownItem.meta.storeId || item.meta.storeId;
+        knownItem.meta.deleted = item.meta.deleted || knownItem.meta.deleted;
+        knownItem.meta.action = item.meta.action || knownItem.meta.action;
 
         // Add known data to item
         _.extend(item.meta, knownItem.meta);
@@ -2074,6 +2101,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   var Model = function Model(modelName, options) {
     var _this = this;
+
+    _this.randomId = Math.round(Math.random() * 100000);
 
     _this._modelName = modelName;
     _this._options = options || {};
@@ -2114,10 +2143,32 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       });
     }
 
+    _this._serverHandler.downStream.subscribe(function(item) {
+      console.log('server item sub');
+      console.log(JSON.stringify(item));
+    });
 
     // The downstreams with map function to add not added hash ids
-    _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this));
-    _this._dbDownStream = _this._dbHandler.downStream.map(downStreamMap(_this));
+    _this._serverDownStream = _this._serverHandler.downStream.map(function(item) {
+      console.log('server downstream');
+      if (item.meta.action === 'deletePermanently') {
+        console.log('delete perm in server ds');
+      }
+
+      return item;
+    }).map(downStreamMap(_this));
+
+    _this._dbHandler.downStream.subscribe(function(item) {
+      console.log('sub db ds on model');
+      console.log(JSON.stringify(item));
+    });
+
+    _this._dbDownStream = _this._dbHandler.downStream.map(function(item) {
+      console.log('db downstream on model ' + _this.randomId);
+      console.log(JSON.stringify(item));
+      console.log('vvvvv');
+      return item;
+    }).map(downStreamMap(_this));
 
     // Add already available items to the database
     _this._serverDownStream.filter(function(item) {
@@ -2142,21 +2193,27 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this.downStream = new Rx.Subject();
 
     // Internal downstream merged from the database and server downstreams
-    _this._downStream = new Rx.Observable.merge(_this._serverDownStream,
+    _this._downStream = Rx.Observable.merge(_this._serverDownStream,
       _this._dbDownStream);
 
     // Only add already existing model items to the public downstream
     _this._existingItemDownStream = _this._downStream.filter(function(item) {
-      return !_.isUndefined(item.meta.rtId) && !item.meta.deleted;
+      return !_.isUndefined(item.meta.rtId);
+    });
+
+    _this._existingItemDownStream.subscribe(function(item) {
+      console.log('existing item downstream');
+      console.log(JSON.stringify(item));
     });
 
     _this._existingItemDownStream.subscribe(_this.downStream);
 
     // Create a stream for data received from the downstream not yet in the model
     _this._downStream.filter(function(item) {
-      return _.isUndefined(item.meta.rtId) && !item.meta.deleted;
+      return _.isUndefined(item.meta.rtId);
     }).subscribe(function(item) {
       var newModel = new ModelItem(_this, item.data, item.meta);
+      console.log('new item?');
       item.meta = _.clone(newModel.meta);
     });
 
@@ -2206,11 +2263,11 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     }
   }
 
-  Model.prototype.pushChanges = function () {
+  Model.prototype.pushChanges = function() {
     // Push the items to the server that have to be saved
     for (var storeId in this._storeIdHash) {
-      var currentItem = this._storeIdHash[storeId];
       if (this._storeIdHash.hasOwnProperty(storeId)) {
+        var currentItem = this._storeIdHash[storeId];
         var itemMeta = _.clone(currentItem.meta);
         var itemData = _.clone(currentItem.data);
 
@@ -2225,6 +2282,9 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
           });
         } else if (currentItem.meta.deleted) {
           itemMeta.action = 'delete';
+          console.log('delete this:');
+          console.log(currentItem);
+          console.log('----');
           this._serverHandler.upStream.onNext({
             meta: itemMeta,
             data: itemData
@@ -2247,6 +2307,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   Model.prototype.checkForDeletedItems = function() {
     var _this = this;
+
     // TODO make params configurable
     this._serverHandler.sendHttpRequest({
       params: {
@@ -2360,8 +2421,6 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
         }
       },
 
-
-
       _modelList: {}
     };
 
@@ -2374,235 +2433,242 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
 define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
   function(_, Rx, ViewCollection, harmonizedData) {
 
-  /**
-   * Constructor of the ViewItem
-   * @param {ViewCollection} viewCollection   The collection of the item
-   * @param {Object} [data]                   The data of the item
-   * @param {Object} [meta]                   The metadata of the item
-   * @param {boolean} [addToCollection]       true if item should be added
-   *                                          directly, false if not
-   */
-  var ViewItem = function ViewItem(viewCollection, data, meta, subData,
-    addToCollection) {
-    var _this = this;
-
-    // If item is user created (by the collections .new() method), this is false
-    _this._wasAlreadySynced = (subData !== null && subData !== undefined);
-
     /**
-     * Gets the collection of the item
-     * @return {ViewCollection} The collection of the item
+     * Constructor of the ViewItem
+     * @param {ViewCollection} viewCollection   The collection of the item
+     * @param {Object} [data]                   The data of the item
+     * @param {Object} [meta]                   The metadata of the item
+     * @param {boolean} [addToCollection]       true if item should be added
+     *                                          directly, false if not
      */
-    _this.getCollection = function() {
-      return viewCollection;
+    var ViewItem = function ViewItem(viewCollection, data, meta, subData,
+      addToCollection) {
+      var _this = this;
+
+      // If item is user created (by the collections .new() method), this is false
+      _this._wasAlreadySynced = (subData !== null && subData !== undefined);
+
+      /**
+       * Gets the collection of the item
+       * @return {ViewCollection} The collection of the item
+       */
+      _this.getCollection = function() {
+        return viewCollection;
+      };
+
+      _this._streams = {};
+
+      _this._streams.upStream = viewCollection.upStream;
+
+      _this._streams.saveDownStream = viewCollection.downStream.filter(
+        function(item) {
+          return item.meta.rtId === _this._meta.rtId && item.meta.action ===
+            'save';
+        });
+
+      // Subscription for the save downstream
+      _this._streams.saveDownStreamSub = _this._streams.saveDownStream.subscribe(
+        function(item) {
+          _this._save(item.data, item.meta);
+        });
+
+      // Subscription for the delete downstream
+      _this._streams.deleteDownStream = viewCollection.downStream.filter(
+        function(item) {
+          return item.meta.rtId === _this._meta.rtId && (item.meta.action ===
+            'delete' || item.meta.action === 'deletePermanently');
+        });
+
+      // Subscription for the delete downstream
+      _this._streams.deleteDownStreamSub = _this._streams.deleteDownStream.subscribe(
+        function() {
+          _this._delete();
+        });
+
+      _this._meta = meta || {};
+      _this._meta = _.clone(_this._meta);
+      delete _this._meta.action;
+
+      // Add the content
+      for (var key in data) {
+        _this[key] = data[key];
+      }
+
+      if (subData !== null && subData !== undefined) {
+        _this._addSubCollections(subData);
+      }
+
+      _this._meta.addedToCollection = false;
+      if (addToCollection && !_.isUndefined(_this._meta.rtId)) {
+        _this._meta.addedToCollection = true;
+        viewCollection.push(_this);
+        viewCollection._items[_this._meta.rtId] = _this;
+        harmonizedData._viewUpdateCb();
+      }
+
     };
 
-    _this._streams = {};
+    /**
+     * Sends item to the upstream (to the model)
+     * @param  {string} action The action that should be added (save or delete)
+     */
+    ViewItem.prototype._sendItemToUpStream = function(action) {
+      var itemData = {};
+      var itemMeta = {};
 
-    _this._streams.upStream = viewCollection.upStream;
-
-    _this._streams.saveDownStream = viewCollection.downStream.filter(
-      function(item) {
-        return item.meta.rtId === _this._meta.rtId && item.meta.action ===
-          'save';
-      });
-
-    // Subscription for the save downstream
-    _this._streams.saveDownStreamSub = _this._streams.saveDownStream.subscribe(
-      function(item) {
-        _this._save(item.data, item.meta);
-      });
-
-    // Subscription for the delete downstream
-    _this._streams.deleteDownStream = viewCollection.downStream.filter(
-      function(item) {
-        return item.meta.rtId === _this._meta.rtId && ( (item.meta.action ===
-          'delete' || item.meta.action === 'deletePermanently' ));
-      });
-
-    // Subscription for the delete downstream
-    _this._streams.deleteDownStreamSub = _this._streams.deleteDownStream.subscribe(
-      function() {
-        _this._delete();
-      });
-
-    _this._meta = meta || {};
-    _this._meta = _.clone(_this._meta);
-    delete _this._meta.action;
-
-    // Add the content
-    for (var key in data) {
-      _this[key] = data[key];
-    }
-
-    if (subData !== null && subData !== undefined) {
-      _this._addSubCollections(subData);
-    }
-
-    _this._meta.addedToCollection = false;
-    if (addToCollection && !_.isUndefined(_this._meta.rtId)) {
-      _this._meta.addedToCollection = true;
-      viewCollection.push(_this);
-      viewCollection._items[_this._meta.rtId] = _this;
-      harmonizedData._viewUpdateCb();
-    }
-
-  };
-
-  /**
-   * Sends item to the upstream (to the model)
-   * @param  {string} action The action that should be added (save or delete)
-   */
-  ViewItem.prototype._sendItemToUpStream = function(action) {
-    var itemData = {};
-    var itemMeta = {};
-
-    if (_.isUndefined(this._meta.rtId)) {
-      this._meta.rtId = this.getCollection()._model.getNextRuntimeId();
-    }
-
-    // Add item to collection if not yet in it
-    if (this._meta.addedToCollection === false) {
-      this._meta.addedToCollection = true;
-      var viewCollection = this.getCollection();
-      viewCollection.push(this);
-      viewCollection._items[this._meta.rtId] = this;
-      harmonizedData._viewUpdateCb();
-    }
-
-    itemMeta.rtId = this._meta.rtId;
-
-    if (!_.isUndefined(this._meta.serverId)) {
-      itemMeta.serverId = this._meta.serverId;
-    }
-
-    if (!_.isUndefined(this._meta.storeId)) {
-      itemMeta.storeId = this._meta.storeId;
-    }
-
-    itemMeta.action = action;
-
-    // Get all item data
-    for (var item in this) {
-      if (this._isPropertyData(item)) {
-        itemData[item] = this[item];
+      if (_.isUndefined(this._meta.rtId)) {
+        this._meta.rtId = this.getCollection()._model.getNextRuntimeId();
       }
-    }
 
-    this._streams.upStream.onNext({
-      data: itemData,
-      meta: itemMeta
-    });
-  };
-
-  /**
-   * Saves the item and updates the data of the model, server and local
-   * database. If item is not yet in the collection, it adds itself.
-   */
-  ViewItem.prototype.save = function() {
-    this._sendItemToUpStream('save');
-  };
-
-  /**
-   * Save function for the save downstream. Updates the data and metadata
-   * @param  {Object} data The new data of the item
-   * @param  {Object} meta The new metadata of the item
-   */
-  ViewItem.prototype._save = function(data, meta) {
-    // Set metadata
-    if (!_.isUndefined(meta.storeId)) {
-      this._meta.storeId = meta.storeId;
-    }
-
-    if (!_.isUndefined(meta.serverId)) {
-      this._meta.serverId = meta.serverId;
-    }
-
-    // Remove all old data
-    for (var item in this) {
-      if (this._isPropertyData(item)) {
-        delete this[item];
+      // Add item to collection if not yet in it
+      if (this._meta.addedToCollection === false) {
+        this._meta.addedToCollection = true;
+        var viewCollection = this.getCollection();
+        viewCollection.push(this);
+        viewCollection._items[this._meta.rtId] = this;
+        harmonizedData._viewUpdateCb();
       }
+
+      itemMeta.rtId = this._meta.rtId;
+
+      if (!_.isUndefined(this._meta.serverId)) {
+        itemMeta.serverId = this._meta.serverId;
+      }
+
+      if (!_.isUndefined(this._meta.storeId)) {
+        itemMeta.storeId = this._meta.storeId;
+      }
+
+      itemMeta.action = action;
+
+      // Get all item data
+      for (var item in this) {
+        if (this._isPropertyData(item)) {
+          itemData[item] = this[item];
+        }
+      }
+
+      this._streams.upStream.onNext({
+        data: itemData,
+        meta: itemMeta
+      });
+    };
+
+    /**
+     * Saves the item and updates the data of the model, server and local
+     * database. If item is not yet in the collection, it adds itself.
+     */
+    ViewItem.prototype.save = function() {
+      this._sendItemToUpStream('save');
+    };
+
+    /**
+     * Save function for the save downstream. Updates the data and metadata
+     * @param  {Object} data The new data of the item
+     * @param  {Object} meta The new metadata of the item
+     */
+    ViewItem.prototype._save = function(data, meta) {
+      // Set metadata
+      if (!_.isUndefined(meta.storeId)) {
+        this._meta.storeId = meta.storeId;
+      }
+
+      if (!_.isUndefined(meta.serverId)) {
+        this._meta.serverId = meta.serverId;
+      }
+
+      // Remove all old data
+      for (var item in this) {
+        if (this._isPropertyData(item)) {
+          delete this[item];
+        }
+      }
+
+      // Add new data
+      for (var key in data) {
+        this[key] = data[key];
+      }
+
+      // Add sub model view collections to the item if not happened before
+      if (!this._wasAlreadySynced) {
+        var model = this.getCollection()._model;
+        var modelItem = model.getItem(this._meta.rtId);
+        var subData = modelItem.subData;
+        this._addSubCollections(subData);
+        this._wasAlreadySynced = true;
+      }
+
+      harmonizedData._viewUpdateCb();
+    };
+
+    /**
+     * Deletes the item from the database, server, model and view collection
+     */
+    ViewItem.prototype.delete = function() {
+      this._sendItemToUpStream('delete');
+      this._delete();
+    };
+
+    /**
+     * Internal delete function. Sets the delete flag, deletes the item from the
+     * collection and disposes the downstream subscriptions of the item
+     */
+    ViewItem.prototype._delete = function() {
+      // Set metadata deleted flag
+      this._meta.deleted = true;
+
+      // Delete from collection
+      if (this._meta.addedToCollection) {
+        var collection = this.getCollection();
+        for (var i = collection.length - 1; i >= 0; i--) {
+          if (collection[i] === this) {
+            collection.splice(i, 1);
+          }
+        }
+      }
+
+      this._streams.saveDownStreamSub.dispose();
+      this._streams.deleteDownStreamSub.dispose();
+      harmonizedData._viewUpdateCb();
+    };
+
+    /**
+     * Resets the item to the model entry
+     */
+    ViewItem.prototype.reset = function() {
+      this.getCollection()._model.getItem(this._meta.rtId);
     }
 
-    // Add new data
-    for (var key in data) {
-      this[key] = data[key];
-    }
+    /**
+     * Checks if a given property is a dataentry of the item
+     * @param  {string} property  Property to test for dataentry
+     * @return {boolean}          If true, the property is a dataentry
+     */
+    ViewItem.prototype._isPropertyData = function(property) {
+      return this.hasOwnProperty(property) &&
+        property !== '_meta' &&
+        property !== 'getCollection' &&
+        property !== '_streams' &&
+        property !== '_wasAlreadySynced' &&
+        !_.includes(this._subDataList, property);
+    };
 
-    // Add sub model view collections to the item if not happened before
-    if (!this._wasAlreadySynced) {
-      var model = this.getCollection()._model;
-      var modelItem = model.getItem(this._meta.rtId);
-      var subData = modelItem.subData;
-      this._addSubCollections(subData);
-      this._wasAlreadySynced = true;
-    }
-
-    harmonizedData._viewUpdateCb();
-  };
-
-  /**
-   * Deletes the item from the database, server, model and view collection
-   */
-  ViewItem.prototype.delete = function() {
-    this._sendItemToUpStream('delete');
-    this._delete();
-  };
-
-  /**
-   * Internal delete function. Sets the delete flag, deletes the item from the
-   * collection and disposes the downstream subscriptions of the item
-   */
-  ViewItem.prototype._delete = function() {
-    // Set metadata deleted flag
-    this._meta.deleted = true;
-
-    // Delete from collection
-    if (this._meta.addedToCollection) {
-      var collection = this.getCollection();
-      for (var i = collection.length - 1; i >= 0; i--) {
-        if (collection[i] === this) {
-          collection.splice(i, 1);
+    /**
+     * Adds sub collections to the item. The collections resemble the sub models
+     * of the model item
+     * @param {Object} subData object containing the sub data of the model item
+     */
+    ViewItem.prototype._addSubCollections = function(subData) {
+      this._subDataList = Object.keys(subData);
+      for (var subModel in subData) {
+        if (subData.hasOwnProperty(subModel)) {
+          this[subModel] = new ViewCollection(subData[subModel]);
         }
       }
     }
 
-    this._streams.saveDownStreamSub.dispose();
-    this._streams.deleteDownStreamSub.dispose();
-    harmonizedData._viewUpdateCb();
-  };
-
-  /**
-   * Checks if a given property is a dataentry of the item
-   * @param  {string} property  Property to test for dataentry
-   * @return {boolean}          If true, the property is a dataentry
-   */
-  ViewItem.prototype._isPropertyData = function(property) {
-    return this.hasOwnProperty(property) &&
-      property !== '_meta' &&
-      property !== 'getCollection' &&
-      property !== '_streams' &&
-      property !== '_wasAlreadySynced' &&
-      !_.includes(this._subDataList, property);
-  };
-
-  /**
-   * Adds sub collections to the item. The collections resemble the sub models
-   * of the model item
-   * @param {Object} subData object containing the sub data of the model item
-   */
-  ViewItem.prototype._addSubCollections = function(subData) {
-    this._subDataList = Object.keys(subData);
-    for (var subModel in subData) {
-      if (subData.hasOwnProperty(subModel)) {
-        this[subModel] = new ViewCollection(subData[subModel]);
-      }
-    }
-  }
-
-  return ViewItem;
-});
+    return ViewItem;
+  });
 
 
 
@@ -2640,7 +2706,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
 
     // Filters items that are not in the view model yet
     collection.downStream.filter(function(item) {
-      return _.isUndefined(collection._items[item.meta.rtId]);
+      return _.isUndefined(collection._items[item.meta.rtId]) && !item.meta.deleted;
     }).subscribe(function(item) {
       var subData = collection._model._rtIdHash[item.meta.rtId].subData;
       new ViewItem(collection, item.data, item.meta, subData, true);
@@ -2705,7 +2771,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
   /**
    * Gets data from the server
    */
-  ViewCollection.prototype.fetch = function () {
+  ViewCollection.prototype.fetch = function() {
     this._model.getFromServer();
   }
 

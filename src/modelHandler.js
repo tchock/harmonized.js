@@ -57,8 +57,6 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
         }
       },
 
-
-
       _modelList: {}
     };
 

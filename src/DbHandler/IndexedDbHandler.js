@@ -142,6 +142,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
           newItem.meta.action = 'save';
         }
 
+        console.log('db get all entries downstream - id: ' + newItem.meta.storeId);
         _this.downStream.onNext(newItem);
         cursor.continue();
       } else {
@@ -156,7 +157,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     cursor.onerror = _this.downStream.onError;
   };
 
-  IndexedDbHandler.prototype.getEntry = function (key) {
+  IndexedDbHandler.prototype.getEntry = function(key) {
     var _this = this;
 
     var transaction = IndexedDbHandler._db.transaction([_this._storeName]);
@@ -169,6 +170,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       if (!_.isUndefined(request.result)) {
         var newItem = harmonizedData._createStreamItem(request.result,
           _this._keys);
+        console.log('db get entry downstream');
         _this.downStream.onNext(newItem);
       } else {
         _this.downStream.onError(new Error('Item with id ' + key + ' not found in database'));

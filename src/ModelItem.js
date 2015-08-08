@@ -13,6 +13,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     var filter = stream.filter(function(item) {
       return item.meta.action === action;
     });
+
     modelItem['_' + action + 'StreamSub'] = filter.subscribe(function(item) {
       modelItem[action](item);
     });
@@ -108,6 +109,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
+    console.log('item save');
     this.meta = _.clone(item.meta);
     delete this.meta.action;
     this.data = _.clone(item.data);

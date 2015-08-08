@@ -165,6 +165,7 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
             _this._storeItems.push(storeId);
             _this._updateDb();
           }
+
           break;
         case 'delete':
           if (!_.isUndefined(serverId) && _.includes(serverItems,
@@ -176,6 +177,7 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
             _this._storeItems.splice(storeItems.indexOf(storeId), 1);
             _this._updateDb();
           }
+
           break;
       }
     });

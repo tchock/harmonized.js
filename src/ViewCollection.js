@@ -34,7 +34,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
 
     // Filters items that are not in the view model yet
     collection.downStream.filter(function(item) {
-      return _.isUndefined(collection._items[item.meta.rtId]);
+      return _.isUndefined(collection._items[item.meta.rtId]) && !item.meta.deleted;
     }).subscribe(function(item) {
       var subData = collection._model._rtIdHash[item.meta.rtId].subData;
       new ViewItem(collection, item.data, item.meta, subData, true);
@@ -99,7 +99,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
   /**
    * Gets data from the server
    */
-  ViewCollection.prototype.fetch = function () {
+  ViewCollection.prototype.fetch = function() {
     this._model.getFromServer();
   }
 
