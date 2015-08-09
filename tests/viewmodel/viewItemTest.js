@@ -558,7 +558,6 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
 
         done();
       });
-
     });
 
   });

@@ -243,14 +243,14 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
           this[subModel] = new ViewCollection(subData[subModel]);
         }
       }
-    }
+    };
 
     ViewItem.prototype.callFn = function (name, args) {
       this._sendItemToUpStream('function', {
         fnName: name,
         fnArgs: args
       });
-    }
+    };
 
     return ViewItem;
   });

@@ -111,5 +111,17 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     return new ViewItem(this, {}, {}, null);
   };
 
+  ViewCollection.prototype.callFn = function (name, args) {
+    this.upStream.onNext({
+      meta: {
+        action: 'function'
+      },
+      data: {
+        fnName: name,
+        fnArgs: args
+      }
+    });
+  };
+
   return ViewCollection;
 });

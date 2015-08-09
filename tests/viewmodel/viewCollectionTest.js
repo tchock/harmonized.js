@@ -395,9 +395,37 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       testInContext(function() {
         testViewCollection.fetch();
 
-        expect(testViewCollection._model.getFromServer.calls.count()).toBe(1);        
+        expect(testViewCollection._model.getFromServer.calls.count()).toBe(1);
         done();
       });
     });
+
+    it('should send a http function to the server', function(done) {
+      testInContext(function() {
+        testModel.upStream.subscribe(function(item) {
+          upStreamItems.push(item);
+        });
+        
+        scheduler.scheduleWithAbsolute(1, function() {
+          testViewCollection.callFn('testfn', {
+            value: true
+          });
+        });
+
+        scheduler.start();
+
+        expect(upStreamItems.length).toBe(1);
+        expect(upStreamItems[0].meta).toEqual({
+          action: 'function'
+        });
+        expect(upStreamItems[0].data.fnName).toBe('testfn');
+        expect(upStreamItems[0].data.fnArgs).toEqual({
+          value: true
+        });
+
+        done();
+      });
+    });
+
   });
 });
