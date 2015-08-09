@@ -26,7 +26,6 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
         parent.push(this);
         parent._items[meta.rtId] = this;
       }
-
     };
 
     var ModelMock = function ModelMock(modelName, options) {
@@ -405,7 +404,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
         testModel.upStream.subscribe(function(item) {
           upStreamItems.push(item);
         });
-        
+
         scheduler.scheduleWithAbsolute(1, function() {
           testViewCollection.callFn('testfn', {
             value: true
@@ -421,6 +420,88 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
         expect(upStreamItems[0].data.fnName).toBe('testfn');
         expect(upStreamItems[0].data.fnArgs).toEqual({
           value: true
+        });
+
+        done();
+      });
+    });
+
+    it('should get items from the function return stream', function(done) {
+      testInContext(function() {
+        var returnStreamItems = [];
+
+        testModel._rtIdHash[12] = {};
+        testModel._serverIdHash[123] = {};
+
+        testViewCollection.functionReturnStream.subscribe(function(item) {
+          returnStreamItems.push(item);
+        });
+
+        scheduler.scheduleWithAbsolute(1, function() {
+          testModel.downStream.onNext({
+            meta: {
+              action: 'function',
+              serverId: 123
+            },
+            data: {
+              fnName: 'carbonize',
+              fnArgs: {
+                place: 'Bespin'
+              },
+              fnReturn: {}
+            }
+          });
+        });
+
+        scheduler.scheduleWithAbsolute(10, function() {
+          testModel.downStream.onNext({
+            meta: {
+              action: 'function'
+            },
+            data: {
+              fnName: 'textfn',
+              fnArgs: {
+                value: true
+              },
+              fnReturn: {}
+            }
+          });
+        });
+
+        scheduler.scheduleWithAbsolute(20, function() {
+          testModel.downStream.onNext({
+            meta: {
+              action: 'save',
+              serverId: 123,
+              rtId: 12
+            },
+            data: {
+              name: 'Han Solo'
+            }
+          });
+        });
+
+        scheduler.start();
+
+        expect(returnStreamItems.length).toBe(2);
+        expect(returnStreamItems[0].meta.action).toBe('function');
+        expect(returnStreamItems[0].meta.serverId).toBe(123);
+        expect(returnStreamItems[0].data).toEqual({
+          fnName: 'carbonize',
+          fnArgs: {
+            place: 'Bespin'
+          },
+          fnReturn: {}
+        });
+
+        expect(returnStreamItems[1].meta.action).toBe('function');
+        expect(returnStreamItems[1].meta.serverId).toBeUndefined();
+        expect(returnStreamItems[1].data).toEqual({
+          fnName: 'textfn',
+          fnArgs: {
+            value: true
+          },
+          fnReturn: {}
         });
 
         done();

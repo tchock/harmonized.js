@@ -11,8 +11,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
      * @param {boolean} [addToCollection]       true if item should be added
      *                                          directly, false if not
      */
-    var ViewItem = function ViewItem(viewCollection, data, meta, subData,
-      addToCollection) {
+    var ViewItem = function ViewItem(viewCollection, data, meta, subData, addToCollection) {
       var _this = this;
 
       // If item is user created (by the collections .new() method), this is false
