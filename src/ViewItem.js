@@ -244,7 +244,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       }
     };
 
-    ViewItem.prototype.callFn = function (name, args) {
+    ViewItem.prototype.callFn = function(name, args) {
       this._sendItemToUpStream('function', {
         fnName: name,
         fnArgs: args

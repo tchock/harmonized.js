@@ -106,6 +106,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
             httpOptions.method = 'PUT';
             httpOptions.url = httpOptions.url + item.meta.serverId + '/';
           }
+
           break;
         case 'delete':
           httpOptions.method = 'DELETE';
