@@ -356,7 +356,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
                 serverId: 1000,
                 storeId: 12,
                 rtId: 12,
-                deleted: false
+                deleted: false,
+                action: 'save'
               },
               data: {
                 name: 'John Cleese'
@@ -371,7 +372,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
               meta: {
                 serverId: 1025,
                 storeId: 13,
-                deleted: false
+                deleted: false,
+                action: 'save'
               },
               data: {
                 name: 'Terry Gilliam'
@@ -416,10 +418,17 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             serverId: 1000,
             storeId: 12,
             rtId: 12,
-            deleted: false
+            deleted: false,
+            action: 'save'
           });
           expect(dbHandlerUpstreamList[1].data).toEqual(terry);
-          expect(dbHandlerUpstreamList[1].meta).toEqual(terryMeta);
+          expect(dbHandlerUpstreamList[1].meta).toEqual({
+            serverId: 1025,
+            storeId: 13,
+            rtId: 1,
+            deleted: false,
+            action: 'save'
+          });
 
           done();
         });

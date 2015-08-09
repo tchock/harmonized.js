@@ -33,8 +33,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       if (!_.isUndefined(knownItem)) {
         // Sync known item metadata with item metadata
         knownItem.meta.rtId = knownItem.meta.rtId || item.meta.rtId;
-        knownItem.meta.serverId = knownItem.meta.serverId || item.meta
-          .serverId;
+        knownItem.meta.serverId = knownItem.meta.serverId || item.meta.serverId;
         knownItem.meta.storeId = knownItem.meta.storeId || item.meta.storeId;
         knownItem.meta.deleted = item.meta.deleted || knownItem.meta.deleted;
 

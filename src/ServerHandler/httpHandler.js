@@ -96,19 +96,27 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       httpOptions.url = serverHandler._fullUrl;
 
-      if (item.meta.action === 'delete') {
-        httpOptions.method = 'DELETE';
-        httpOptions.url = httpOptions.url + item.meta.serverId + '/';
-      }
-
-      if (item.meta.action === 'save') {
-        httpOptions.data = item.data;
-        if (_.isUndefined(item.meta.serverId)) {
-          httpOptions.method = 'POST';
-        } else {
-          httpOptions.method = 'PUT';
+      var action = item.meta.action;
+      switch (action) {
+        case 'save':
+          httpOptions.data = item.data;
+          if (_.isUndefined(item.meta.serverId)) {
+            httpOptions.method = 'POST';
+          } else {
+            httpOptions.method = 'PUT';
+            httpOptions.url = httpOptions.url + item.meta.serverId + '/';
+          }
+          break;
+        case 'delete':
+          httpOptions.method = 'DELETE';
           httpOptions.url = httpOptions.url + item.meta.serverId + '/';
-        }
+          break;
+        case 'function':
+          httpOptions.method = 'POST';
+          var idPart = (_.isUndefined(item.meta.serverId)) ? '' :  item.meta.serverId + '/';
+          httpOptions.url = httpOptions.url + idPart + item.data.fnName + '/';
+          httpOptions.data = item.data.fnArgs;
+          break;
       }
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
@@ -117,9 +125,17 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         });
 
         item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
+
+        // Delete server id if not defined
+        if (_.isUndefined(item.meta.serverId)) {
+          delete item.meta.serverId;
+        }
+
         if (item.meta.action === 'delete') {
           item.meta.action = 'deletePermanently';
           item.meta.deleted = true;
+        } else if (item.meta.action === 'function') {
+          item.data.fnReturn = tempItem.data;
         }
 
         serverHandler.downStream.onNext(item);
