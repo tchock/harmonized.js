@@ -704,19 +704,28 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       httpOptions.url = serverHandler._fullUrl;
 
-      if (item.meta.action === 'delete') {
-        httpOptions.method = 'DELETE';
-        httpOptions.url = httpOptions.url + item.meta.serverId + '/';
-      }
+      var action = item.meta.action;
+      switch (action) {
+        case 'save':
+          httpOptions.data = item.data;
+          if (_.isUndefined(item.meta.serverId)) {
+            httpOptions.method = 'POST';
+          } else {
+            httpOptions.method = 'PUT';
+            httpOptions.url = httpOptions.url + item.meta.serverId + '/';
+          }
 
-      if (item.meta.action === 'save') {
-        httpOptions.data = item.data;
-        if (_.isUndefined(item.meta.serverId)) {
-          httpOptions.method = 'POST';
-        } else {
-          httpOptions.method = 'PUT';
+          break;
+        case 'delete':
+          httpOptions.method = 'DELETE';
           httpOptions.url = httpOptions.url + item.meta.serverId + '/';
-        }
+          break;
+        case 'function':
+          httpOptions.method = 'POST';
+          var idPart = (_.isUndefined(item.meta.serverId)) ? '' :  item.meta.serverId + '/';
+          httpOptions.url = httpOptions.url + idPart + item.data.fnName + '/';
+          httpOptions.data = item.data.fnArgs;
+          break;
       }
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
@@ -725,9 +734,17 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         });
 
         item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
+
+        // Delete server id if not defined
+        if (_.isUndefined(item.meta.serverId)) {
+          delete item.meta.serverId;
+        }
+
         if (item.meta.action === 'delete') {
           item.meta.action = 'deletePermanently';
           item.meta.deleted = true;
+        } else if (item.meta.action === 'function') {
+          item.data.fnReturn = tempItem.data;
         }
 
         serverHandler.downStream.onNext(item);
@@ -2046,8 +2063,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       if (!_.isUndefined(knownItem)) {
         // Sync known item metadata with item metadata
         knownItem.meta.rtId = knownItem.meta.rtId || item.meta.rtId;
-        knownItem.meta.serverId = knownItem.meta.serverId || item.meta
-          .serverId;
+        knownItem.meta.serverId = knownItem.meta.serverId || item.meta.serverId;
         knownItem.meta.storeId = knownItem.meta.storeId || item.meta.storeId;
         knownItem.meta.deleted = item.meta.deleted || knownItem.meta.deleted;
 
@@ -2391,8 +2407,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
      * @param {boolean} [addToCollection]       true if item should be added
      *                                          directly, false if not
      */
-    var ViewItem = function ViewItem(viewCollection, data, meta, subData,
-      addToCollection) {
+    var ViewItem = function ViewItem(viewCollection, data, meta, subData, addToCollection) {
       var _this = this;
 
       // If item is user created (by the collections .new() method), this is false
@@ -2460,9 +2475,10 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
     /**
      * Sends item to the upstream (to the model)
-     * @param  {string} action The action that should be added (save or delete)
+     * @param {string} action   The action that should be added (save or delete)
+     * @param {Object} [data]   Data to send instead of item data
      */
-    ViewItem.prototype._sendItemToUpStream = function(action) {
+    ViewItem.prototype._sendItemToUpStream = function(action, data) {
       var itemData = {};
       var itemMeta = {};
 
@@ -2491,13 +2507,20 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
       itemMeta.action = action;
 
-      // Get all item data
-      for (var item in this) {
-        if (this._isPropertyData(item)) {
-          itemData[item] = this[item];
+      // Set data to send
+      if (_.isObject(data)) {
+        // If the data argument is an object, send this data
+        itemData = data;
+      } else {
+        // Otherwise send the data of the item
+        for (var item in this) {
+          if (this._isPropertyData(item)) {
+            itemData[item] = this[item];
+          }
         }
       }
 
+      // Push to upstream
       this._streams.upStream.onNext({
         data: itemData,
         meta: itemMeta
@@ -2615,7 +2638,14 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
           this[subModel] = new ViewCollection(subData[subModel]);
         }
       }
-    }
+    };
+
+    ViewItem.prototype.callFn = function(name, args) {
+      this._sendItemToUpStream('function', {
+        fnName: name,
+        fnArgs: args
+      });
+    };
 
     return ViewItem;
   });
@@ -2648,7 +2678,10 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     };
 
     // map the downstream to show the data as the view needs it
-    collection.downStream = model.downStream.map(function(item) {
+    collection.downStream = model.downStream.filter(function(item) {
+      // Don't let returning function in the downstream
+      return item.meta.action !== 'function';
+    }).map(function(item) {
       var newItem = _.clone(item);
       newItem.data = collection._mapDownFn(newItem.data);
       return newItem;
@@ -2676,6 +2709,11 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     // Get all model items
     model.getItems(function(item) {
       new ViewItem(collection, item.data, item.meta, null, true);
+    });
+
+    collection.functionReturnStream = model.downStream.filter(function(item) {
+      console.log(item.meta.action);
+      return item.meta.action === 'function';
     });
 
     return collection;
@@ -2731,6 +2769,18 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
    */
   ViewCollection.prototype.new = function() {
     return new ViewItem(this, {}, {}, null);
+  };
+
+  ViewCollection.prototype.callFn = function(name, args) {
+    this.upStream.onNext({
+      meta: {
+        action: 'function'
+      },
+      data: {
+        fnName: name,
+        fnArgs: args
+      }
+    });
   };
 
   return ViewCollection;
