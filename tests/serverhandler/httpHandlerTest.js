@@ -520,6 +520,108 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(sh._broadcastError.calls.count()).toBe(1);
         });
 
+        it('should send a collection function to the server', function() {
+          var returnedItem = null;
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push({
+              meta: {
+                action: 'function'
+              },
+              data: {
+                fnName: 'testfn',
+                fnArgs: {
+                  value: true
+                }
+              }
+            }, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          expect(receivedOptions).toEqual({
+            method: 'POST',
+            url: 'http://www.hyphe.me/test/resource/testfn/',
+            data: {
+              value: true
+            }
+          });
+
+          expect(returnedItem).toEqual({
+            meta: {
+              action: 'function'
+            },
+            data: {
+              fnName: 'testfn',
+              fnArgs: {
+                value: true
+              },
+              fnReturn: {
+                value: true
+              }
+            }
+          });
+        });
+
+        it('should send a item function to the server', function() {
+          var returnedItem = null;
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push({
+              meta: {
+                serverId: 123,
+                rtId: 2,
+                action: 'function'
+              },
+              data: {
+                fnName: 'carbonize',
+                fnArgs: {
+                  place: 'Bespin'
+                }
+              }
+            }, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          expect(receivedOptions).toEqual({
+            method: 'POST',
+            url: 'http://www.hyphe.me/test/resource/123/carbonize/',
+            data: {
+              place: 'Bespin'
+            }
+          });
+
+          expect(returnedItem).toEqual({
+            meta: {
+              serverId: 123,
+              rtId: 2,
+              action: 'function'
+            },
+            data: {
+              fnName: 'carbonize',
+              fnArgs: {
+                place: 'Bespin'
+              },
+              fnReturn: {
+                place: 'Bespin'
+              }
+            }
+          });
+        });
+
       });
 
       it('should send a custom request', function() {
@@ -553,8 +655,6 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           url: 'http://hyphe.me/blub',
           hello: 'dave'
         });
-
-
       });
 
     });
