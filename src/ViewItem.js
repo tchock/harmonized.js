@@ -80,9 +80,10 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
     /**
      * Sends item to the upstream (to the model)
-     * @param  {string} action The action that should be added (save or delete)
+     * @param {string} action   The action that should be added (save or delete)
+     * @param {Object} [data]   Data to send instead of item data
      */
-    ViewItem.prototype._sendItemToUpStream = function(action) {
+    ViewItem.prototype._sendItemToUpStream = function(action, data) {
       var itemData = {};
       var itemMeta = {};
 
@@ -111,13 +112,20 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
       itemMeta.action = action;
 
-      // Get all item data
-      for (var item in this) {
-        if (this._isPropertyData(item)) {
-          itemData[item] = this[item];
+      // Set data to send
+      if (_.isObject(data)) {
+        // If the data argument is an object, send this data
+        itemData = data;
+      } else {
+        // Otherwise send the data of the item
+        for (var item in this) {
+          if (this._isPropertyData(item)) {
+            itemData[item] = this[item];
+          }
         }
       }
 
+      // Push to upstream
       this._streams.upStream.onNext({
         data: itemData,
         meta: itemMeta
@@ -235,6 +243,13 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
           this[subModel] = new ViewCollection(subData[subModel]);
         }
       }
+    }
+
+    ViewItem.prototype.callFn = function (name, args) {
+      this._sendItemToUpStream('function', {
+        fnName: name,
+        fnArgs: args
+      });
     }
 
     return ViewItem;

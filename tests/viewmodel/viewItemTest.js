@@ -528,5 +528,38 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       });
     });
 
+    it('should send a http function to the server', function(done) {
+      var injector = new Squire();
+      injector.mock('ViewCollection', ViewCollectionMock);
+      injector.require(['ViewItem'], function(ViewItem) {
+        var viewItem = new ViewItem(testViewCollection, {
+          name: 'Han Solo',
+          evil: false
+        }, {
+          serverId: 1234,
+          rtId: 123
+        });
+
+        scheduler.scheduleWithAbsolute(1, function() {
+          viewItem.callFn('carbonize', {
+            place: 'Bespin'
+          });
+        });
+
+        scheduler.start();
+
+        expect(upStreamItems.length).toBe(1);
+        expect(upStreamItems[0].meta.serverId).toBe(1234);
+        expect(upStreamItems[0].meta.action).toBe('function');
+        expect(upStreamItems[0].data.fnName).toBe('carbonize');
+        expect(upStreamItems[0].data.fnArgs).toEqual({
+          place: 'Bespin'
+        });
+
+        done();
+      });
+
+    });
+
   });
 });
