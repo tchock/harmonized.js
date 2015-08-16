@@ -12,7 +12,8 @@ define('harmonizedData', ['lodash'], function(_) {
     baseUrl: null,
     dbName: 'harmonizedDb',
     sendModifiedSince: false,
-    fetchAtStart: false
+    fetchAtStart: false,
+    saveLocally: false
   };
 
   data._resourceSchema = {};
