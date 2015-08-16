@@ -452,7 +452,8 @@ define('harmonizedData', ['lodash'], function(_) {
     baseUrl: null,
     dbName: 'harmonizedDb',
     sendModifiedSince: false,
-    fetchAtStart: false
+    fetchAtStart: false,
+    saveLocally: false
   };
 
   data._resourceSchema = {};
@@ -2110,6 +2111,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     setOptionIfUndefined(thisOptions, 'route', modelSchema);
     setOptionIfUndefined(thisOptions, 'keys', modelSchema);
     setOptionIfUndefined(thisOptions, 'storeName', modelSchema);
+    setOptionIfUndefined(thisOptions, 'saveLocally', modelSchema);
 
     _this._subModelsSchema = modelSchema.subModels;
 
@@ -2122,26 +2124,45 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
 
     // Set server- and database handlers
     _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.serverOptions);
-    _this._dbHandler = dbHandlerFactory.createDbHandler(thisOptions.storeName,
-      thisOptions.keys);
+    if (thisOptions.saveLocally) {
+      // Data should be saved locally
+      _this._dbHandler = dbHandlerFactory.createDbHandler(thisOptions.storeName, thisOptions.keys);
 
-    dbHandlerFactory._DbHandler._connectionStream.subscribe(function(state) {
-      if (state === true) {
+      // Listen to the database to be connected, to get all entries
+      dbHandlerFactory._DbHandler._connectionStream.subscribe(function(state) {
+        if (state === true) {
+          _this._dbHandler.getAllEntries(function() {
+            _this._dbReadyCb();
+          });
+        }
+      });
+
+      // Get all entries, if the database is already connected
+      if (dbHandlerFactory._DbHandler._db !== null) {
         _this._dbHandler.getAllEntries(function() {
           _this._dbReadyCb();
         });
       }
-    });
 
-    if (dbHandlerFactory._DbHandler._db !== null) {
-      _this._dbHandler.getAllEntries(function() {
-        _this._dbReadyCb();
-      });
+    } else {
+      // Data should not be saved locally
+      _this._dbHandler = {
+        downStream: new Rx.Subject(),
+        upStream: new Rx.Subject()
+      };
+
+      // Subscribe the downstream directly to the upstream
+      _this._dbHandler.upStream.map(function(item) {
+        item.meta.action = (item.meta.action === 'delete') ? 'deletePermanently' : item.meta.action;
+        return item;
+      }).subscribe(_this._dbHandler.downStream);
+
+      // No DB, so db is immediately ready ;)
+      _this._dbReadyCb();
     }
 
     // The downstreams with map function to add not added hash ids
     _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this));
-
     _this._dbDownStream = _this._dbHandler.downStream.map(downStreamMap(_this));
 
     // Add already available items to the database
