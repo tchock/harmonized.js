@@ -98,6 +98,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           _connectionStream: new Rx.Subject()
         }
       };
+
       dbHandlerFactoryMock.createDbHandler = function createDbHandler(storeName,
         keys) {
 
@@ -132,7 +133,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             keys: {
               serverKey: 'id',
               storeKey: '_id'
-            }
+            },
+            saveLocally: true
           },
           explicitTest: {
             storeName: 'test',
@@ -141,7 +143,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             keys: {
               serverKey: 'id',
               storeKey: '_id'
-            }
+            },
+            saveLocally: true
           }
         }
       };
@@ -165,7 +168,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           storeName: 'test',
           serverOptions: {
             serverKey: 'id'
-          }
+          },
+          saveLocally: true
         };
 
         returnedData = undefined;
@@ -772,6 +776,65 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           expect(serverHandlerUpstreamList[1].meta.storeId).toBe(125);
           expect(serverHandlerUpstreamList[2].meta.action).toBe('save');
           expect(serverHandlerUpstreamList[2].meta.storeId).toBe(126);
+          done();
+        });
+      });
+
+      it('should create a model without local database', function(done) {
+        testInContext(function(deps) {
+          spyOn(deps.Model.prototype, '_dbReadyCb').and.stub();
+
+          expect(deps.Model.prototype._dbReadyCb).not.toHaveBeenCalled();
+
+          testModel = new deps.Model('test', {
+            saveLocally: false
+          });
+
+          expect(testModel._dbHandler._storeName).toBeUndefined();
+          expect(testModel._dbReadyCb).toHaveBeenCalled();
+
+          var downStreamItems = [];
+          testModel._dbHandler.downStream.subscribe(function(item) {
+            downStreamItems.push(item);
+          });
+
+          // Test upstream
+          scheduler.scheduleWithAbsolute(1, function() {
+            testModel._dbHandler.upStream.onNext({
+              meta: {
+                serverId: 1000,
+                storeId: 12,
+                rtId: 12,
+                action: 'save',
+                deleted: false
+              },
+              data: {
+                name: 'John Cleese'
+              }
+            });
+          });
+
+          scheduler.scheduleWithAbsolute(10, function() {
+            testModel._dbHandler.upStream.onNext({
+              meta: {
+                serverId: 1000,
+                storeId: 12,
+                rtId: 12,
+                action: 'delete',
+                deleted: false
+              },
+              data: {
+                name: 'John Cleese'
+              }
+            });
+          });
+
+          scheduler.start();
+
+          expect(downStreamItems.length).toBe(2);
+          expect(downStreamItems[0].meta.action).toBe('save');
+          expect(downStreamItems[1].meta.action).toBe('deletePermanently');
+
           done();
         });
       });
