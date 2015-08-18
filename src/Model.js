@@ -154,7 +154,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * Creates a new item
    * @param  {Object} item The stream item with metadata and data
    */
-  Model.prototype._createNewItem = function (item) {
+  Model.prototype._createNewItem = function(item) {
     var newModel = new ModelItem(this, item.data, item.meta);
     item.meta = _.clone(newModel.meta);
     delete item.meta.action;
@@ -163,7 +163,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
   /**
    * Builds the database handler (will only be called in the constructor)
    */
-  Model.prototype._buildDbHandler = function () {
+  Model.prototype._buildDbHandler = function() {
     var _this = this;
     _this._dbHandler = dbHandlerFactory.createDbHandler(_this._options.storeName, _this._options.keys);
 
@@ -188,7 +188,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * Builds a stub for the database handler, because there will be no saving into
    * the local database.
    */
-  Model.prototype._buildDbHandlerStub = function () {
+  Model.prototype._buildDbHandlerStub = function() {
     this._dbHandler = {
       downStream: new Rx.Subject(),
       upStream: new Rx.Subject()

@@ -33,7 +33,9 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       this.downStream = new Rx.Subject();
       this.downStream.subscribe(
         /* istanbul ignore next */
-        function() {}, function(error) {
+        function() {},
+
+        function(error) {
           ServerHandler.errorStream.onNext(error);
         });
 
