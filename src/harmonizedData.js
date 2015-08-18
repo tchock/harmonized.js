@@ -97,6 +97,18 @@ define('harmonizedData', ['lodash'], function(_) {
         currentModel.baseUrl = data._config.baseUrl;
       }
 
+      if (_.isUndefined(currentModel.saveLocally)) {
+        currentModel.saveLocally = data._config.saveLocally;
+      }
+
+      if (_.isUndefined(currentModel.serverOptions)) {
+        currentModel.serverOptions = _.clone(data._config.serverOptions);
+      }
+
+      if (_.isUndefined(currentModel.fetchAtStart)) {
+        currentModel.fetchAtStart = data._config.fetchAtStart;
+      }
+
       subModels = currentModel.subModels;
       if (_.isObject(subModels)) {
         data._setModelSchema(subModels, currentModel.storeName + '_');

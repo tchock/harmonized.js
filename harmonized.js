@@ -537,6 +537,18 @@ define('harmonizedData', ['lodash'], function(_) {
         currentModel.baseUrl = data._config.baseUrl;
       }
 
+      if (_.isUndefined(currentModel.saveLocally)) {
+        currentModel.saveLocally = data._config.saveLocally;
+      }
+
+      if (_.isUndefined(currentModel.serverOptions)) {
+        currentModel.serverOptions = _.clone(data._config.serverOptions);
+      }
+
+      if (_.isUndefined(currentModel.fetchAtStart)) {
+        currentModel.fetchAtStart = data._config.fetchAtStart;
+      }
+
       subModels = currentModel.subModels;
       if (_.isObject(subModels)) {
         data._setModelSchema(subModels, currentModel.storeName + '_');
@@ -664,7 +676,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         // Go through all returned items
         for (var i = 0; i < responseLenght; i++) {
           var item = harmonizedData._createStreamItem(returnedItems[i], {
-            serverKey: serverHandler._options.serverKey
+            serverKey: serverHandler._keys.serverKey
           });
           item.meta.action = 'save';
 
@@ -734,7 +746,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
         var tempItem = harmonizedData._createStreamItem(returnItem.data, {
-          serverKey: serverHandler._options.serverKey
+          serverKey: serverHandler._keys.serverKey
         });
 
         item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
@@ -1077,6 +1089,11 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     // Public streams
     this.downStream = new Rx.Subject();
     this.upStream = new Rx.Subject();
+
+    this.upStream.subscribe(function(item) {
+      console.log('db up sub');
+      console.log(JSON.stringify(item));
+    });
 
     // Internal pausable upstream
     this._upStream = this.upStream.pausableBuffered(dbHandler._connectionStream);
@@ -1936,6 +1953,12 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     _this._updateStreams = Rx.Observable.merge(parentModel.upStream,
       parentModel._existingItemDownStream).filter(filterThisItem);
 
+    parentModel._existingItemDownStream.subscribe(function(item) {
+      console.log('whiii');
+      console.log(item);
+      console.log('----');
+    });
+
     /**
      * Gets the model of the item. This is needed as a function to prevent
      * circular dependency
@@ -2060,11 +2083,13 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * @param  {Model} model  The Model where the metadata will be changed
    * @return {Object}       The item with the updated metadata
    */
-  function downStreamMap(model) {
+  function downStreamMap(model, source) {
     return function(item) {
       var knownItem = model._rtIdHash[item.meta.rtId] || model._serverIdHash[
         item.meta.serverId] || model._storeIdHash[item.meta.storeId];
-
+      console.log('agag ' + source);
+      console.log(JSON.stringify(item));
+      console.log('______');
       if (!_.isUndefined(knownItem)) {
         // Sync known item metadata with item metadata
         knownItem.meta.rtId = knownItem.meta.rtId || item.meta.rtId;
@@ -2115,28 +2140,34 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       }
     }
 
+    console.log(thisOptions);
+
     _this._subModelsSchema = modelSchema.subModels;
 
     // Set server- and database handlers
-    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.keys);
+    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.keys, thisOptions.serverOptions);
 
     // Build db handler if data should be saved locally or build the db handler
     // stub, to fake a database call. This is simpler to write extra logic for
     // the case, that no data will be saved locally.
     if (thisOptions.saveLocally) {
+      console.log('whaaaa');
       _this._buildDbHandler();
     } else {
       _this._buildDbHandlerStub();
     }
 
+    _this._serverHandler.downStream.subscribe(function(item) {
+      console.log('server down sub');
+      console.log(JSON.stringify(item));
+    });
+
     // The downstreams with map function to add not added hash ids
-    _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this));
-    _this._dbDownStream = _this._dbHandler.downStream.map(downStreamMap(_this));
+    _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this, 'server'));
+    _this._dbDownStream = _this._dbHandler.downStream.map(downStreamMap(_this, 'database'));
 
     // Add already available items to the database
-    _this._serverDownStream.filter(function(item) {
-      return !_.isUndefined(item.meta.rtId);
-    }).subscribe(_this._dbHandler.upStream);
+    _this._serverDownStream.subscribe(_this._dbHandler.upStream);
 
     // Public upstream
     _this.upStream = new Rx.Subject();
@@ -2270,6 +2301,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     var _this = this;
     if (harmonizedData._config.fetchAtStart) {
       _this.getFromServer(function() {
+        console.log('got from server');
         _this.pushChanges();
       });
     }

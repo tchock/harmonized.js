@@ -141,7 +141,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh = {
             downStream: new Rx.Subject(),
             _fullUrl: 'http://www.hyphe.me/test/resource/',
-            _options: {}
+            _options: {},
+            _keys: {}
           };
         });
 
@@ -246,6 +247,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             downStream: new Rx.Subject(),
             _fullUrl: 'http://www.hyphe.me/test/resource/',
             _options: {},
+            _keys: {},
             _unpushedList: {}
           };
         });

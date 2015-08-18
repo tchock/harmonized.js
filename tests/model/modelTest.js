@@ -493,9 +493,10 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           // New Items should always be send to the server through the new item.
           // So the upstream item lists should be empty.
           expect(serverHandlerUpstreamList.length).toEqual(0);
-          expect(dbHandlerUpstreamList.length).toEqual(0);
+          expect(dbHandlerUpstreamList.length).toEqual(2);
 
-          expect(dbHandlerUpstreamList).toEqual(serverHandlerUpstreamList);
+          expect(dbHandlerUpstreamList[0].meta.serverId).toEqual(1000);
+          expect(dbHandlerUpstreamList[1].meta.serverId).toEqual(1025);
 
           done();
         });

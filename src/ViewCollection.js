@@ -60,7 +60,6 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     });
 
     collection.functionReturnStream = model.downStream.filter(function(item) {
-      console.log(item.meta.action);
       return item.meta.action === 'function';
     });
 

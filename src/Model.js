@@ -25,11 +25,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    * @param  {Model} model  The Model where the metadata will be changed
    * @return {Object}       The item with the updated metadata
    */
-  function downStreamMap(model) {
+  function downStreamMap(model, source) {
     return function(item) {
       var knownItem = model._rtIdHash[item.meta.rtId] || model._serverIdHash[
         item.meta.serverId] || model._storeIdHash[item.meta.storeId];
-
       if (!_.isUndefined(knownItem)) {
         // Sync known item metadata with item metadata
         knownItem.meta.rtId = knownItem.meta.rtId || item.meta.rtId;
@@ -95,13 +94,11 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     }
 
     // The downstreams with map function to add not added hash ids
-    _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this));
-    _this._dbDownStream = _this._dbHandler.downStream.map(downStreamMap(_this));
+    _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this, 'server'));
+    _this._dbDownStream = _this._dbHandler.downStream.map(downStreamMap(_this, 'database'));
 
     // Add already available items to the database
-    _this._serverDownStream.filter(function(item) {
-      return !_.isUndefined(item.meta.rtId);
-    }).subscribe(_this._dbHandler.upStream);
+    _this._serverDownStream.subscribe(_this._dbHandler.upStream);
 
     // Public upstream
     _this.upStream = new Rx.Subject();
