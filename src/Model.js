@@ -57,8 +57,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       }
 
       return item;
-    }
-  }
+    };
+  };
 
   /**
    * The constructor of the Model
@@ -68,66 +68,30 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
   var Model = function Model(modelName, options) {
     var _this = this;
 
-    _this.randomId = Math.round(Math.random() * 100000);
-
     _this._modelName = modelName;
     _this._options = options || {};
 
     // Set the options defined in the model schema if not manually overwritten
     var modelSchema = harmonizedData._modelSchema[modelName];
     var thisOptions = _this._options;
-    setOptionIfUndefined(thisOptions, 'baseUrl', modelSchema);
-    setOptionIfUndefined(thisOptions, 'route', modelSchema);
-    setOptionIfUndefined(thisOptions, 'keys', modelSchema);
-    setOptionIfUndefined(thisOptions, 'storeName', modelSchema);
-    setOptionIfUndefined(thisOptions, 'saveLocally', modelSchema);
+    for (var optKey in modelSchema) {
+      if (modelSchema.hasOwnProperty(optKey)) {
+        setOptionIfUndefined(thisOptions, optKey, modelSchema);
+      }
+    }
 
     _this._subModelsSchema = modelSchema.subModels;
 
-    // TODO check if should be moved to modelSchema
-    if (_.isUndefined(thisOptions.serverOptions)) {
-      thisOptions.serverOptions = {
-        serverKey: thisOptions.keys.serverKey
-      };
-    }
-
     // Set server- and database handlers
-    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.serverOptions);
+    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.keys);
+
+    // Build db handler if data should be saved locally or build the db handler
+    // stub, to fake a database call. This is simpler to write extra logic for
+    // the case, that no data will be saved locally.
     if (thisOptions.saveLocally) {
-      // Data should be saved locally
-      _this._dbHandler = dbHandlerFactory.createDbHandler(thisOptions.storeName, thisOptions.keys);
-
-      // Listen to the database to be connected, to get all entries
-      dbHandlerFactory._DbHandler._connectionStream.subscribe(function(state) {
-        if (state === true) {
-          _this._dbHandler.getAllEntries(function() {
-            _this._dbReadyCb();
-          });
-        }
-      });
-
-      // Get all entries, if the database is already connected
-      if (dbHandlerFactory._DbHandler._db !== null) {
-        _this._dbHandler.getAllEntries(function() {
-          _this._dbReadyCb();
-        });
-      }
-
+      _this._buildDbHandler();
     } else {
-      // Data should not be saved locally
-      _this._dbHandler = {
-        downStream: new Rx.Subject(),
-        upStream: new Rx.Subject()
-      };
-
-      // Subscribe the downstream directly to the upstream
-      _this._dbHandler.upStream.map(function(item) {
-        item.meta.action = (item.meta.action === 'delete') ? 'deletePermanently' : item.meta.action;
-        return item;
-      }).subscribe(_this._dbHandler.downStream);
-
-      // No DB, so db is immediately ready ;)
-      _this._dbReadyCb();
+      _this._buildDbHandlerStub();
     }
 
     // The downstreams with map function to add not added hash ids
@@ -171,9 +135,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._downStream.filter(function(item) {
       return _.isUndefined(item.meta.rtId);
     }).subscribe(function(item) {
-      var newModel = new ModelItem(_this, item.data, item.meta);
-      item.meta = _.clone(newModel.meta);
-      delete item.meta.action;
+      _this._createNewItem(item);
     });
 
     // Hashs for ModelItems
@@ -186,6 +148,62 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     // Get data from db and server
 
     return _this;
+  };
+
+  /**
+   * Creates a new item
+   * @param  {Object} item The stream item with metadata and data
+   */
+  Model.prototype._createNewItem = function (item) {
+    var newModel = new ModelItem(this, item.data, item.meta);
+    item.meta = _.clone(newModel.meta);
+    delete item.meta.action;
+  };
+
+  /**
+   * Builds the database handler (will only be called in the constructor)
+   */
+  Model.prototype._buildDbHandler = function () {
+    var _this = this;
+    _this._dbHandler = dbHandlerFactory.createDbHandler(_this._options.storeName, _this._options.keys);
+
+    // Listen to the database to be connected, to get all entries
+    dbHandlerFactory._DbHandler._connectionStream.subscribe(function(state) {
+      if (state === true) {
+        _this._dbHandler.getAllEntries(function() {
+          _this._dbReadyCb();
+        });
+      }
+    });
+
+    // Get all entries, if the database is already connected
+    if (dbHandlerFactory._DbHandler._db !== null) {
+      _this._dbHandler.getAllEntries(function() {
+        _this._dbReadyCb();
+      });
+    }
+  };
+
+  /**
+   * Builds a stub for the database handler, because there will be no saving into
+   * the local database.
+   */
+  Model.prototype._buildDbHandlerStub = function () {
+    this._dbHandler = {
+      downStream: new Rx.Subject(),
+      upStream: new Rx.Subject()
+    };
+
+    // Subscribe the downstream directly to the upstream
+    this._dbHandler.upStream.map(function(item) {
+      // Set action to "deletePermanently" if action was delete
+      // to permanently delete item in Model
+      item.meta.action = (item.meta.action === 'delete') ? 'deletePermanently' : item.meta.action;
+      return item;
+    }).subscribe(this._dbHandler.downStream);
+
+    // No DB, so db is immediately ready ;)
+    this._dbReadyCb();
   };
 
   /**

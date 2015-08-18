@@ -447,7 +447,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
 
             mockWebStorage.localStorageContent = {
-              harmonizedMeta_testStore: expectedObject
+              'harmonized-meta-testStore': expectedObject
             };
 
             dbHandler = new deps.DbHandler(explicitDbHandler,
@@ -470,7 +470,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             expect(dbHandler._metadata).toEqual(
               expectedObject);
             expect(mockWebStorage.localStorageContent).toEqual({
-              harmonizedMeta_testStore: expectedObject
+              'harmonized-meta-testStore': expectedObject
             });
             done();
           });
@@ -480,7 +480,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           done) {
           testInContext(function(deps) {
             mockWebStorage.localStorageContent = {
-              harmonizedMeta_testStore: {
+              'harmonized-meta-testStore': {
                 name: 'John Doe'
               }
             };
@@ -497,7 +497,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             expect(dbHandler._metadata).toEqual(
               expectedObject);
             expect(mockWebStorage.localStorageContent).toEqual({
-              harmonizedMeta_testStore: expectedObject
+              'harmonized-meta-testStore': expectedObject
             });
             done();
           });

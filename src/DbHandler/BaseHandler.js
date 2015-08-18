@@ -66,7 +66,7 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     this._deletePermanentlySubscribe = this._deletePermanentlyDownstream.subscribe(this.downStream);
 
     // Initially get the metadata
-    this._metaStorageName = 'harmonizedMeta_' + this._storeName;
+    this._metaStorageName = 'harmonized-meta-' + this._storeName;
     this._metadata = webStore.getWebStorage().getItem(this._metaStorageName) || {};
   };
 
