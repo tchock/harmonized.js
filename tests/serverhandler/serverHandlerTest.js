@@ -48,8 +48,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           sh = new ServerHandler(['http://api.hyphe.me/', 'rest',
             'resource'
           ], {
-            serverKey: 'id',
-            modelName: 'test'
+            serverKey: 'id'
           });
 
           pushList = [];
@@ -329,6 +328,8 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           testInContext(function(deps) {
             sh = new deps.ServerHandler(
               ['http://api.hyphe.me', 'rest', 'resource'], {
+                serverKey: 'id'
+              }, {
                 protocol: 'websocket'
               });
             expect(deps.ServerHandler.prototype._setProtocol)
@@ -638,7 +639,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
       it('should get the last modified value at the beginning', function(done) {
         testInContext(function(deps) {
-          mockWebStorage.localStorageContent.harmonized_modified_testo = 123;
+          mockWebStorage.localStorageContent['harmonized-modified-testi'] = 123;
           sh = new deps.ServerHandler(['http://hyphe.me', 'testi'], {
             serverKey: 'id',
             modelName: 'testo'
@@ -657,7 +658,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           sh.setLastModified(9001);
 
           expect(sh._lastModified).toBe(9001);
-          expect(mockWebStorage.localStorageContent.harmonized_modified_test).toBe(9001);
+          expect(mockWebStorage.localStorageContent['harmonized-modified-rest_resource']).toBe(9001);
 
           done();
         });

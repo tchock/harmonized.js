@@ -11,13 +11,14 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      *                            first array entry is the base URL
      * @param  {Object} options   The options for the server handler
      */
-    var ServerHandler = function(route, options) {
+    var ServerHandler = function(route, keys, options) {
       var _this = this;
 
       this._baseUrl = route.splice(0, 1)[0];
       this._resourcePath = route;
       this._fullUrl = this._buildUrl();
-      this._options = options;
+      this._options = options || {};
+      this._keys = keys;
 
       // Public streams
       this.upStream = new Rx.Subject();
@@ -32,10 +33,8 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       this.downStream = new Rx.Subject();
       this.downStream.subscribe(
         /* istanbul ignore next */
-        function(item) {
-        }, function(error) {
-          //ServerHandler.errorStream.onNext(error);
-
+        function() {}, function(error) {
+          ServerHandler.errorStream.onNext(error);
         });
 
       // Instance connection stream that gets input from
@@ -56,11 +55,11 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       this._unpushedList = {};
 
       this._lastModified = webStorage.getWebStorage().getItem(
-        'harmonized_modified_' + this._options.modelName) || 0;
+        'harmonized-modified-' + this._resourcePath.join('_')) || 0;
 
       this._protocol = null;
       var useProtocol;
-      if (options.protocol === 'websocket') {
+      if (this._options.protocol === 'websocket') {
         useProtocol = 'websocket';
       } else {
         useProtocol = 'http';
@@ -157,7 +156,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       var serverItem = _.clone(item.data);
 
       if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
-        serverItem[this._options.serverKey] = item.meta.serverId;
+        serverItem[this._keys.serverKey] = item.meta.serverId;
       }
 
       return serverItem;
@@ -171,13 +170,13 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       }
 
       return url;
-    }
+    };
 
     ServerHandler.prototype.setLastModified = function(lastModified) {
       this._lastModified = lastModified;
-      webStorage.getWebStorage().setItem('harmonized_modified_' + this._options
-        .modelName, lastModified);
-    }
+      var path = this._resourcePath.join('_');
+      webStorage.getWebStorage().setItem('harmonized-modified-' + path, lastModified);
+    };
 
     return ServerHandler;
   });

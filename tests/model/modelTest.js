@@ -166,9 +166,6 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             storeKey: '_id'
           },
           storeName: 'test',
-          serverOptions: {
-            serverKey: 'id'
-          },
           saveLocally: true
         };
 

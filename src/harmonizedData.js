@@ -13,7 +13,10 @@ define('harmonizedData', ['lodash'], function(_) {
     dbName: 'harmonizedDb',
     sendModifiedSince: false,
     fetchAtStart: false,
-    saveLocally: false
+    saveLocally: false,
+    serverOptions: {
+      protocol: 'http'
+    }
   };
 
   data._resourceSchema = {};
