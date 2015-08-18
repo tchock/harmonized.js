@@ -52,7 +52,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         // Go through all returned items
         for (var i = 0; i < responseLenght; i++) {
           var item = harmonizedData._createStreamItem(returnedItems[i], {
-            serverKey: serverHandler._options.serverKey
+            serverKey: serverHandler._keys.serverKey
           });
           item.meta.action = 'save';
 
@@ -122,7 +122,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
         var tempItem = harmonizedData._createStreamItem(returnItem.data, {
-          serverKey: serverHandler._options.serverKey
+          serverKey: serverHandler._keys.serverKey
         });
 
         item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;

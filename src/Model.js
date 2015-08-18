@@ -83,7 +83,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._subModelsSchema = modelSchema.subModels;
 
     // Set server- and database handlers
-    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.keys);
+    _this._serverHandler = new ServerHandler(_this.getFullRoute(), thisOptions.keys, thisOptions.serverOptions);
 
     // Build db handler if data should be saved locally or build the db handler
     // stub, to fake a database call. This is simpler to write extra logic for
