@@ -1090,11 +1090,6 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
     this.downStream = new Rx.Subject();
     this.upStream = new Rx.Subject();
 
-    this.upStream.subscribe(function(item) {
-      console.log('db up sub');
-      console.log(JSON.stringify(item));
-    });
-
     // Internal pausable upstream
     this._upStream = this.upStream.pausableBuffered(dbHandler._connectionStream);
 
@@ -1953,12 +1948,6 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     _this._updateStreams = Rx.Observable.merge(parentModel.upStream,
       parentModel._existingItemDownStream).filter(filterThisItem);
 
-    parentModel._existingItemDownStream.subscribe(function(item) {
-      console.log('whiii');
-      console.log(item);
-      console.log('----');
-    });
-
     /**
      * Gets the model of the item. This is needed as a function to prevent
      * circular dependency
@@ -2087,9 +2076,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     return function(item) {
       var knownItem = model._rtIdHash[item.meta.rtId] || model._serverIdHash[
         item.meta.serverId] || model._storeIdHash[item.meta.storeId];
-      console.log('agag ' + source);
-      console.log(JSON.stringify(item));
-      console.log('______');
       if (!_.isUndefined(knownItem)) {
         // Sync known item metadata with item metadata
         knownItem.meta.rtId = knownItem.meta.rtId || item.meta.rtId;
@@ -2140,8 +2126,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
       }
     }
 
-    console.log(thisOptions);
-
     _this._subModelsSchema = modelSchema.subModels;
 
     // Set server- and database handlers
@@ -2151,16 +2135,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     // stub, to fake a database call. This is simpler to write extra logic for
     // the case, that no data will be saved locally.
     if (thisOptions.saveLocally) {
-      console.log('whaaaa');
       _this._buildDbHandler();
     } else {
       _this._buildDbHandlerStub();
     }
-
-    _this._serverHandler.downStream.subscribe(function(item) {
-      console.log('server down sub');
-      console.log(JSON.stringify(item));
-    });
 
     // The downstreams with map function to add not added hash ids
     _this._serverDownStream = _this._serverHandler.downStream.map(downStreamMap(_this, 'server'));
@@ -2301,7 +2279,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     var _this = this;
     if (harmonizedData._config.fetchAtStart) {
       _this.getFromServer(function() {
-        console.log('got from server');
         _this.pushChanges();
       });
     }
@@ -2787,7 +2764,6 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     });
 
     collection.functionReturnStream = model.downStream.filter(function(item) {
-      console.log(item.meta.action);
       return item.meta.action === 'function';
     });
 
