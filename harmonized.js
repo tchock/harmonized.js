@@ -1039,10 +1039,11 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      * @param  {Object} item Item that has to be transformed to server server structure
      * @return {Object}      The item in the structure the server accepts
      */
-    ServerHandler.prototype._createServerItem = function createServerItem(
-      item) {
-      // Clone data and arrange it for db
-      var serverItem = _.clone(item.data);
+    ServerHandler.prototype._createServerItem = function createServerItem(item) {
+      var meta = item.meta || {};
+      var serverData = meta.serverData || {};
+
+      var serverItem = _.extend({}, item.data, serverData);
 
       if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
         serverItem[this._keys.serverKey] = item.meta.serverId;
@@ -2527,10 +2528,12 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
     /**
      * Sends item to the upstream (to the model)
-     * @param {string} action   The action that should be added (save or delete)
-     * @param {Object} [data]   Data to send instead of item data
+     * @param {string} action       The action that should be added (save or delete)
+     * @param {Object} [data]       Data to send instead of item data
+     * @param {Object} serverData   Data that will additionally send to the server.
+     *                              Is ignored by everything else
      */
-    ViewItem.prototype._sendItemToUpStream = function(action, data) {
+    ViewItem.prototype._sendItemToUpStream = function(action, data, serverData) {
       var itemData = {};
       var itemMeta = {};
 
@@ -2559,6 +2562,10 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
       itemMeta.action = action;
 
+      if (_.isPlainObject(serverData)) {
+        itemMeta.serverData = serverData;
+      }
+
       // Set data to send
       if (_.isObject(data)) {
         // If the data argument is an object, send this data
@@ -2582,9 +2589,11 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
     /**
      * Saves the item and updates the data of the model, server and local
      * database. If item is not yet in the collection, it adds itself.
+     * @param {Object} serverData   Data that will additionally send to the server.
+     *                              Is ignored by everything else
      */
-    ViewItem.prototype.save = function() {
-      this._sendItemToUpStream('save');
+    ViewItem.prototype.save = function(serverData) {
+      this._sendItemToUpStream('save', undefined, serverData);
     };
 
     /**

@@ -245,6 +245,43 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       done();
     });
 
+    it('should save an entry with additional data for the server', function(done) {
+      var viewItem = new ViewItem(testViewCollection, {});
+      viewItem.name = 'Han Solo';
+      viewItem.evil = false;
+
+      expect(testViewCollection.length).toBe(0);
+      expect(upStreamItems.length).toBe(0);
+
+      viewItem.save({
+        credential: 'LeaCutie123'
+      });
+
+      scheduler.start();
+
+      expect(testViewCollection.length).toBe(1);
+      expect(testViewCollection[0]).toBe(viewItem);
+      expect(testViewCollection._items[1]).toBe(viewItem);
+
+      expect(downStreamItems.length).toBe(0);
+      expect(upStreamItems.length).toBe(1);
+      expect(upStreamItems[0]).toEqual({
+        data: {
+          name: 'Han Solo',
+          evil: false
+        },
+        meta: {
+          rtId: 1,
+          action: 'save',
+          serverData: {
+            credential: 'LeaCutie123'
+          }
+        }
+      });
+
+      done();
+    });
+
     it('should reset an entry', function(done) {
       spyOn(testViewCollection._model, 'getItem').and.stub();
       var viewItem = new ViewItem(testViewCollection, {

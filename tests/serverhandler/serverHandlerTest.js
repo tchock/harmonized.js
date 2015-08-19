@@ -549,79 +549,81 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           });
         });
 
-        it('should create create a server item with full metadata',
-          function(done) {
-            testInContext(function(deps) {
-              var inputItem = {
-                data: {
-                  firstName: 'John',
-                  lastName: 'Doe'
-                },
-                meta: {
-                  storeId: 123,
-                  serverId: 321
+        it('should create create a server item with full metadata', function(done) {
+          testInContext(function(deps) {
+            var inputItem = {
+              data: {
+                firstName: 'John',
+                lastName: 'Doe'
+              },
+              meta: {
+                storeId: 123,
+                serverId: 321,
+                serverData: {
+                  firstName: 'Johnny',
+                  credentials: 'password123'
                 }
-              };
+              }
+            };
 
-              var expectedOutputItem = _.clone(inputItem.data);
-              expectedOutputItem.id = 321;
-              var outputItem = sh._createServerItem(inputItem);
+            var expectedOutputItem = _.clone(inputItem.data);
+            expectedOutputItem.id = 321;
+            expectedOutputItem.firstName = 'Johnny';
+            expectedOutputItem.credentials = 'password123';
+            var outputItem = sh._createServerItem(inputItem);
 
-              expect(outputItem).toEqual(expectedOutputItem);
-              expect(outputItem).not.toEqual(inputItem.data);
-              expect(outputItem).not.toBe(inputItem.data);
+            expect(outputItem).toEqual(expectedOutputItem);
+            expect(outputItem).not.toEqual(inputItem.data);
+            expect(outputItem).not.toBe(inputItem.data);
 
-              done();
-            });
+            done();
           });
+        });
 
-        it(
-          'should create create a server item with one missing metadata',
-          function(done) {
-            testInContext(function(deps) {
-              var inputItem = {
-                data: {
-                  firstName: 'John',
-                  lastName: 'Doe'
-                },
-                meta: {
-                  serverId: 321
-                }
-              };
+        it('should create create a server item with one missing metadata', function(done) {
+          testInContext(function(deps) {
+            var inputItem = {
+              data: {
+                firstName: 'John',
+                lastName: 'Doe'
+              },
+              meta: {
+                serverId: 321
+              }
+            };
 
-              var expectedOutputItem = _.clone(inputItem.data);
-              expectedOutputItem.id = 321;
+            var expectedOutputItem = _.clone(inputItem.data);
+            expectedOutputItem.id = 321;
 
-              var outputItem = sh._createServerItem(inputItem);
-              expect(outputItem).toEqual(expectedOutputItem);
-              expect(outputItem).not.toEqual(inputItem.data);
-              expect(outputItem).not.toBe(inputItem.data);
+            var outputItem = sh._createServerItem(inputItem);
+            expect(outputItem).toEqual(expectedOutputItem);
+            expect(outputItem).not.toEqual(inputItem.data);
+            expect(outputItem).not.toBe(inputItem.data);
 
-              done();
-            });
+            done();
           });
+        });
 
-        it(
-          'should create create a server item with whole missing metadata',
-          function(done) {
-            testInContext(function(deps) {
-              var inputItem = {
-                data: {
-                  firstName: 'John',
-                  lastName: 'Doe'
-                }
-              };
+        it('should create create a server item with whole missing metadata', function(done) {
+          testInContext(function(deps) {
+            var inputItem = {
+              data: {
+                firstName: 'John',
+                lastName: 'Doe'
+              }
+            };
 
-              var expectedOutputItem = _.clone(inputItem.data);
+            var expectedOutputItem = _.clone(inputItem.data);
 
-              var outputItem = sh._createServerItem(inputItem);
-              expect(outputItem).toEqual(expectedOutputItem);
-              expect(outputItem).toEqual(inputItem.data);
-              expect(outputItem).not.toBe(inputItem.data);
+            var outputItem = sh._createServerItem(inputItem);
+            expect(outputItem).toEqual(expectedOutputItem);
+            expect(outputItem).toEqual(inputItem.data);
+            expect(outputItem).not.toBe(inputItem.data);
 
-              done();
-            });
+            done();
           });
+        });
+
       });
 
       it('should send a http request', function(done) {

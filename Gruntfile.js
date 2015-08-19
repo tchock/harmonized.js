@@ -169,7 +169,7 @@ module.exports = function(grunt) {
     grunt.task.run([
       'dist',
       'bump:' + (type || 'patch') + ':bump-only',
-      'changelog',
+      //'changelog',
       'bump-commit'
     ]);
   });

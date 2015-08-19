@@ -152,10 +152,11 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      * @param  {Object} item Item that has to be transformed to server server structure
      * @return {Object}      The item in the structure the server accepts
      */
-    ServerHandler.prototype._createServerItem = function createServerItem(
-      item) {
-      // Clone data and arrange it for db
-      var serverItem = _.clone(item.data);
+    ServerHandler.prototype._createServerItem = function createServerItem(item) {
+      var meta = item.meta || {};
+      var serverData = meta.serverData || {};
+
+      var serverItem = _.extend({}, item.data, serverData);
 
       if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
         serverItem[this._keys.serverKey] = item.meta.serverId;
