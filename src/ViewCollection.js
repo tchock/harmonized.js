@@ -26,12 +26,12 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     };
 
     // map the downstream to show the data as the view needs it
-    collection.downStream = model.downStream.map(function(item) {
+    collection.downStream = model.downStream.filter(function(item) {
+      // Don't let returning function in the downstream
+      return item.meta.action !== 'function';
+    }).map(function(item) {
       var newItem = _.clone(item);
-      if (item.meta.action !== 'function') {
-        newItem.data = collection._mapDownFn(newItem.data);
-      }
-
+      newItem.data = collection._mapDownFn(newItem.data);
       return newItem;
     });
 

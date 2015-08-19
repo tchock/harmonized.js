@@ -49,8 +49,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
         _this._delete();
       });
 
-      _this._streams.functionDownStream = viewCollection.downStream.filter(function(item) {
-        return item.meta.rtId === _this._meta.rtId && item.meta.action === 'function';
+      _this._streams.functionDownStream = viewCollection.functionReturnStream.filter(function(item) {
+        return item.meta.rtId === _this._meta.rtId;
       });
 
       _this._meta = meta || {};
