@@ -53,7 +53,7 @@ module.exports = function(grunt) {
         updateConfigs: [],
         commit: true,
         commitMessage: 'Release %VERSION%',
-        commitFiles: ['package.json', 'bower.json', 'CHANGELOG.md',
+        commitFiles: ['package.json', 'bower.json', /*'CHANGELOG.md',*/
           'harmonized.js', 'harmonized.min.js'
         ],
         createTag: true,
