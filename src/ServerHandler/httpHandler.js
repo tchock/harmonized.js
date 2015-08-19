@@ -142,7 +142,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         serverHandler.downStream.onNext(item);
       }).catch(function(error) {
         serverHandler._unpushedList[item.meta.rtId] = item;
-        serverHandler._broadcastError(error);
+        serverHandler._broadcastError(error, item);
       })
     }
   };

@@ -21,6 +21,8 @@ define('harmonizedData', ['lodash'], function(_) {
 
   data._resourceSchema = {};
 
+  data._nextTransactionId = 1;
+
   /**
    * The HTTP function where the hook is stored
    * (e.g. jQuery $.ajax or angular $http)
@@ -29,7 +31,7 @@ define('harmonizedData', ['lodash'], function(_) {
   data._httpFunction = function() {
     throw new Error('No http function was added');
   };
-  
+
   // The promise class
   data._promiseClass = null;
 
@@ -175,10 +177,17 @@ define('harmonizedData', ['lodash'], function(_) {
     delete inputItem[keys.storeKey];
     delete inputItem[keys.serverKey];
     delete inputItem._deleted;
-
     item.data = inputItem;
 
     return item;
+  };
+
+  /**
+   * Gets the next transaction ID for a new stream item
+   * @return {number} a new unique transaction ID
+   */
+  data.getNextTransactionId = function() {
+    return data._nextTransactionId++;
   };
 
   return data;

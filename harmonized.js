@@ -461,6 +461,8 @@ define('harmonizedData', ['lodash'], function(_) {
 
   data._resourceSchema = {};
 
+  data._nextTransactionId = 1;
+
   /**
    * The HTTP function where the hook is stored
    * (e.g. jQuery $.ajax or angular $http)
@@ -615,10 +617,17 @@ define('harmonizedData', ['lodash'], function(_) {
     delete inputItem[keys.storeKey];
     delete inputItem[keys.serverKey];
     delete inputItem._deleted;
-
     item.data = inputItem;
 
     return item;
+  };
+
+  /**
+   * Gets the next transaction ID for a new stream item
+   * @return {number} a new unique transaction ID
+   */
+  data.getNextTransactionId = function() {
+    return data._nextTransactionId++;
   };
 
   return data;
@@ -769,7 +778,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         serverHandler.downStream.onNext(item);
       }).catch(function(error) {
         serverHandler._unpushedList[item.meta.rtId] = item;
-        serverHandler._broadcastError(error);
+        serverHandler._broadcastError(error, item);
       })
     }
   };
@@ -1033,9 +1042,13 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      * Broadcasts an error globally to the error stream
      * @param  {Error} error The error to broadcast
      */
-    ServerHandler.prototype._broadcastError = function broadcastError(error) {
+    ServerHandler.prototype._broadcastError = function broadcastError(error, item) {
+      if (_.isPlainObject(item)) {
+        error.target.transactionId = item.meta.transactionId;
+      }
+
       ServerHandler.errorStream.onNext(error);
-    }
+    };
 
     /**
      * Creates a server item in the form to send to the server
@@ -2188,7 +2201,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._storeIdHash = {};
 
     _this._nextRuntimeId = 1;
-    _this._nextTransactionId = 1;
 
     // Get data from db and server
 
@@ -2370,14 +2382,6 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
   };
 
   /**
-   * Gets the next transaction ID for a new stream item
-   * @return {number} a new model-unique transaction ID
-   */
-  Model.prototype.getNextTransactionId = function() {
-    return this._nextTransactionId++;
-  };
-
-  /**
    * Gets the full URL to the resource of the server
    * @return {String} URL to the resource of the server
    */
@@ -2457,8 +2461,8 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
 
 
 
-define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
-  function(_, Rx, ViewCollection, harmonizedData) {
+define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerHandler'],
+  function(_, Rx, ViewCollection, harmonizedData, ServerHandler) {
 
     /**
      * Constructor of the ViewItem
@@ -2560,7 +2564,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       }
 
       itemMeta.rtId = this._meta.rtId;
-      itemMeta.transactionId = model.getNextTransactionId();
+      itemMeta.transactionId = harmonizedData.getNextTransactionId();
 
       if (!_.isUndefined(this._meta.serverId)) {
         itemMeta.serverId = this._meta.serverId;
@@ -2594,6 +2598,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
         data: itemData,
         meta: itemMeta
       });
+
+      return itemMeta.transactionId;
     };
 
     /**
@@ -2737,10 +2743,30 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
      * @return {Promise}              The promise object
      */
     ViewItem.prototype._returnActionPromise = function(stream, transactionId) {
-      if (_.isObject(harmonizedData._promiseClass)) {
-        return this.streams[stream].filter(function(item) {
+      var Promise = harmonizedData._promiseClass;
+      if (Promise !== null) {
+        var deferrer = Promise.defer();
+
+        var successSub;
+        var errorSub;
+
+        successSub = this._streams[stream].filter(function(item) {
           return item.meta.transactionId === transactionId;
-        }).toPromise(harmonizedData._promiseClass);
+        }).subscribe(function(item) {
+          deferrer.resolve(item);
+          successSub.dispose();
+          errorSub.dispose();
+        });
+
+        errorSub = ServerHandler.errorStream.filter(function(error) {
+          return error.target.transactionId === transactionId;
+        }).subscribe(function(error) {
+          deferrer.reject(error);
+          successSub.dispose();
+          errorSub.dispose();
+        });
+
+        return deferrer.promise;
       }
     };
 

@@ -1,7 +1,7 @@
 'use strict';
 
-define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
-  function(_, Rx, ViewCollection, harmonizedData) {
+define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerHandler'],
+  function(_, Rx, ViewCollection, harmonizedData, ServerHandler) {
 
     /**
      * Constructor of the ViewItem
@@ -39,7 +39,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       });
 
       // Subscription for the delete downstream
-      _this._streams.deleteDownStream = viewCollection.downStream.filter( function(item) {
+      _this._streams.deleteDownStream = viewCollection.downStream.filter(function(item) {
         return item.meta.rtId === _this._meta.rtId && (item.meta.action === 'delete' ||
           item.meta.action === 'deletePermanently');
       });
@@ -103,7 +103,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       }
 
       itemMeta.rtId = this._meta.rtId;
-      itemMeta.transactionId = model.getNextTransactionId();
+      itemMeta.transactionId = harmonizedData.getNextTransactionId();
 
       if (!_.isUndefined(this._meta.serverId)) {
         itemMeta.serverId = this._meta.serverId;
@@ -137,6 +137,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
         data: itemData,
         meta: itemMeta
       });
+
+      return itemMeta.transactionId;
     };
 
     /**
@@ -279,11 +281,31 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
      * @param  {number} transactionId The transaction ID to hear on the stream
      * @return {Promise}              The promise object
      */
-    ViewItem.prototype._returnActionPromise = function (stream, transactionId) {
-      if (_.isObject(harmonizedData._promiseClass)) {
-        return this.streams[stream].filter(function(item) {
+    ViewItem.prototype._returnActionPromise = function(stream, transactionId) {
+      var Promise = harmonizedData._promiseClass;
+      if (Promise !== null) {
+        var deferrer = Promise.defer();
+
+        var successSub;
+        var errorSub;
+
+        successSub = this._streams[stream].filter(function(item) {
           return item.meta.transactionId === transactionId;
-        }).toPromise(harmonizedData._promiseClass);
+        }).subscribe(function(item) {
+          deferrer.resolve(item);
+          successSub.dispose();
+          errorSub.dispose();
+        });
+
+        errorSub = ServerHandler.errorStream.filter(function(error) {
+          return error.target.transactionId === transactionId;
+        }).subscribe(function(error) {
+          deferrer.reject(error);
+          successSub.dispose();
+          errorSub.dispose();
+        });
+
+        return deferrer.promise;
       }
     };
 

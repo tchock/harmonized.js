@@ -143,9 +143,13 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      * Broadcasts an error globally to the error stream
      * @param  {Error} error The error to broadcast
      */
-    ServerHandler.prototype._broadcastError = function broadcastError(error) {
+    ServerHandler.prototype._broadcastError = function broadcastError(error, item) {
+      if (_.isPlainObject(item)) {
+        error.target.transactionId = item.meta.transactionId;
+      }
+
       ServerHandler.errorStream.onNext(error);
-    }
+    };
 
     /**
      * Creates a server item in the form to send to the server
