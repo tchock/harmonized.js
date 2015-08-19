@@ -470,6 +470,9 @@ define('harmonizedData', ['lodash'], function(_) {
     throw new Error('No http function was added');
   };
 
+  // The promise class
+  data._promiseClass = null;
+
   /**
    * The view update hook. It is called every time the view is updated
    */
@@ -2185,6 +2188,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._storeIdHash = {};
 
     _this._nextRuntimeId = 1;
+    _this._nextTransactionId = 1;
 
     // Get data from db and server
 
@@ -2355,14 +2359,22 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         _this._dbHandler.upStream.onNext(streamItem);
       }
     });
-  }
+  };
 
   /**
    * Gets the next runtime ID for a new item
-   * @return {number} a new model-unique runtimeid
+   * @return {number} a new model-unique runtime ID
    */
   Model.prototype.getNextRuntimeId = function() {
     return this._nextRuntimeId++;
+  };
+
+  /**
+   * Gets the next transaction ID for a new stream item
+   * @return {number} a new model-unique transaction ID
+   */
+  Model.prototype.getNextTransactionId = function() {
+    return this._nextTransactionId++;
   };
 
   /**
@@ -2474,30 +2486,29 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
       _this._streams.upStream = viewCollection.upStream;
 
-      _this._streams.saveDownStream = viewCollection.downStream.filter(
-        function(item) {
-          return item.meta.rtId === _this._meta.rtId && item.meta.action ===
-            'save';
-        });
+      _this._streams.saveDownStream = viewCollection.downStream.filter(function(item) {
+        return item.meta.rtId === _this._meta.rtId && item.meta.action === 'save';
+      });
 
       // Subscription for the save downstream
-      _this._streams.saveDownStreamSub = _this._streams.saveDownStream.subscribe(
-        function(item) {
-          _this._save(item.data, item.meta);
-        });
+      _this._streams.saveDownStreamSub = _this._streams.saveDownStream.subscribe(function(item) {
+        _this._save(item.data, item.meta);
+      });
 
       // Subscription for the delete downstream
-      _this._streams.deleteDownStream = viewCollection.downStream.filter(
-        function(item) {
-          return item.meta.rtId === _this._meta.rtId && (item.meta.action ===
-            'delete' || item.meta.action === 'deletePermanently');
-        });
+      _this._streams.deleteDownStream = viewCollection.downStream.filter(function(item) {
+        return item.meta.rtId === _this._meta.rtId && (item.meta.action === 'delete' ||
+          item.meta.action === 'deletePermanently');
+      });
 
       // Subscription for the delete downstream
-      _this._streams.deleteDownStreamSub = _this._streams.deleteDownStream.subscribe(
-        function() {
-          _this._delete();
-        });
+      _this._streams.deleteDownStreamSub = _this._streams.deleteDownStream.subscribe(function() {
+        _this._delete();
+      });
+
+      _this._streams.functionDownStream = viewCollection.downStream.filter(function(item) {
+        return item.meta.rtId === _this._meta.rtId && item.meta.action === 'function';
+      });
 
       _this._meta = meta || {};
       _this._meta = _.clone(_this._meta);
@@ -2533,8 +2544,10 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       var itemData = {};
       var itemMeta = {};
 
+      var model = this.getCollection()._model;
+
       if (_.isUndefined(this._meta.rtId)) {
-        this._meta.rtId = this.getCollection()._model.getNextRuntimeId();
+        this._meta.rtId = model.getNextRuntimeId();
       }
 
       // Add item to collection if not yet in it
@@ -2547,6 +2560,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       }
 
       itemMeta.rtId = this._meta.rtId;
+      itemMeta.transactionId = model.getNextTransactionId();
 
       if (!_.isUndefined(this._meta.serverId)) {
         itemMeta.serverId = this._meta.serverId;
@@ -2587,9 +2601,11 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
      * database. If item is not yet in the collection, it adds itself.
      * @param {Object} serverData   Data that will additionally send to the server.
      *                              Is ignored by everything else
+     * @return {Promise}            The action promise to execute further actions
      */
     ViewItem.prototype.save = function(serverData) {
-      this._sendItemToUpStream('save', undefined, serverData);
+      var transactionId = this._sendItemToUpStream('save', undefined, serverData);
+      return this._returnActionPromise('saveDownStream', transactionId);
     };
 
     /**
@@ -2633,10 +2649,13 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
 
     /**
      * Deletes the item from the database, server, model and view collection
+     * @return {Promise}     The action promise to execute further actions
      */
     ViewItem.prototype.delete = function() {
-      this._sendItemToUpStream('delete');
+      var transactionId = this._sendItemToUpStream('delete');
       this._delete();
+
+      return this._returnActionPromise('deleteDownStream', transactionId);
     };
 
     /**
@@ -2697,11 +2716,32 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData'],
       }
     };
 
+    /**
+     * Calls a HTTP function on the server
+     * @param  {string} name The name of the function
+     * @param  {Object} args The arguments for the function
+     * @return {Promise}     The action promise to execute further actions
+     */
     ViewItem.prototype.callFn = function(name, args) {
-      this._sendItemToUpStream('function', {
+      var transactionId = this._sendItemToUpStream('function', {
         fnName: name,
         fnArgs: args
       });
+
+      return this._returnActionPromise('functionDownStream', transactionId);
+    };
+
+    /**
+     * Returns the action promise for a given transaction id
+     * @param  {number} transactionId The transaction ID to hear on the stream
+     * @return {Promise}              The promise object
+     */
+    ViewItem.prototype._returnActionPromise = function(stream, transactionId) {
+      if (_.isObject(harmonizedData._promiseClass)) {
+        return this.streams[stream].filter(function(item) {
+          return item.meta.transactionId === transactionId;
+        }).toPromise(harmonizedData._promiseClass);
+      }
     };
 
     return ViewItem;
@@ -2868,6 +2908,10 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
         if (_.isFunction(viewUpdateCb)) {
           harmonizedData._viewUpdateCb = viewUpdateCb;
         }
+      },
+
+      setPromiseClass: function(promiseClass) {
+        harmonizedData._promiseClass = promiseClass;
       },
 
       /**
