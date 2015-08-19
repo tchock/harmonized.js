@@ -567,7 +567,6 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             };
 
             var expectedOutputItem = _.clone(inputItem.data);
-            expectedOutputItem.id = 321;
             expectedOutputItem.firstName = 'Johnny';
             expectedOutputItem.credentials = 'password123';
             var outputItem = sh._createServerItem(inputItem);
@@ -593,11 +592,9 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             };
 
             var expectedOutputItem = _.clone(inputItem.data);
-            expectedOutputItem.id = 321;
 
             var outputItem = sh._createServerItem(inputItem);
             expect(outputItem).toEqual(expectedOutputItem);
-            expect(outputItem).not.toEqual(inputItem.data);
             expect(outputItem).not.toBe(inputItem.data);
 
             done();

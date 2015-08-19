@@ -85,6 +85,9 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             downStream: new Rx.Subject(),
             _downStreamSubscribe: null,
             _connected: false,
+            _createServerItem: jasmine.createSpy().and.callFake(function(item) {
+              return item.data;
+            }),
             setConnectionState: function(state) {
               sh._connected = state;
             },
@@ -114,7 +117,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             _connected: true,
             setConnectionState: function(state) {
               sh._connected = state;
-            }
+            },
+            _createServerItem: jasmine.createSpy().and.callFake(function(item) {
+              return item.data;
+            })
           };
 
           scheduler.scheduleWithAbsolute(5, function() {
@@ -142,7 +148,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             downStream: new Rx.Subject(),
             _fullUrl: 'http://www.hyphe.me/test/resource/',
             _options: {},
-            _keys: {}
+            _keys: {},
+            _createServerItem: jasmine.createSpy().and.callFake(function(item) {
+              return item.data;
+            })
           };
         });
 
@@ -248,7 +257,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             _fullUrl: 'http://www.hyphe.me/test/resource/',
             _options: {},
             _keys: {},
-            _unpushedList: {}
+            _unpushedList: {},
+            _createServerItem: jasmine.createSpy().and.callFake(function(item) {
+              return item.data;
+            })
           };
         });
 
