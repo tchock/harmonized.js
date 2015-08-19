@@ -723,7 +723,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
       var action = item.meta.action;
       switch (action) {
         case 'save':
-          httpOptions.data = item.data;
+          httpOptions.data = serverHandler._createServerItem(item);
           if (_.isUndefined(item.meta.serverId)) {
             httpOptions.method = 'POST';
           } else {
@@ -1044,10 +1044,6 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       var serverData = meta.serverData || {};
 
       var serverItem = _.extend({}, item.data, serverData);
-
-      if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
-        serverItem[this._keys.serverKey] = item.meta.serverId;
-      }
 
       return serverItem;
     };
