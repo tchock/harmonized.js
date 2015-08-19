@@ -330,6 +330,16 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
         });
       });
 
+      it('should get the next transaction id for the model', function(done) {
+        testInContext(function(deps) {
+          expect(testModel._nextTransactionId).toBe(1);
+          testModel.getNextTransactionId();
+          expect(testModel._nextTransactionId).toBe(2);
+
+          done();
+        });
+      });
+
       it('should receive updated data from the server', function(done) {
         testInContext(function(deps) {
 

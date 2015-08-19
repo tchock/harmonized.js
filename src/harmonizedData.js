@@ -29,6 +29,9 @@ define('harmonizedData', ['lodash'], function(_) {
   data._httpFunction = function() {
     throw new Error('No http function was added');
   };
+  
+  // The promise class
+  data._promiseClass = null;
 
   /**
    * The view update hook. It is called every time the view is updated

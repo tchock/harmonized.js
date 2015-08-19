@@ -141,6 +141,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     _this._storeIdHash = {};
 
     _this._nextRuntimeId = 1;
+    _this._nextTransactionId = 1;
 
     // Get data from db and server
 
@@ -311,14 +312,22 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         _this._dbHandler.upStream.onNext(streamItem);
       }
     });
-  }
+  };
 
   /**
    * Gets the next runtime ID for a new item
-   * @return {number} a new model-unique runtimeid
+   * @return {number} a new model-unique runtime ID
    */
   Model.prototype.getNextRuntimeId = function() {
     return this._nextRuntimeId++;
+  };
+
+  /**
+   * Gets the next transaction ID for a new stream item
+   * @return {number} a new model-unique transaction ID
+   */
+  Model.prototype.getNextTransactionId = function() {
+    return this._nextTransactionId++;
   };
 
   /**

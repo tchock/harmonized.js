@@ -29,6 +29,9 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         getNextRuntimeId: function() {
           return 1;
         },
+        getNextTransactionId: function() {
+          return 1;
+        },
         getItem: function() {
           return {
             subData: {
@@ -152,6 +155,7 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
           evil: false
         },
         meta: {
+          transactionId: 1,
           rtId: 1,
           action: 'save'
         }
@@ -193,6 +197,7 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
           rtId: 123,
           serverId: 1000,
           storeId: 124,
+          transactionId: 1,
           action: 'save'
         }
       });
@@ -238,6 +243,7 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         },
         meta: {
           rtId: 123,
+          transactionId: 1,
           action: 'delete'
         }
       });
@@ -273,6 +279,7 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         meta: {
           rtId: 1,
           action: 'save',
+          transactionId: 1,
           serverData: {
             credential: 'LeaCutie123'
           }

@@ -26,6 +26,10 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
         }
       },
 
+      setPromiseClass: function(promiseClass) {
+        harmonizedData._promiseClass = promiseClass;
+      },
+
       /**
        * Sets the config
        * @param  {Object} config The configuration (or partial configuration)
