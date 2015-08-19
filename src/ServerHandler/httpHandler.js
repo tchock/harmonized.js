@@ -99,7 +99,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
       var action = item.meta.action;
       switch (action) {
         case 'save':
-          httpOptions.data = item.data;
+          httpOptions.data = serverHandler._createServerItem(item);
           if (_.isUndefined(item.meta.serverId)) {
             httpOptions.method = 'POST';
           } else {

@@ -158,10 +158,6 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
       var serverItem = _.extend({}, item.data, serverData);
 
-      if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.serverId)) {
-        serverItem[this._keys.serverKey] = item.meta.serverId;
-      }
-
       return serverItem;
     };
 
