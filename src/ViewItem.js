@@ -251,7 +251,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      */
     ViewItem.prototype.reset = function() {
       var item = this.getCollection()._model.getItem(this._meta.rtId);
-      this._save(item.data, item.meta);
+      this._save(_.cloneDeep(item.data), _.cloneDeep(item.meta));
     };
 
     /**
