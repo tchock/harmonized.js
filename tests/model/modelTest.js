@@ -217,7 +217,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
             testOption: 'blub'
           });
 
-          var overwrittenExpectedOptions = _.clone(expectedOptions);
+          var overwrittenExpectedOptions = _.cloneDeep(expectedOptions);
           overwrittenExpectedOptions.route = 'othertest';
           overwrittenExpectedOptions.testOption = 'blub';
           expect(testModel._options).toEqual(overwrittenExpectedOptions);

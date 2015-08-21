@@ -200,9 +200,9 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         storeId: this.getParent().meta.storeId
       },
       data: {
-        storeItems: _.clone(this._storeItems),
-        serverItems: _.clone(this._serverItems),
-        deletedItems: _.clone(this._deletedItems)
+        storeItems: _.cloneDeep(this._storeItems),
+        serverItems: _.cloneDeep(this._serverItems),
+        deletedItems: _.cloneDeep(this._deletedItems)
       }
     });
   };
@@ -216,8 +216,8 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
     var modelItem = this._model['_' + idType + 'IdHash'][id];
     if (!_.isUndefined(modelItem)) {
       this.downStream.onNext({
-        meta: _.clone(modelItem.meta),
-        data: _.clone(modelItem.data)
+        meta: _.cloneDeep(modelItem.meta),
+        data: _.cloneDeep(modelItem.data)
       });
     }
   };

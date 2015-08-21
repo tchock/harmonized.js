@@ -85,11 +85,11 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
 
     // Initially send the item back downstream, so all associated views get
     // informed of the new item
-    var initialSendMeta = _.clone(_this.meta);
+    var initialSendMeta = _.cloneDeep(_this.meta);
     initialSendMeta.action = 'save';
     parentModel.downStream.onNext({
       meta: initialSendMeta,
-      data: _.clone(_this.data)
+      data: _.cloneDeep(_this.data)
     });
 
     return _this;
@@ -109,9 +109,9 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
-    this.meta = _.clone(item.meta);
+    this.meta = _.cloneDeep(item.meta);
     delete this.meta.action;
-    this.data = _.clone(item.data);
+    this.data = _.cloneDeep(item.data);
     return item;
   };
 

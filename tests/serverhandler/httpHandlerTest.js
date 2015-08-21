@@ -36,12 +36,12 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             break;
           case 'POST':
             returnedData = {
-              data: _.clone(options.data)
+              data: _.cloneDeep(options.data)
             };
             break;
           case 'PUT':
             returnedData = {
-              data: _.clone(options.data)
+              data: _.cloneDeep(options.data)
             };
             break;
           case 'DELETE':

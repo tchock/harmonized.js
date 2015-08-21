@@ -153,7 +153,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   Model.prototype._createNewItem = function(item) {
     var newModel = new ModelItem(this, item.data, item.meta);
-    item.meta = _.clone(newModel.meta);
+    item.meta = _.cloneDeep(newModel.meta);
     delete item.meta.action;
   };
 
@@ -242,8 +242,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     for (var storeId in this._storeIdHash) {
       if (this._storeIdHash.hasOwnProperty(storeId)) {
         var currentItem = this._storeIdHash[storeId];
-        var itemMeta = _.clone(currentItem.meta);
-        var itemData = _.clone(currentItem.data);
+        var itemMeta = _.cloneDeep(currentItem.meta);
+        var itemData = _.cloneDeep(currentItem.data);
 
         if (_.isUndefined(currentItem.meta.serverId)) {
 
@@ -301,8 +301,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         // Create the stream item
         var currentItem = _this._serverIdHash[deletedItemIds[i]];
         var streamItem = {
-          meta: _.clone(currentItem.meta),
-          data: _.clone(currentItem.data)
+          meta: _.cloneDeep(currentItem.meta),
+          data: _.cloneDeep(currentItem.data)
         };
         streamItem.meta.action = 'deletePermanently';
 

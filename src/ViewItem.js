@@ -54,7 +54,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       });
 
       _this._meta = meta || {};
-      _this._meta = _.clone(_this._meta);
+      _this._meta = _.cloneDeep(_this._meta);
       delete _this._meta.action;
 
       // Add the content

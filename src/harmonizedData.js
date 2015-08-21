@@ -72,7 +72,7 @@ define('harmonizedData', ['lodash'], function(_) {
     for (var item in schema) {
       currentModel = schema[item];
       if (!_.isObject(currentModel.keys)) {
-        var defaultKeys = _.clone(this._config.defaultKeys);
+        var defaultKeys = _.cloneDeep(this._config.defaultKeys);
         currentModel.keys = defaultKeys;
       } else {
         keys = currentModel.keys;
@@ -107,7 +107,7 @@ define('harmonizedData', ['lodash'], function(_) {
       }
 
       if (_.isUndefined(currentModel.serverOptions)) {
-        currentModel.serverOptions = _.clone(data._config.serverOptions);
+        currentModel.serverOptions = _.cloneDeep(data._config.serverOptions);
       }
 
       if (_.isUndefined(currentModel.fetchAtStart)) {
@@ -159,7 +159,7 @@ define('harmonizedData', ['lodash'], function(_) {
    * @return {Object}           The stream item
    */
   data._createStreamItem = function(inputItem, keys) {
-    inputItem = _.clone(inputItem) || {};
+    inputItem = _.cloneDeep(inputItem) || {};
     var item = {
       meta: {
         storeId: inputItem[keys.storeKey],

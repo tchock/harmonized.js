@@ -566,7 +566,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               }
             };
 
-            var expectedOutputItem = _.clone(inputItem.data);
+            var expectedOutputItem = _.cloneDeep(inputItem.data);
             expectedOutputItem.firstName = 'Johnny';
             expectedOutputItem.credentials = 'password123';
             var outputItem = sh._createServerItem(inputItem);
@@ -591,7 +591,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               }
             };
 
-            var expectedOutputItem = _.clone(inputItem.data);
+            var expectedOutputItem = _.cloneDeep(inputItem.data);
 
             var outputItem = sh._createServerItem(inputItem);
             expect(outputItem).toEqual(expectedOutputItem);
@@ -610,7 +610,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               }
             };
 
-            var expectedOutputItem = _.clone(inputItem.data);
+            var expectedOutputItem = _.cloneDeep(inputItem.data);
 
             var outputItem = sh._createServerItem(inputItem);
             expect(outputItem).toEqual(expectedOutputItem);

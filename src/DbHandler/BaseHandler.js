@@ -96,7 +96,7 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
    */
   DbHandler.prototype._createDbItem = function(item) {
     // Clone data and arrange it for db
-    var putItem = _.clone(item.data);
+    var putItem = _.cloneDeep(item.data);
     if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.storeId)) {
       putItem[this._keys.storeKey] = item.meta.storeId;
     }

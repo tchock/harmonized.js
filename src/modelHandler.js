@@ -12,7 +12,7 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
       init: function init() {
         var currentSchema;
         for (var modelName in harmonizedData._modelSchema) {
-          currentSchema = _.clone(harmonizedData._modelSchema[modelName]);
+          currentSchema = _.cloneDeep(harmonizedData._modelSchema[modelName]);
           delete currentSchema.subModels;
           modelHandler._modelList[modelName] = new Model(modelName,
             currentSchema);

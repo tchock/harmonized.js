@@ -30,7 +30,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       // Don't let returning function in the downstream
       return item.meta.action !== 'function';
     }).map(function(item) {
-      var newItem = _.clone(item);
+      var newItem = _.cloneDeep(item);
       newItem.data = collection._mapDownFn(newItem.data);
       return newItem;
     });
@@ -46,7 +46,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     // map the upstream to transform the data to the model format
     collection.upStream = new Rx.Subject();
     collection.upStream.map(function(item) {
-      var newItem = _.clone(item);
+      var newItem = _.cloneDeep(item);
       newItem.data = collection._mapUpFn(newItem.data);
       return newItem;
     }).subscribe(model.upStream);
@@ -96,8 +96,8 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     var itemToAdd = this._model.getItem(rtId);
     var newViewItem;
     if (!_.isUndefined(itemToAdd)) {
-      var data = this._mapDownFn(_.clone(itemToAdd.data));
-      newViewItem = new ViewItem(this, data, _.clone(itemToAdd.meta), itemToAdd.subData, true);
+      var data = this._mapDownFn(_.cloneDeep(itemToAdd.data));
+      newViewItem = new ViewItem(this, data, _.cloneDeep(itemToAdd.meta), itemToAdd.subData, true);
     }
 
     return newViewItem;

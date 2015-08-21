@@ -215,7 +215,7 @@ define(['Squire', 'lodash', 'rx', 'rx.testing'],
         expect(testSubModel._model).toBe(testModel);
         expect(testSubModel.getParent()).toBe(testParentItem);
 
-        var overwrittenExpectedOptions = _.clone(expectedOptions);
+        var overwrittenExpectedOptions = _.cloneDeep(expectedOptions);
         overwrittenExpectedOptions.route = 'othertest';
         overwrittenExpectedOptions.testOption = 'blub';
         expect(testSubModel._options).toEqual(overwrittenExpectedOptions);

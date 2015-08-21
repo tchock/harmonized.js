@@ -520,7 +520,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
                 }
               };
 
-              var expectedOutputItem = _.clone(inputItem.data);
+              var expectedOutputItem = _.cloneDeep(inputItem.data);
               expectedOutputItem._id = 123;
               expectedOutputItem.id = 321;
               expectedOutputItem._deleted = false;
@@ -544,7 +544,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
                 }
               };
 
-              var expectedOutputItem = _.clone(inputItem.data);
+              var expectedOutputItem = _.cloneDeep(inputItem.data);
               expectedOutputItem._id = 123;
               expectedOutputItem.id = 321;
               expectedOutputItem._deleted = true;
@@ -573,7 +573,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
                 }
               };
 
-              var expectedOutputItem = _.clone(inputItem.data);
+              var expectedOutputItem = _.cloneDeep(inputItem.data);
               expectedOutputItem.id = 321;
               expectedOutputItem._deleted = true;
 
@@ -600,7 +600,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
                 }
               };
 
-              var expectedOutputItem = _.clone(inputItem.data);
+              var expectedOutputItem = _.cloneDeep(inputItem.data);
               expectedOutputItem._deleted = false;
 
               var outputItem = dbHandler._createDbItem(inputItem);
