@@ -351,7 +351,16 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
 
     it('should reset an entry', function(done) {
       testInContext(function(deps) {
-        spyOn(testViewCollection._model, 'getItem').and.stub();
+        spyOn(testViewCollection._model, 'getItem').and.returnValue({
+          meta: {
+            rtId: 1,
+            serverId: 1234
+          },
+          data: {
+            name: 'Hans Olo',
+            evil: true
+          }
+        });
         var viewItem = new deps.ViewItem(testViewCollection, {
           name: 'Han Solo',
           evil: false
@@ -362,6 +371,10 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         viewItem.reset();
 
         expect(testViewCollection._model.getItem).toHaveBeenCalled();
+        expect(viewItem.name).toBe('Hans Olo');
+        expect(viewItem.evil).toBe(true);
+        expect(viewItem._meta.serverId).toBe(1234);
+        expect(viewItem._meta.rtId).toBe(123);
 
         done();
       });

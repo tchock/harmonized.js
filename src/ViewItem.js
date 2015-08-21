@@ -195,7 +195,11 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
         var model = this.getCollection()._model;
         var modelItem = model.getItem(this._meta.rtId);
         var subData = modelItem.subData;
-        this._addSubCollections(subData);
+        if (_.isPlainObject(subData)) {
+          // Add sub collections if subdata is set
+          this._addSubCollections(subData);
+        }
+
         this._wasAlreadySynced = true;
       }
 
@@ -207,7 +211,13 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      * @return {Promise}     The action promise to execute further actions
      */
     ViewItem.prototype.delete = function() {
-      var transactionId = this._sendItemToUpStream('delete');
+      var transactionId;
+      if (this._meta.rtId) {
+        // Only send to upstream if there is a runtime ID
+        transactionId = this._sendItemToUpStream('delete');
+      }
+
+      // Delete the item from the view collection
       this._delete();
 
       return this._returnActionPromise('deleteDownStream', transactionId);
@@ -240,8 +250,9 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      * Resets the item to the model entry
      */
     ViewItem.prototype.reset = function() {
-      this.getCollection()._model.getItem(this._meta.rtId);
-    }
+      var item = this.getCollection()._model.getItem(this._meta.rtId);
+      this._save(item.data, item.meta);
+    };
 
     /**
      * Checks if a given property is a dataentry of the item
@@ -294,28 +305,32 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
     ViewItem.prototype._returnActionPromise = function(stream, transactionId) {
       var Promise = harmonizedData._promiseClass;
       if (Promise !== null) {
-        var deferrer = Promise.defer();
+        var deferred = Promise.defer();
 
         var successSub;
         var errorSub;
 
-        successSub = this._streams[stream].filter(function(item) {
-          return item.meta.transactionId === transactionId;
-        }).subscribe(function(item) {
-          deferrer.resolve(item);
-          successSub.dispose();
-          errorSub.dispose();
-        });
+        if (transactionId) {
+          successSub = this._streams[stream].filter(function(item) {
+            return item.meta.transactionId === transactionId;
+          }).subscribe(function(item) {
+            deferred.resolve(item);
+            successSub.dispose();
+            errorSub.dispose();
+          });
 
-        errorSub = ServerHandler.errorStream.filter(function(error) {
-          return error.target.transactionId === transactionId;
-        }).subscribe(function(error) {
-          deferrer.reject(error);
-          successSub.dispose();
-          errorSub.dispose();
-        });
+          errorSub = ServerHandler.errorStream.filter(function(error) {
+            return error.target.transactionId === transactionId;
+          }).subscribe(function(error) {
+            deferred.reject(error);
+            successSub.dispose();
+            errorSub.dispose();
+          });
+        } else {
+          deferred.reject(new Error('Item as no runtime id'));
+        }
 
-        return deferrer.promise;
+        return deferred.promise;
       }
     };
 
