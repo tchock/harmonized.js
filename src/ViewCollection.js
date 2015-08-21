@@ -116,7 +116,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
    */
   ViewCollection.prototype.new = function(addToCollection) {
     var add = addToCollection || false;
-    return new ViewItem(this, {}, {}, null, undefined, add);
+    return new ViewItem(this, {}, {}, null, add);
   };
 
   ViewCollection.prototype.callFn = function(name, args) {
