@@ -320,21 +320,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
         });
       });
 
-      it('should get the next runtime id for the model', function(done) {
+      it('should get the next runtime ID for the model', function(done) {
         testInContext(function(deps) {
           expect(testModel._nextRuntimeId).toBe(1);
           testModel.getNextRuntimeId();
           expect(testModel._nextRuntimeId).toBe(2);
-
-          done();
-        });
-      });
-
-      it('should get the next transaction id for the model', function(done) {
-        testInContext(function(deps) {
-          expect(testModel._nextTransactionId).toBe(1);
-          testModel.getNextTransactionId();
-          expect(testModel._nextTransactionId).toBe(2);
 
           done();
         });

@@ -114,8 +114,9 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
    * Creates a new view item with reference to the collection
    * @return {ViewItem} The created view item
    */
-  ViewCollection.prototype.new = function() {
-    return new ViewItem(this, {}, {}, null);
+  ViewCollection.prototype.new = function(addToCollection) {
+    var add = addToCollection || false;
+    return new ViewItem(this, {}, {}, null, undefined, add);
   };
 
   ViewCollection.prototype.callFn = function(name, args) {

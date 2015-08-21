@@ -266,6 +266,12 @@ define(['harmonizedData', 'lodash'], function(harmonizedData, _) {
         expect(streamItem.data.id).toBeUndefined();
       });
 
+      it('should get the next transaction ID', function() {
+        expect(harmonizedData._nextTransactionId).toBe(1);
+        harmonizedData.getNextTransactionId();
+        expect(harmonizedData._nextTransactionId).toBe(2);
+      });
+
     });
 
   });

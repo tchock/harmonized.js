@@ -67,11 +67,16 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       }
 
       _this._meta.addedToCollection = false;
-      if (addToCollection && !_.isUndefined(_this._meta.rtId)) {
+      if (addToCollection) {
         _this._meta.addedToCollection = true;
         viewCollection.push(_this);
         viewCollection._items[_this._meta.rtId] = _this;
         harmonizedData._viewUpdateCb();
+      }
+
+      // Add item to the items list, if runtime ID is set
+      if (_.isUndefined(_this._meta.rtId)) {
+        viewCollection._items[_this._meta.rtId] = _this;
       }
 
     };
@@ -93,13 +98,18 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
         this._meta.rtId = model.getNextRuntimeId();
       }
 
+      var viewCollection = this.getCollection();
+
       // Add item to collection if not yet in it
       if (this._meta.addedToCollection === false) {
         this._meta.addedToCollection = true;
-        var viewCollection = this.getCollection();
         viewCollection.push(this);
-        viewCollection._items[this._meta.rtId] = this;
         harmonizedData._viewUpdateCb();
+      }
+
+      // Add item to the items list, if not already in list
+      if (_.isUndefined(viewCollection._items[this._meta.rtId])) {
+        viewCollection._items[this._meta.rtId] = this;
       }
 
       itemMeta.rtId = this._meta.rtId;
