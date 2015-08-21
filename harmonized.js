@@ -512,7 +512,7 @@ define('harmonizedData', ['lodash'], function(_) {
     for (var item in schema) {
       currentModel = schema[item];
       if (!_.isObject(currentModel.keys)) {
-        var defaultKeys = _.clone(this._config.defaultKeys);
+        var defaultKeys = _.cloneDeep(this._config.defaultKeys);
         currentModel.keys = defaultKeys;
       } else {
         keys = currentModel.keys;
@@ -547,7 +547,7 @@ define('harmonizedData', ['lodash'], function(_) {
       }
 
       if (_.isUndefined(currentModel.serverOptions)) {
-        currentModel.serverOptions = _.clone(data._config.serverOptions);
+        currentModel.serverOptions = _.cloneDeep(data._config.serverOptions);
       }
 
       if (_.isUndefined(currentModel.fetchAtStart)) {
@@ -599,7 +599,7 @@ define('harmonizedData', ['lodash'], function(_) {
    * @return {Object}           The stream item
    */
   data._createStreamItem = function(inputItem, keys) {
-    inputItem = _.clone(inputItem) || {};
+    inputItem = _.cloneDeep(inputItem) || {};
     var item = {
       meta: {
         storeId: inputItem[keys.storeKey],
@@ -1181,7 +1181,7 @@ define('DbHandler/BaseHandler', ['helper/webStorage'], function(webStore) {
    */
   DbHandler.prototype._createDbItem = function(item) {
     // Clone data and arrange it for db
-    var putItem = _.clone(item.data);
+    var putItem = _.cloneDeep(item.data);
     if (!_.isUndefined(item.meta) && !_.isUndefined(item.meta.storeId)) {
       putItem[this._keys.storeKey] = item.meta.storeId;
     }
@@ -1764,9 +1764,9 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
         storeId: this.getParent().meta.storeId
       },
       data: {
-        storeItems: _.clone(this._storeItems),
-        serverItems: _.clone(this._serverItems),
-        deletedItems: _.clone(this._deletedItems)
+        storeItems: _.cloneDeep(this._storeItems),
+        serverItems: _.cloneDeep(this._serverItems),
+        deletedItems: _.cloneDeep(this._deletedItems)
       }
     });
   };
@@ -1780,8 +1780,8 @@ define('SubModel', ['harmonizedData', 'ServerHandler', 'dbHandlerFactory',
     var modelItem = this._model['_' + idType + 'IdHash'][id];
     if (!_.isUndefined(modelItem)) {
       this.downStream.onNext({
-        meta: _.clone(modelItem.meta),
-        data: _.clone(modelItem.data)
+        meta: _.cloneDeep(modelItem.meta),
+        data: _.cloneDeep(modelItem.data)
       });
     }
   };
@@ -1994,11 +1994,11 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
 
     // Initially send the item back downstream, so all associated views get
     // informed of the new item
-    var initialSendMeta = _.clone(_this.meta);
+    var initialSendMeta = _.cloneDeep(_this.meta);
     initialSendMeta.action = 'save';
     parentModel.downStream.onNext({
       meta: initialSendMeta,
-      data: _.clone(_this.data)
+      data: _.cloneDeep(_this.data)
     });
 
     return _this;
@@ -2018,9 +2018,9 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
-    this.meta = _.clone(item.meta);
+    this.meta = _.cloneDeep(item.meta);
     delete this.meta.action;
-    this.data = _.clone(item.data);
+    this.data = _.cloneDeep(item.data);
     return item;
   };
 
@@ -2213,7 +2213,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
    */
   Model.prototype._createNewItem = function(item) {
     var newModel = new ModelItem(this, item.data, item.meta);
-    item.meta = _.clone(newModel.meta);
+    item.meta = _.cloneDeep(newModel.meta);
     delete item.meta.action;
   };
 
@@ -2302,8 +2302,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
     for (var storeId in this._storeIdHash) {
       if (this._storeIdHash.hasOwnProperty(storeId)) {
         var currentItem = this._storeIdHash[storeId];
-        var itemMeta = _.clone(currentItem.meta);
-        var itemData = _.clone(currentItem.data);
+        var itemMeta = _.cloneDeep(currentItem.meta);
+        var itemData = _.cloneDeep(currentItem.data);
 
         if (_.isUndefined(currentItem.meta.serverId)) {
 
@@ -2361,8 +2361,8 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler',
         // Create the stream item
         var currentItem = _this._serverIdHash[deletedItemIds[i]];
         var streamItem = {
-          meta: _.clone(currentItem.meta),
-          data: _.clone(currentItem.data)
+          meta: _.cloneDeep(currentItem.meta),
+          data: _.cloneDeep(currentItem.data)
         };
         streamItem.meta.action = 'deletePermanently';
 
@@ -2407,7 +2407,7 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
       init: function init() {
         var currentSchema;
         for (var modelName in harmonizedData._modelSchema) {
-          currentSchema = _.clone(harmonizedData._modelSchema[modelName]);
+          currentSchema = _.cloneDeep(harmonizedData._modelSchema[modelName]);
           delete currentSchema.subModels;
           modelHandler._modelList[modelName] = new Model(modelName,
             currentSchema);
@@ -2515,7 +2515,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       });
 
       _this._meta = meta || {};
-      _this._meta = _.clone(_this._meta);
+      _this._meta = _.cloneDeep(_this._meta);
       delete _this._meta.action;
 
       // Add the content
@@ -2830,7 +2830,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       // Don't let returning function in the downstream
       return item.meta.action !== 'function';
     }).map(function(item) {
-      var newItem = _.clone(item);
+      var newItem = _.cloneDeep(item);
       newItem.data = collection._mapDownFn(newItem.data);
       return newItem;
     });
@@ -2846,7 +2846,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     // map the upstream to transform the data to the model format
     collection.upStream = new Rx.Subject();
     collection.upStream.map(function(item) {
-      var newItem = _.clone(item);
+      var newItem = _.cloneDeep(item);
       newItem.data = collection._mapUpFn(newItem.data);
       return newItem;
     }).subscribe(model.upStream);
@@ -2896,8 +2896,8 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     var itemToAdd = this._model.getItem(rtId);
     var newViewItem;
     if (!_.isUndefined(itemToAdd)) {
-      var data = this._mapDownFn(_.clone(itemToAdd.data));
-      newViewItem = new ViewItem(this, data, _.clone(itemToAdd.meta), itemToAdd.subData, true);
+      var data = this._mapDownFn(_.cloneDeep(itemToAdd.data));
+      newViewItem = new ViewItem(this, data, _.cloneDeep(itemToAdd.meta), itemToAdd.subData, true);
     }
 
     return newViewItem;
