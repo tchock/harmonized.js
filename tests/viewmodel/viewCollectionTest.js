@@ -91,8 +91,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       });
     }
 
-    it('should add all existing model items at the start', function(
-      done) {
+    it('should add all existing model items at the start', function(done) {
       testInContext(function(deps) {
         // Create the items in the rtIdHash
         testModel._rtIdHash = {
@@ -127,16 +126,12 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
         expect(testViewCollection.length).toBe(3);
         expect(testViewCollection[0].name).toBe('Darth Vader');
-        expect(testViewCollection._items[123].name).toBe(
-          'Darth Vader');
+        expect(testViewCollection._items[123].name).toBe('Darth Vader');
         expect(testViewCollection[0]._meta.rtId).toBe(123);
-        expect(testViewCollection._items[124].name).toBe(
-          'Luke Skywalker');
-        expect(testViewCollection[1].name).toBe(
-          'Luke Skywalker');
+        expect(testViewCollection._items[124].name).toBe('Luke Skywalker');
+        expect(testViewCollection[1].name).toBe('Luke Skywalker');
         expect(testViewCollection[1]._meta.rtId).toBe(124);
-        expect(testViewCollection._items[125].name).toBe(
-          'Han Solo');
+        expect(testViewCollection._items[125].name).toBe('Han Solo');
         expect(testViewCollection[2].name).toBe('Han Solo');
         expect(testViewCollection[2]._meta.rtId).toBe(125);
 
@@ -167,8 +162,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
           expect(testViewCollection.length).toBe(1);
           expect(testViewCollection[0].name).toBe('Darth Vader');
-          expect(testViewCollection._items[123].name).toBe(
-            'Darth Vader');
+          expect(testViewCollection._items[123].name).toBe('Darth Vader');
           expect(testViewCollection[0]._meta.rtId).toBe(123);
 
           done();
@@ -219,8 +213,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
 
         expect(testViewCollection.length).toBe(2);
         expect(testViewCollection[1].name).toBe('Han Solo');
-        expect(testViewCollection._items[125].name).toBe(
-          'Han Solo');
+        expect(testViewCollection._items[125].name).toBe('Han Solo');
         expect(testViewCollection[1]._meta.rtId).toBe(125);
 
         expect(testViewCollection[1]._subData).toBe('hello');
@@ -300,8 +293,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
     it('should create a view collection with map functions', function(
       done) {
       testInContext(function(deps) {
-        testViewCollection = new deps.ViewCollection(testModel,
-          function(item) {
+        testViewCollection = new deps.ViewCollection(testModel, function(item) {
             var newItem = {};
             newItem.country = item.country;
             newItem.gdp = item.gdp;

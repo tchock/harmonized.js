@@ -51,16 +51,16 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       return newItem;
     }).subscribe(model.upStream);
 
+    collection.functionReturnStream = model.downStream.filter(function(item) {
+      return item.meta.action === 'function';
+    });
+
     // Inject all items of the ViewController prototype to the created instance
     ViewCollection.injectClassMethods(collection);
 
     // Get all model items
     model.getItems(function(item) {
       new ViewItem(collection, item.data, item.meta, null, true);
-    });
-
-    collection.functionReturnStream = model.downStream.filter(function(item) {
-      return item.meta.action === 'function';
     });
 
     return collection;
