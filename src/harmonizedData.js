@@ -16,6 +16,7 @@ define('harmonizedData', ['lodash'], function(_) {
     serverOptions: {
       sendModifiedSince: false,
       protocol: 'http',
+      httpHeaders: {},
       omitItemDataOnSend: false,
     },
   };

@@ -31,11 +31,11 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         httpOptions.params = serverHandler._options.params;
       }
 
+      httpOptions.headers = _.clone(serverHandler._options.httpHeaders);
+
       if (serverHandler._options.sendModifiedSince &&
         serverHandler._lastModified > 0) {
-        httpOptions.headers = {
-          'If-Modified-Since': serverHandler._lastModified,
-        };
+        httpOptions.headers['If-Modified-Since'] =  serverHandler._lastModified;
       }
 
       httpOptions.url = serverHandler._fullUrl;

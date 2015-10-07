@@ -91,7 +91,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             setConnectionState: function(state) {
               sh._connected = state;
             },
-            pushAll: jasmine.createSpy()
+
+            pushAll: jasmine.createSpy(),
           };
 
           scheduler.scheduleWithAbsolute(5, function() {
@@ -118,9 +119,11 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             setConnectionState: function(state) {
               sh._connected = state;
             },
+
             _createServerItem: jasmine.createSpy().and.callFake(function(item) {
               return item.data;
-            })
+            }),
+
           };
 
           scheduler.scheduleWithAbsolute(5, function() {
@@ -147,11 +150,13 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh = {
             downStream: new Rx.Subject(),
             _fullUrl: 'http://www.hyphe.me/test/resource/',
-            _options: {},
+            _options: {
+              httpHeaders: {},
+            },
             _keys: {},
             _createServerItem: jasmine.createSpy().and.callFake(function(item) {
               return item.data;
-            })
+            }),
           };
         });
 
@@ -162,13 +167,23 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           });
 
           var calledCb = false;
+
+          sh._options.httpHeaders = {
+            'Content-Type': 'multipart/form-data',
+          };
+
           httpHandler.fetch(sh, function() {
             calledCb = true;
           });
+
           expect(receivedOptions).toEqual({
             method: 'GET',
-            url: 'http://www.hyphe.me/test/resource/'
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            url: 'http://www.hyphe.me/test/resource/',
           });
+
           expect(harmonizedData._httpFunction.calls.count()).toBe(1);
 
           jasmine.clock().tick(11);
@@ -186,12 +201,17 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh._options.sendModifiedSince = true;
           sh._lastModified = 1234;
 
+          sh._options.httpHeaders = {
+            'Content-Type': 'multipart/form-data',
+          };
+
           httpHandler.fetch(sh);
 
           expect(receivedOptions).toEqual({
             method: 'GET',
             url: 'http://www.hyphe.me/test/resource/',
             headers: {
+              'Content-Type': 'multipart/form-data',
               'If-Modified-Since': 1234,
             },
           });
@@ -199,19 +219,18 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           jasmine.clock().tick(11);
         });
 
-        it(
-          'should fetch all data with missing last-modified info but activated sendLastModified in config',
-          function() {
-            harmonizedData._config.sendModifiedSince = true;
-            sh._lastModified = undefined;
+        it('should fetch all data with missing last-modified info but activated sendLastModified in config', function() {
+          harmonizedData._config.sendModifiedSince = true;
+          sh._lastModified = undefined;
 
-            httpHandler.fetch(sh);
+          httpHandler.fetch(sh);
 
-            expect(receivedOptions).toEqual({
-              method: 'GET',
-              url: 'http://www.hyphe.me/test/resource/',
-            });
+          expect(receivedOptions).toEqual({
+            method: 'GET',
+            headers: {},
+            url: 'http://www.hyphe.me/test/resource/',
           });
+        });
 
         it('should fail at fetching data', function() {
           var fetchedItems = [];

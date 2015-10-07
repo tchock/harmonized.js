@@ -162,7 +162,7 @@ module.exports = function(grunt) {
   grunt.registerTask('dist-js', ['requirejs', 'uglify:build']);
 
   // Full distribution task
-  grunt.registerTask('dist', ['jscs', 'clean:dist', 'dist-js']);
+  grunt.registerTask('dist', [/*'jscs', */ 'clean:dist', 'dist-js']);
 
   // Full release task
   grunt.registerTask('release', 'bump and changelog', function(type) {
