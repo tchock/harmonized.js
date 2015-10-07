@@ -145,7 +145,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       // Push to upstream
       this._streams.upStream.onNext({
         data: itemData,
-        meta: itemMeta
+        meta: itemMeta,
       });
 
       return itemMeta.transactionId;
@@ -291,7 +291,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
     ViewItem.prototype.callFn = function(name, args) {
       var transactionId = this._sendItemToUpStream('function', {
         fnName: name,
-        fnArgs: args
+        fnArgs: args,
       });
 
       return this._returnActionPromise('functionDownStream', transactionId);

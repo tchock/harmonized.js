@@ -549,26 +549,60 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           });
         });
 
-        it('should create create a server item with full metadata', function(done) {
+        it('should create a server item with full metadata', function(done) {
           testInContext(function(deps) {
             var inputItem = {
               data: {
                 firstName: 'John',
-                lastName: 'Doe'
+                lastName: 'Doe',
               },
               meta: {
                 storeId: 123,
                 serverId: 321,
                 serverData: {
                   firstName: 'Johnny',
-                  credentials: 'password123'
-                }
-              }
+                  credentials: 'password123',
+                },
+              },
             };
 
             var expectedOutputItem = _.cloneDeep(inputItem.data);
             expectedOutputItem.firstName = 'Johnny';
             expectedOutputItem.credentials = 'password123';
+            var outputItem = sh._createServerItem(inputItem);
+
+            expect(outputItem).toEqual(expectedOutputItem);
+            expect(outputItem).not.toEqual(inputItem.data);
+            expect(outputItem).not.toBe(inputItem.data);
+
+            done();
+          });
+        });
+
+        it('should create a server item without item data', function(done) {
+
+          testInContext(function(deps) {
+
+            sh._options.omitItemDataOnSend = true;
+            var inputItem = {
+              data: {
+                firstName: 'John',
+                lastName: 'Doe',
+              },
+              meta: {
+                storeId: 123,
+                serverId: 321,
+                serverData: {
+                  firstName: 'Johnny',
+                  credentials: 'password123',
+                },
+              },
+            };
+
+            var expectedOutputItem = {
+              firstName: 'Johnny',
+              credentials: 'password123',
+            };
             var outputItem = sh._createServerItem(inputItem);
 
             expect(outputItem).toEqual(expectedOutputItem);

@@ -7,7 +7,7 @@ define('harmonizedData', ['lodash'], function(_) {
   data._config = {
     defaultKeys: {
       serverKey: 'id',
-      storeKey: '_id'
+      storeKey: '_id',
     },
     baseUrl: null,
     dbName: 'harmonizedDb',
@@ -15,8 +15,9 @@ define('harmonizedData', ['lodash'], function(_) {
     fetchAtStart: false,
     saveLocally: false,
     serverOptions: {
-      protocol: 'http'
-    }
+      protocol: 'http',
+      omitItemDataOnSend: false,
+    },
   };
 
   data._resourceSchema = {};

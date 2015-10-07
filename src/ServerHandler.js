@@ -160,7 +160,9 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       var meta = item.meta || {};
       var serverData = meta.serverData || {};
 
-      var serverItem = _.extend({}, item.data, serverData);
+      var data = (this._options.omitItemDataOnSend) ? {} : item.data;
+
+      var serverItem = _.extend({}, data, serverData);
 
       return serverItem;
     };
