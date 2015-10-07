@@ -1072,9 +1072,13 @@ define('ServerHandler', ['ServerHandler/httpHandler',
       var meta = item.meta || {};
       var serverData = meta.serverData || {};
 
-      var data = (this._options.omitItemDataOnSend) ? {} : item.data;
+      var serverItem;
 
-      var serverItem = _.extend({}, data, serverData);
+      if (this._options.omitItemDataOnSend) {
+        serverItem = serverData;
+      } else {
+        serverItem = _.extend({}, item.data, serverData);
+      }
 
       return serverItem;
     };
