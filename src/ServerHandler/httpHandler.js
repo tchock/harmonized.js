@@ -31,10 +31,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         httpOptions.params = serverHandler._options.params;
       }
 
-      if (harmonizedData._config.sendModifiedSince &&
+      if (serverHandler._options.sendModifiedSince &&
         serverHandler._lastModified > 0) {
         httpOptions.headers = {
-          'If-Modified-Since': serverHandler._lastModified
+          'If-Modified-Since': serverHandler._lastModified,
         };
       }
 

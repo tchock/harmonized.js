@@ -183,7 +183,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
         });
 
         it('should fetch data with "modified-since header"', function() {
-          harmonizedData._config.sendModifiedSince = true;
+          sh._options.sendModifiedSince = true;
           sh._lastModified = 1234;
 
           httpHandler.fetch(sh);
@@ -192,8 +192,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             method: 'GET',
             url: 'http://www.hyphe.me/test/resource/',
             headers: {
-              'If-Modified-Since': 1234
-            }
+              'If-Modified-Since': 1234,
+            },
           });
 
           jasmine.clock().tick(11);
@@ -209,7 +209,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
 
             expect(receivedOptions).toEqual({
               method: 'GET',
-              url: 'http://www.hyphe.me/test/resource/'
+              url: 'http://www.hyphe.me/test/resource/',
             });
           });
 
@@ -226,7 +226,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           });
 
           sh._options.params = {
-            shouldFail: true
+            shouldFail: true,
           };
 
           httpHandler.fetch(sh);
@@ -260,7 +260,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             _unpushedList: {},
             _createServerItem: jasmine.createSpy().and.callFake(function(item) {
               return item.data;
-            })
+            }),
           };
         });
 
@@ -269,7 +269,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             meta: {
               action: 'save',
               rtId: 12,
-              storeId: 11
+              storeId: 11,
             },
             data: {
               name: 'HAL-9000'
@@ -281,10 +281,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               action: 'save',
               rtId: 12,
               serverId: 4103,
-              storeId: 11
+              storeId: 11,
             },
             data: {
-              name: 'HAL-9000'
+              name: 'HAL-9000',
             }
           };
 
@@ -293,11 +293,11 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               action: 'delete',
               rtId: 12,
               serverId: 4103,
-              storeId: 11
+              storeId: 11,
             },
             data: {
-              name: 'HAL-9000'
-            }
+              name: 'HAL-9000',
+            },
           };
         });
 
@@ -320,20 +320,20 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             method: 'POST',
             url: 'http://www.hyphe.me/test/resource/',
             data: {
-              name: 'HAL-9000'
+              name: 'HAL-9000',
             }
           });
 
           expect(returnedItem).toEqual({
             meta: postItem.meta,
-            data: postItem.data
+            data: postItem.data,
           });
         });
 
         it('should POST an item with parameters', function() {
           sh._options.params = {
             openPodBayDoor: false,
-            iCantDoThatDave: true
+            iCantDoThatDave: true,
           };
 
           var returnedItem = null;
@@ -354,17 +354,17 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             method: 'POST',
             url: 'http://www.hyphe.me/test/resource/',
             data: {
-              name: 'HAL-9000'
+              name: 'HAL-9000',
             },
             params: {
               openPodBayDoor: false,
-              iCantDoThatDave: true
+              iCantDoThatDave: true,
             }
           });
 
           expect(returnedItem).toEqual({
             meta: postItem.meta,
-            data: postItem.data
+            data: postItem.data,
           });
         });
 
@@ -387,20 +387,20 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             method: 'PUT',
             url: 'http://www.hyphe.me/test/resource/4103/',
             data: {
-              name: 'HAL-9000'
-            }
+              name: 'HAL-9000',
+            },
           });
 
           expect(returnedItem).toEqual({
             meta: putItem.meta,
-            data: putItem.data
+            data: putItem.data,
           });
         });
 
         it('should PUT an item with parameter', function() {
           sh._options.params = {
             openPodBayDoor: false,
-            iCantDoThatDave: true
+            iCantDoThatDave: true,
           };
 
           var returnedItem = null;
@@ -421,17 +421,17 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             method: 'PUT',
             url: 'http://www.hyphe.me/test/resource/4103/',
             data: {
-              name: 'HAL-9000'
+              name: 'HAL-9000',
             },
             params: {
               openPodBayDoor: false,
-              iCantDoThatDave: true
+              iCantDoThatDave: true,
             }
           });
 
           expect(returnedItem).toEqual({
             meta: putItem.meta,
-            data: putItem.data
+            data: putItem.data,
           });
         });
 
@@ -452,19 +452,19 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
 
           expect(receivedOptions).toEqual({
             method: 'DELETE',
-            url: 'http://www.hyphe.me/test/resource/4103/'
+            url: 'http://www.hyphe.me/test/resource/4103/',
           });
 
           expect(returnedItem).toEqual({
             meta: deleteItem.meta,
-            data: deleteItem.data
+            data: deleteItem.data,
           });
         });
 
         it('should DELETE an item with parameter', function() {
           sh._options.params = {
             openPodBayDoor: false,
-            iCantDoThatDave: true
+            iCantDoThatDave: true,
           };
 
           var returnedItem = null;
@@ -486,8 +486,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             url: 'http://www.hyphe.me/test/resource/4103/',
             params: {
               openPodBayDoor: false,
-              iCantDoThatDave: true
-            }
+              iCantDoThatDave: true,
+            },
           });
 
           expect(returnedItem).toEqual({
@@ -496,15 +496,15 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               rtId: 12,
               serverId: 4103,
               storeId: 11,
-              deleted: true
+              deleted: true,
             },
-            data: deleteItem.data
+            data: deleteItem.data,
           });
         });
 
         it('should fail and add item to the unpushedList', function() {
           sh._options.params = {
-            shouldFail: true
+            shouldFail: true,
           };
 
           var returnedItem = null;
@@ -544,14 +544,14 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           scheduler.scheduleWithAbsolute(5, function() {
             httpHandler.push({
               meta: {
-                action: 'function'
+                action: 'function',
               },
               data: {
                 fnName: 'testfn',
                 fnArgs: {
-                  value: true
-                }
-              }
+                  value: true,
+                },
+              },
             }, sh);
             expect(returnedItem).toBeNull();
             jasmine.clock().tick(10);
@@ -563,23 +563,23 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             method: 'POST',
             url: 'http://www.hyphe.me/test/resource/testfn/',
             data: {
-              value: true
-            }
+              value: true,
+            },
           });
 
           expect(returnedItem).toEqual({
             meta: {
-              action: 'function'
+              action: 'function',
             },
             data: {
               fnName: 'testfn',
               fnArgs: {
-                value: true
+                value: true,
               },
               fnReturn: {
-                value: true
-              }
-            }
+                value: true,
+              },
+            },
           });
         });
 
@@ -595,14 +595,14 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               meta: {
                 serverId: 123,
                 rtId: 2,
-                action: 'function'
+                action: 'function',
               },
               data: {
                 fnName: 'carbonize',
                 fnArgs: {
-                  place: 'Bespin'
-                }
-              }
+                  place: 'Bespin',
+                },
+              },
             }, sh);
             expect(returnedItem).toBeNull();
             jasmine.clock().tick(10);
@@ -614,25 +614,25 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             method: 'POST',
             url: 'http://www.hyphe.me/test/resource/123/carbonize/',
             data: {
-              place: 'Bespin'
-            }
+              place: 'Bespin',
+            },
           });
 
           expect(returnedItem).toEqual({
             meta: {
               serverId: 123,
               rtId: 2,
-              action: 'function'
+              action: 'function',
             },
             data: {
               fnName: 'carbonize',
               fnArgs: {
-                place: 'Bespin'
+                place: 'Bespin',
               },
               fnReturn: {
-                place: 'Bespin'
-              }
-            }
+                place: 'Bespin',
+              },
+            },
           });
         });
 
@@ -644,11 +644,11 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           downStream: new Rx.Subject(),
           _downStreamSubscribe: null,
           _connected: false,
-          _fullUrl: 'http://hyphe.me/blub'
+          _fullUrl: 'http://hyphe.me/blub',
         };
 
         var insertedOptions = {
-          blub: 'blib'
+          blub: 'blib',
         };
 
         httpHandler.sendRequest(insertedOptions, sh);
@@ -656,18 +656,18 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
         expect(receivedOptions).toEqual({
           method: 'GET',
           url: 'http://hyphe.me/blub',
-          blub: 'blib'
+          blub: 'blib',
         });
 
         httpHandler.sendRequest({
           method: 'POST',
-          hello: 'dave'
+          hello: 'dave',
         }, sh);
 
         expect(receivedOptions).toEqual({
           method: 'POST',
           url: 'http://hyphe.me/blub',
-          hello: 'dave'
+          hello: 'dave',
         });
       });
 
