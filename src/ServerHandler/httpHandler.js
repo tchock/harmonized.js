@@ -31,7 +31,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         httpOptions.params = serverHandler._options.params;
       }
 
-      httpOptions.headers = _.clone(serverHandler._options.httpHeaders);
+      httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.get, serverHandler._options.httpHeaders.all);
 
       if (serverHandler._options.sendModifiedSince &&
         serverHandler._lastModified > 0) {
@@ -52,7 +52,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         // Go through all returned items
         for (var i = 0; i < responseLenght; i++) {
           var item = harmonizedData._createStreamItem(returnedItems[i], {
-            serverKey: serverHandler._keys.serverKey
+            serverKey: serverHandler._keys.serverKey,
           });
           item.meta.action = 'save';
 
@@ -102,18 +102,22 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           httpOptions.data = serverHandler._createServerItem(item);
           if (_.isUndefined(item.meta.serverId)) {
             httpOptions.method = 'POST';
+            httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.post, serverHandler._options.httpHeaders.all);
           } else {
             httpOptions.method = 'PUT';
             httpOptions.url = httpOptions.url + item.meta.serverId + '/';
+            httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.put, serverHandler._options.httpHeaders.all);
           }
 
           break;
         case 'delete':
           httpOptions.method = 'DELETE';
           httpOptions.url = httpOptions.url + item.meta.serverId + '/';
+          httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.delete, serverHandler._options.httpHeaders.all);
           break;
         case 'function':
           httpOptions.method = 'POST';
+          httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.function, serverHandler._options.httpHeaders.all);
           var idPart = (_.isUndefined(item.meta.serverId)) ? '' :  item.meta.serverId + '/';
           httpOptions.url = httpOptions.url + idPart + item.data.fnName + '/';
           httpOptions.data = item.data.fnArgs;
@@ -122,7 +126,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
         var tempItem = harmonizedData._createStreamItem(returnItem.data, {
-          serverKey: serverHandler._keys.serverKey
+          serverKey: serverHandler._keys.serverKey,
         });
 
         item.meta.serverId = tempItem.meta.serverId || item.meta.serverId;
@@ -132,7 +136,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           delete item.meta.serverId;
         }
 
-        if (item.meta.action === 'delete') {
+        if (item.meta.action === 'save' && serverHandler._options.omitItemDataOnSend) {
+          item.data = returnItem.data;
+          delete item.data[serverHandler._keys.serverKey];
+        } else if (item.meta.action === 'delete') {
           item.meta.action = 'deletePermanently';
           item.meta.deleted = true;
         } else if (item.meta.action === 'function') {
@@ -143,7 +150,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
       }).catch(function(error) {
         serverHandler._unpushedList[item.meta.rtId] = item;
         serverHandler._broadcastError(error, item);
-      })
-    }
+      });
+    },
   };
 });

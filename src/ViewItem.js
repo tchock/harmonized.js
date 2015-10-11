@@ -125,9 +125,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
       itemMeta.action = action;
 
-      if (_.isPlainObject(serverData)) {
-        itemMeta.serverData = serverData;
-      }
+      itemMeta.serverData = serverData;
 
       // Set data to send
       if (_.isObject(data)) {

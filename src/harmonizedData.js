@@ -16,7 +16,14 @@ define('harmonizedData', ['lodash'], function(_) {
     serverOptions: {
       sendModifiedSince: false,
       protocol: 'http',
-      httpHeaders: {},
+      httpHeaders: {
+        all: {},
+        get: {},
+        post: {},
+        put: {},
+        delete: {},
+        function: {},
+      },
       omitItemDataOnSend: false,
     },
   };
@@ -166,8 +173,8 @@ define('harmonizedData', ['lodash'], function(_) {
       meta: {
         storeId: inputItem[keys.storeKey],
         serverId: inputItem[keys.serverKey],
-        deleted: !!inputItem._deleted
-      }
+        deleted: !!inputItem._deleted,
+      },
     };
 
     // Delete store Id if the key is undefined (e.g. when creating item at the server)

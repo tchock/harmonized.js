@@ -781,7 +781,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           delete item.meta.serverId;
         }
 
-        if (item.meta.action === 'delete') {
+        if (item.meta.action === 'save' && serverHandler._options.omitItemDataOnSend) {
+          item.data = returnItem.data;
+          delete item.data[serverHandler._keys.serverKey];
+        } else if (item.meta.action === 'delete') {
           item.meta.action = 'deletePermanently';
           item.meta.deleted = true;
         } else if (item.meta.action === 'function') {
@@ -2602,9 +2605,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
       itemMeta.action = action;
 
-      if (_.isPlainObject(serverData)) {
-        itemMeta.serverData = serverData;
-      }
+      itemMeta.serverData = serverData;
 
       // Set data to send
       if (_.isObject(data)) {

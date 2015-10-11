@@ -19,7 +19,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           catch: function(fn) {
             returnedPromise.catchFn = fn;
             return returnedPromise;
-          }
+          },
         };
         var returnedData = {};
 
@@ -27,26 +27,26 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           case 'GET':
             returnedData = {
               header: {
-                lastModified: 1234
+                lastModified: 1234,
               },
               data: [
-                123, 124, 125
-              ]
+                123, 124, 125,
+              ],
             };
             break;
           case 'POST':
             returnedData = {
-              data: _.cloneDeep(options.data)
+              data: _.cloneDeep(options.data),
             };
             break;
           case 'PUT':
             returnedData = {
-              data: _.cloneDeep(options.data)
+              data: _.cloneDeep(options.data),
             };
             break;
           case 'DELETE':
             returnedData = {
-              data: null
+              data: null,
             };
             break;
         }
@@ -55,7 +55,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           if (_.isObject(options.params) && options.params
             .shouldFail === true) {
             returnedPromise.catchFn({
-              status: 500
+              status: 500,
             });
           } else {
             returnedPromise.thenFn(returnedData);
@@ -151,7 +151,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             downStream: new Rx.Subject(),
             _fullUrl: 'http://www.hyphe.me/test/resource/',
             _options: {
-              httpHeaders: {},
+              httpHeaders: {
+                all: {},
+                get: {},
+              },
             },
             _keys: {},
             _createServerItem: jasmine.createSpy().and.callFake(function(item) {
@@ -168,7 +171,11 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
 
           var calledCb = false;
 
-          sh._options.httpHeaders = {
+          sh._options.httpHeaders.all = {
+            test: 'blub',
+          };
+
+          sh._options.httpHeaders.get = {
             'Content-Type': 'multipart/form-data',
           };
 
@@ -179,6 +186,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(receivedOptions).toEqual({
             method: 'GET',
             headers: {
+              test: 'blub',
               'Content-Type': 'multipart/form-data',
             },
             url: 'http://www.hyphe.me/test/resource/',
@@ -201,7 +209,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh._options.sendModifiedSince = true;
           sh._lastModified = 1234;
 
-          sh._options.httpHeaders = {
+          sh._options.httpHeaders.get = {
             'Content-Type': 'multipart/form-data',
           };
 
@@ -274,7 +282,15 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh = {
             downStream: new Rx.Subject(),
             _fullUrl: 'http://www.hyphe.me/test/resource/',
-            _options: {},
+            _options: {
+              httpHeaders: {
+                all: {},
+                post: {},
+                put: {},
+                delete: {},
+                function: {},
+              },
+            },
             _keys: {},
             _unpushedList: {},
             _createServerItem: jasmine.createSpy().and.callFake(function(item) {
@@ -291,8 +307,8 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               storeId: 11,
             },
             data: {
-              name: 'HAL-9000'
-            }
+              name: 'HAL-9000',
+            },
           };
 
           putItem = {
@@ -304,7 +320,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             },
             data: {
               name: 'HAL-9000',
-            }
+            },
           };
 
           deleteItem = {
@@ -327,6 +343,14 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             returnedItem = item;
           });
 
+          sh._options.httpHeaders.all = {
+            test: 'haha',
+          };
+
+          sh._options.httpHeaders.post = {
+            'Content-Type': 'multipart/form-data',
+          };
+
           scheduler.scheduleWithAbsolute(5, function() {
             httpHandler.push(postItem, sh);
             expect(returnedItem).toBeNull();
@@ -338,9 +362,13 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(receivedOptions).toEqual({
             method: 'POST',
             url: 'http://www.hyphe.me/test/resource/',
+            headers: {
+              test: 'haha',
+              'Content-Type': 'multipart/form-data',
+            },
             data: {
               name: 'HAL-9000',
-            }
+            },
           });
 
           expect(returnedItem).toEqual({
@@ -353,6 +381,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh._options.params = {
             openPodBayDoor: false,
             iCantDoThatDave: true,
+          };
+
+          sh._options.httpHeaders.post = {
+            'Content-Type': 'multipart/form-data',
           };
 
           var returnedItem = null;
@@ -375,10 +407,13 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             data: {
               name: 'HAL-9000',
             },
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
             params: {
               openPodBayDoor: false,
               iCantDoThatDave: true,
-            }
+            },
           });
 
           expect(returnedItem).toEqual({
@@ -389,6 +424,14 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
 
         it('should PUT an item', function() {
           var returnedItem = null;
+
+          sh._options.httpHeaders.all = {
+            contenttype: 'multipart/form-data',
+          };
+
+          sh._options.httpHeaders.put = {
+            'Content-Type': 'multipart/form-data',
+          };
 
           sh.downStream.subscribe(function(item) {
             returnedItem = item;
@@ -405,6 +448,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(receivedOptions).toEqual({
             method: 'PUT',
             url: 'http://www.hyphe.me/test/resource/4103/',
+            headers: {
+              contenttype: 'multipart/form-data',
+              'Content-Type': 'multipart/form-data',
+            },
             data: {
               name: 'HAL-9000',
             },
@@ -422,6 +469,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             iCantDoThatDave: true,
           };
 
+          sh._options.httpHeaders.put = {
+            'Content-Type': 'multipart/form-data',
+          };
+
           var returnedItem = null;
 
           sh.downStream.subscribe(function(item) {
@@ -442,10 +493,13 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             data: {
               name: 'HAL-9000',
             },
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
             params: {
               openPodBayDoor: false,
               iCantDoThatDave: true,
-            }
+            },
           });
 
           expect(returnedItem).toEqual({
@@ -456,6 +510,14 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
 
         it('should DELETE an item', function() {
           var returnedItem = null;
+
+          sh._options.httpHeaders.all = {
+            contenttype: 'multipart/form-data',
+          };
+
+          sh._options.httpHeaders.delete = {
+            'Content-Type': 'multipart/form-data',
+          };
 
           sh.downStream.subscribe(function(item) {
             returnedItem = item;
@@ -472,6 +534,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(receivedOptions).toEqual({
             method: 'DELETE',
             url: 'http://www.hyphe.me/test/resource/4103/',
+            headers: {
+              contenttype: 'multipart/form-data',
+              'Content-Type': 'multipart/form-data',
+            },
           });
 
           expect(returnedItem).toEqual({
@@ -484,6 +550,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh._options.params = {
             openPodBayDoor: false,
             iCantDoThatDave: true,
+          };
+
+          sh._options.httpHeaders.delete = {
+            'Content-Type': 'multipart/form-data',
           };
 
           var returnedItem = null;
@@ -503,6 +573,9 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(receivedOptions).toEqual({
             method: 'DELETE',
             url: 'http://www.hyphe.me/test/resource/4103/',
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
             params: {
               openPodBayDoor: false,
               iCantDoThatDave: true,
@@ -560,6 +633,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             returnedItem = item;
           });
 
+          sh._options.httpHeaders.function = {
+            'Content-Type': 'multipart/form-data',
+          };
+
           scheduler.scheduleWithAbsolute(5, function() {
             httpHandler.push({
               meta: {
@@ -581,6 +658,9 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(receivedOptions).toEqual({
             method: 'POST',
             url: 'http://www.hyphe.me/test/resource/testfn/',
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
             data: {
               value: true,
             },
@@ -632,6 +712,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(receivedOptions).toEqual({
             method: 'POST',
             url: 'http://www.hyphe.me/test/resource/123/carbonize/',
+            headers: {},
             data: {
               place: 'Bespin',
             },
