@@ -464,6 +464,9 @@ define('harmonizedData', ['lodash'], function(_) {
         delete: {},
         function: {},
       },
+      hooks: {
+        functionReturn: null,
+      },
       omitItemDataOnSend: false,
     },
   };
@@ -678,8 +681,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.get, serverHandler._options.httpHeaders.all);
 
-      if (serverHandler._options.sendModifiedSince &&
-        serverHandler._lastModified > 0) {
+      if (serverHandler._options.sendModifiedSince && serverHandler._lastModified > 0) {
         httpOptions.headers['If-Modified-Since'] =  serverHandler._lastModified;
       }
 
@@ -789,6 +791,9 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           item.meta.deleted = true;
         } else if (item.meta.action === 'function') {
           item.data.fnReturn = tempItem.data;
+          if (_.isPlainObject(serverHandler._options.hooks) && _.isFunction(serverHandler._options.hooks.functionReturn)) {
+            item = serverHandler._options.hooks.functionReturn(item, returnItem.data);
+          }
         }
 
         serverHandler.downStream.onNext(item);
