@@ -560,6 +560,8 @@ define('harmonizedData', ['lodash'], function(_) {
 
       if (_.isUndefined(currentModel.serverOptions)) {
         currentModel.serverOptions = _.cloneDeep(data._config.serverOptions);
+      } else {
+        currentModel.serverOptions = _.extend(currentModel.serverOptions, data._config.serverOptions);
       }
 
       if (_.isUndefined(currentModel.fetchAtStart)) {
