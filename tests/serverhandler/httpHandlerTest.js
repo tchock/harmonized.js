@@ -682,6 +682,71 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           });
         });
 
+        it('should send a collection function to the server with a hook', function() {
+          var returnedItem = null;
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          sh._options.httpHeaders.function = {
+            'Content-Type': 'multipart/form-data',
+          };
+
+          sh._options.hooks = {
+            functionReturn: function(item, serverData) {
+              item.meta.action = 'save';
+              item.meta.serverId = serverData.id;
+              var clonedServerData = _.cloneDeep(serverData);
+              delete clonedServerData.id;
+              item.data = clonedServerData;
+
+              return item;
+            },
+          };
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push({
+              meta: {
+                action: 'function',
+              },
+              data: {
+                fnName: 'testfn',
+                fnArgs: {
+                  id: 1234,
+                  value: true,
+                },
+              },
+            }, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          expect(receivedOptions).toEqual({
+            method: 'POST',
+            url: 'http://www.hyphe.me/test/resource/testfn/',
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            data: {
+              id: 1234,
+              value: true,
+            },
+          });
+
+          expect(returnedItem).toEqual({
+            meta: {
+              action: 'save',
+              serverId: 1234,
+            },
+            data: {
+              value: true,
+            },
+          });
+        });
+
         it('should send a item function to the server', function() {
           var returnedItem = null;
 
@@ -732,6 +797,69 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               fnReturn: {
                 place: 'Bespin',
               },
+            },
+          });
+        });
+
+        it('should send a item function to the server with a hook', function() {
+          var returnedItem = null;
+
+          sh._options.hooks = {
+            functionReturn: function(item, serverData) {
+              item.meta.action = 'save';
+              item.meta.serverId = serverData.id;
+              var clonedServerData = _.cloneDeep(serverData);
+              delete clonedServerData.id;
+
+              item.data = clonedServerData;
+
+              return item;
+            },
+          };
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push({
+              meta: {
+                serverId: 123,
+                rtId: 2,
+                action: 'function',
+              },
+              data: {
+                fnName: 'carbonize',
+                fnArgs: {
+                  id: 124,
+                  place: 'Bespin',
+                },
+              },
+            }, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          expect(receivedOptions).toEqual({
+            method: 'POST',
+            url: 'http://www.hyphe.me/test/resource/123/carbonize/',
+            headers: {},
+            data: {
+              id: 124,
+              place: 'Bespin',
+            },
+          });
+
+          expect(returnedItem).toEqual({
+            meta: {
+              serverId: 124,
+              rtId: 2,
+              action: 'save',
+            },
+            data: {
+              place: 'Bespin',
             },
           });
         });

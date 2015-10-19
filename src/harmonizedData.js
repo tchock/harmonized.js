@@ -24,6 +24,9 @@ define('harmonizedData', ['lodash'], function(_) {
         delete: {},
         function: {},
       },
+      hooks: {
+        functionReturn: null,
+      },
       omitItemDataOnSend: false,
     },
   };

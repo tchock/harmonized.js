@@ -91,7 +91,7 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         cb({
           ViewItem: ViewItem,
           harmonizedData: harmonizedData,
-          ViewCollection: ViewCollection
+          ViewCollection: ViewCollection,
         });
       });
     }
@@ -205,13 +205,14 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         expect(upStreamItems[0]).toEqual({
           data: {
             name: 'Han Solo',
-            evil: false
+            evil: false,
           },
           meta: {
             transactionId: 1,
             rtId: 1,
-            action: 'save'
-          }
+            action: 'save',
+            serverData: undefined,
+          },
         });
 
         done();
@@ -246,15 +247,16 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         expect(upStreamItems[0]).toEqual({
           data: {
             name: 'Han Solo',
-            evil: false
+            evil: false,
           },
           meta: {
             rtId: 123,
             serverId: 1000,
             storeId: 124,
             transactionId: 1,
-            action: 'save'
-          }
+            action: 'save',
+            serverData: undefined,
+          },
         });
 
         done();
@@ -296,13 +298,14 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         expect(upStreamItems[0]).toEqual({
           data: {
             name: 'Han Solo',
-            evil: false
+            evil: false,
           },
           meta: {
             rtId: 123,
             transactionId: 1,
-            action: 'delete'
-          }
+            action: 'delete',
+            serverData: undefined,
+          },
         });
 
         done();

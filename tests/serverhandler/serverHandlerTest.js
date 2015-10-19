@@ -98,214 +98,201 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
 
       describe('streams', function() {
 
-        it(
-          'should push items to a not connected stream and put them to the unpushedList',
-          function(done) {
-            testInContext(function(deps) {
-              sh._connected = false;
+        it('should push items to a not connected stream and put them to the unpushedList', function(done) {
+          testInContext(function(deps) {
+            sh._connected = false;
 
-              sh.upStream.subscribe(function(item) {
-                pushList.push(item);
-              });
-
-              scheduler.scheduleWithAbsolute(1, function() {
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Frank Underwood'
-                  },
-                  meta: {
-                    rtId: 152
-                  }
-                });
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Walter White'
-                  },
-                  meta: {
-                    rtId: 415
-                  }
-                });
-              });
-
-              scheduler.scheduleWithAbsolute(10, function() {
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Don Draper'
-                  },
-                  meta: {
-                    rtId: 387
-                  }
-                });
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Jack Sheppard'
-                  },
-                  meta: {
-                    rtId: 18
-                  }
-                });
-              });
-
-              scheduler.start();
-
-              expect(sh._unpushedList).toContainKeys([152, 415,
-                387, 18
-              ]);
-              expect(deps.mocks.mocks[
-                'ServerHandler/httpHandler'].push).not.toHaveBeenCalled();
-
-              done();
+            sh.upStream.subscribe(function(item) {
+              pushList.push(item);
             });
-          });
 
-        it(
-          'should push items to a connected stream and call the push method of the implementation',
-          function(done) {
-            testInContext(function(deps) {
-              sh._connected = true;
-              sh._protocol = deps.mocks.mocks[
-                'ServerHandler/httpHandler'];
-
-              scheduler.scheduleWithAbsolute(1, function() {
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Frank Underwood'
-                  },
-                  meta: {
-                    rtId: 152
-                  }
-                });
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Walter White'
-                  },
-                  meta: {
-                    rtId: 415
-                  }
-                });
+            scheduler.scheduleWithAbsolute(1, function() {
+              sh.upStream.onNext({
+                data: {
+                  name: 'Frank Underwood',
+                },
+                meta: {
+                  rtId: 152,
+                },
               });
-
-              scheduler.scheduleWithAbsolute(10, function() {
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Don Draper'
-                  },
-                  meta: {
-                    rtId: 387
-                  }
-                });
-                sh.upStream.onNext({
-                  data: {
-                    name: 'Jack Sheppard'
-                  },
-                  meta: {
-                    rtId: 18
-                  }
-                });
+              sh.upStream.onNext({
+                data: {
+                  name: 'Walter White',
+                },
+                meta: {
+                  rtId: 415,
+                }
               });
-
-              scheduler.start();
-
-              expect(sh._unpushedList).not.toContainKeys([152,
-                415,
-                387, 18
-              ]);
-
-              expect(deps.mocks.mocks[
-                  'ServerHandler/httpHandler'].push.calls.count())
-                .toBe(
-                  4);
-              expect(pushList[0].meta.rtId).toBe(152);
-              expect(pushList[1].meta.rtId).toBe(415);
-              expect(pushList[2].meta.rtId).toBe(387);
-              expect(pushList[3].meta.rtId).toBe(18);
-
-              done();
             });
-          });
 
-        it(
-          'should set the connection state through the global stream',
-          function(done) {
-            testInContext(function(deps) {
-              var stateList = [];
-              var connectionState = false;
-
-              spyOn(sh, 'setConnectionState').and.callFake(
-                function(
-                  state) {
-                  connectionState = state;
-                });
-
-              sh.connectionStream.subscribe(function(state) {
-                stateList.push(state);
+            scheduler.scheduleWithAbsolute(10, function() {
+              sh.upStream.onNext({
+                data: {
+                  name: 'Don Draper'
+                },
+                meta: {
+                  rtId: 387
+                }
               });
-
-              scheduler.scheduleWithAbsolute(5, function() {
-                deps.ServerHandler.connectionStream.onNext(
-                  true);
+              sh.upStream.onNext({
+                data: {
+                  name: 'Jack Sheppard'
+                },
+                meta: {
+                  rtId: 18
+                }
               });
-
-              scheduler.scheduleWithAbsolute(10, function() {
-                deps.ServerHandler.connectionStream.onNext(
-                  false);
-              });
-
-              scheduler.scheduleWithAbsolute(15, function() {
-                deps.ServerHandler.connectionStream.onNext(
-                  true);
-              });
-
-              expect(connectionState).toBeFalsy();
-
-              scheduler.start();
-
-              expect(stateList).toEqual([true, false, true]);
-              expect(connectionState).toBeTruthy();
-
-              done();
             });
+
+            scheduler.start();
+
+            expect(sh._unpushedList).toContainKeys([152, 415, 387, 18]);
+            expect(deps.mocks.mocks['ServerHandler/httpHandler'].push)
+              .not.toHaveBeenCalled();
+
+            done();
           });
+        });
 
-        it(
-          'should set the connection state through the connection stream of the handler instance',
-          function(done) {
-            testInContext(function(deps) {
-              var stateList = [];
-              var connectionState = false;
+        it('should push items to a connected stream and call the push method of the implementation', function(done) {
+          testInContext(function(deps) {
+            sh._connected = true;
+            sh._protocol = deps.mocks.mocks['ServerHandler/httpHandler'];
 
-              spyOn(sh, 'setConnectionState').and.callFake(
-                function(
-                  state) {
-                  connectionState = state;
-                });
-
-              sh.connectionStream.subscribe(function(state) {
-                stateList.push(state);
+            scheduler.scheduleWithAbsolute(1, function() {
+              sh.upStream.onNext({
+                data: {
+                  name: 'Frank Underwood',
+                },
+                meta: {
+                  rtId: 152,
+                },
               });
-
-              scheduler.scheduleWithAbsolute(5, function() {
-                sh.connectionStream.onNext(true);
+              sh.upStream.onNext({
+                data: {
+                  name: 'Walter White',
+                },
+                meta: {
+                  rtId: 415,
+                },
               });
-
-              scheduler.scheduleWithAbsolute(10, function() {
-                sh.connectionStream.onNext(false);
-              });
-
-              scheduler.scheduleWithAbsolute(15, function() {
-                sh.connectionStream.onNext(true);
-              });
-
-              expect(connectionState).toBeFalsy();
-
-              scheduler.start();
-
-              expect(stateList).toEqual([true, false, true]);
-              expect(connectionState).toBeTruthy();
-
-              done();
             });
+
+            scheduler.scheduleWithAbsolute(10, function() {
+              sh.upStream.onNext({
+                data: {
+                  name: 'Don Draper',
+                },
+                meta: {
+                  rtId: 387,
+                }
+              });
+              sh.upStream.onNext({
+                data: {
+                  name: 'Jack Sheppard',
+                },
+                meta: {
+                  rtId: 18,
+                }
+              });
+            });
+
+            scheduler.start();
+
+            expect(sh._unpushedList).not.toContainKeys([152,
+              415,
+              387, 18
+            ]);
+
+            expect(deps.mocks.mocks['ServerHandler/httpHandler']
+              .push.calls.count()).toBe(4);
+            expect(pushList[0].meta.rtId).toBe(152);
+            expect(pushList[1].meta.rtId).toBe(415);
+            expect(pushList[2].meta.rtId).toBe(387);
+            expect(pushList[3].meta.rtId).toBe(18);
+
+            done();
           });
+        });
+
+        it('should set the connection state through the global stream', function(done) {
+          testInContext(function(deps) {
+            var stateList = [];
+            var connectionState = false;
+
+            spyOn(sh, 'setConnectionState').and.callFake(
+              function(
+                state) {
+                connectionState = state;
+              });
+
+            sh.connectionStream.subscribe(function(state) {
+              stateList.push(state);
+            });
+
+            scheduler.scheduleWithAbsolute(5, function() {
+              deps.ServerHandler.connectionStream.onNext(
+                true);
+            });
+
+            scheduler.scheduleWithAbsolute(10, function() {
+              deps.ServerHandler.connectionStream.onNext(
+                false);
+            });
+
+            scheduler.scheduleWithAbsolute(15, function() {
+              deps.ServerHandler.connectionStream.onNext(
+                true);
+            });
+
+            expect(connectionState).toBeFalsy();
+
+            scheduler.start();
+
+            expect(stateList).toEqual([true, false, true]);
+            expect(connectionState).toBeTruthy();
+
+            done();
+          });
+        });
+
+        it('should set the connection state through the connection stream of the handler instance', function(done) {
+          testInContext(function(deps) {
+            var stateList = [];
+            var connectionState = false;
+
+            spyOn(sh, 'setConnectionState').and.callFake(
+              function(
+                state) {
+                connectionState = state;
+              });
+
+            sh.connectionStream.subscribe(function(state) {
+              stateList.push(state);
+            });
+
+            scheduler.scheduleWithAbsolute(5, function() {
+              sh.connectionStream.onNext(true);
+            });
+
+            scheduler.scheduleWithAbsolute(10, function() {
+              sh.connectionStream.onNext(false);
+            });
+
+            scheduler.scheduleWithAbsolute(15, function() {
+              sh.connectionStream.onNext(true);
+            });
+
+            expect(connectionState).toBeFalsy();
+
+            scheduler.start();
+
+            expect(stateList).toEqual([true, false, true]);
+            expect(connectionState).toBeTruthy();
+
+            done();
+          });
+        });
       });
 
       describe('protocol', function() {
@@ -323,14 +310,13 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
           });
         });
 
-        it('should be set to websocket on handler creation', function(
-          done) {
+        it('should be set to websocket on handler creation', function(done) {
           testInContext(function(deps) {
             sh = new deps.ServerHandler(
               ['http://api.hyphe.me', 'rest', 'resource'], {
-                serverKey: 'id'
+                serverKey: 'id',
               }, {
-                protocol: 'websocket'
+                protocol: 'websocket',
               });
             expect(deps.ServerHandler.prototype._setProtocol)
               .toHaveBeenCalled();
@@ -502,30 +488,30 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
               123: {
                 data: {
                   firstName: 'Hans',
-                  lastName: 'Wurst'
+                  lastName: 'Wurst',
                 },
                 meta: {
-                  rtId: 123
-                }
+                  rtId: 123,
+                },
               },
               315: {
                 data: {
                   firstName: 'Peter',
-                  lastName: 'Silie'
+                  lastName: 'Silie',
                 },
                 meta: {
-                  rtId: 315
-                }
+                  rtId: 315,
+                },
               },
               483: {
                 data: {
                   firstName: 'Kurt',
-                  lastName: 'Zehose'
+                  lastName: 'Zehose',
                 },
                 meta: {
-                  rtId: 483
-                }
-              }
+                  rtId: 483,
+                },
+              },
             };
 
             sh.upStream.subscribe(function(item) {
@@ -618,11 +604,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             var inputItem = {
               data: {
                 firstName: 'John',
-                lastName: 'Doe'
+                lastName: 'Doe',
               },
               meta: {
-                serverId: 321
-              }
+                serverId: 321,
+              },
             };
 
             var expectedOutputItem = _.cloneDeep(inputItem.data);
@@ -660,7 +646,7 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
       it('should send a http request', function(done) {
         testInContext(function(deps) {
           var returnedValue = sh.sendHttpRequest({
-            method: 'GET'
+            method: 'GET',
           });
 
           // Should have called the mock sendRequest of the httpHandler
