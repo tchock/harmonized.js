@@ -29,8 +29,13 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
       _this._streams.upStream = viewCollection.upStream;
 
-      _this._streams.saveDownStream = viewCollection.downStream.filter(function(item) {
-        return item.meta.rtId === _this._meta.rtId && item.meta.action === 'save';
+      _this._streams.downStream = Rx.Observable.merge(viewCollection.downStream, viewCollection.functionReturnStream)
+        .filter(function(item) {
+          return item.meta.rtId === _this._meta.rtId;
+        });
+
+      _this._streams.saveDownStream = _this._streams.downStream.filter(function(item) {
+        return item.meta.action === 'save';
       });
 
       // Subscription for the save downstream
@@ -39,9 +44,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       });
 
       // Subscription for the delete downstream
-      _this._streams.deleteDownStream = viewCollection.downStream.filter(function(item) {
-        return item.meta.rtId === _this._meta.rtId && (item.meta.action === 'delete' ||
-          item.meta.action === 'deletePermanently');
+      _this._streams.deleteDownStream = _this._streams.downStream.filter(function(item) {
+        return item.meta.action === 'delete' || item.meta.action === 'deletePermanently';
       });
 
       // Subscription for the delete downstream
@@ -292,7 +296,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
         fnArgs: args,
       });
 
-      return this._returnActionPromise('functionDownStream', transactionId);
+      return this._returnActionPromise('downStream', transactionId);
     };
 
     /**

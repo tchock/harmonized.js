@@ -25,6 +25,7 @@ define('harmonizedData', ['lodash'], function(_) {
         function: {},
       },
       hooks: {
+        prePush: null,
         functionReturn: null,
       },
       omitItemDataOnSend: false,
@@ -121,7 +122,7 @@ define('harmonizedData', ['lodash'], function(_) {
       if (_.isUndefined(currentModel.serverOptions)) {
         currentModel.serverOptions = _.cloneDeep(data._config.serverOptions);
       } else {
-        currentModel.serverOptions = _.extend(currentModel.serverOptions, data._config.serverOptions);
+        currentModel.serverOptions = _.extend({}, data._config.serverOptions, currentModel.serverOptions);
       }
 
       if (_.isUndefined(currentModel.fetchAtStart)) {

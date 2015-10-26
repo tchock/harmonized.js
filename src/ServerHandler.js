@@ -153,7 +153,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
     /**
      * Creates a server item in the form to send to the server
-     * @param  {Object} item Item that has to be transformed to server server structure
+     * @param  {Object} item Item that has to be transformed to server structure
      * @return {Object}      The item in the structure the server accepts
      */
     ServerHandler.prototype._createServerItem = function createServerItem(item) {

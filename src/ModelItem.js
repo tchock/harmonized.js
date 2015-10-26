@@ -28,7 +28,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
   var ModelItem = function ModelItem(parentModel, data, meta) {
     var _this = this;
     _this.data = data || {};
-    _this.meta = meta || {};
+    _this.meta = this._createItemMeta(meta);
     _this.subData = {};
 
     // Go through all described submodels for this item
@@ -59,7 +59,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
      */
     _this.getModel = function() {
       return parentModel;
-    }
+    };
 
     // Add item to the runtime ID hash
     parentModel._rtIdHash[_this.meta.rtId] = _this;
@@ -87,12 +87,22 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     // informed of the new item
     var initialSendMeta = _.cloneDeep(_this.meta);
     initialSendMeta.action = 'save';
+    initialSendMeta.transactionId = meta.transactionId;
     parentModel.downStream.onNext({
       meta: initialSendMeta,
-      data: _.cloneDeep(_this.data)
+      data: _.cloneDeep(_this.data),
     });
 
     return _this;
+  };
+
+  ModelItem.prototype._createItemMeta = function(meta) {
+    return {
+      rtId: meta.rtId,
+      serverId: meta.serverId,
+      storeId: meta.storeId,
+      deleted: meta.deleted,
+    };
   };
 
   /**
@@ -109,7 +119,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
-    this.meta = _.cloneDeep(item.meta);
+    this.meta = this._createItemMeta(item.meta);
     delete this.meta.action;
     this.data = _.cloneDeep(item.data);
     return item;

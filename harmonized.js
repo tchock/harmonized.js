@@ -465,6 +465,7 @@ define('harmonizedData', ['lodash'], function(_) {
         function: {},
       },
       hooks: {
+        prePush: null,
         functionReturn: null,
       },
       omitItemDataOnSend: false,
@@ -561,7 +562,7 @@ define('harmonizedData', ['lodash'], function(_) {
       if (_.isUndefined(currentModel.serverOptions)) {
         currentModel.serverOptions = _.cloneDeep(data._config.serverOptions);
       } else {
-        currentModel.serverOptions = _.extend(currentModel.serverOptions, data._config.serverOptions);
+        currentModel.serverOptions = _.extend({}, data._config.serverOptions, currentModel.serverOptions);
       }
 
       if (_.isUndefined(currentModel.fetchAtStart)) {
@@ -737,6 +738,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
      * @param  {ServerHandler} serverHandler  ServerHandler for individual options
      */
     push: function(item, serverHandler) {
+
       var httpOptions = {};
 
       if (_.isObject(serverHandler._options.params)) {
@@ -771,6 +773,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           httpOptions.url = httpOptions.url + idPart + item.data.fnName + '/';
           httpOptions.data = item.data.fnArgs;
           break;
+      }
+
+      if (_.isPlainObject(serverHandler._options.hooks) && _.isFunction(serverHandler._options.hooks.prePush)) {
+        httpOptions = serverHandler._options.hooks.prePush(httpOptions, item);
       }
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
@@ -1075,7 +1081,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
 
     /**
      * Creates a server item in the form to send to the server
-     * @param  {Object} item Item that has to be transformed to server server structure
+     * @param  {Object} item Item that has to be transformed to server structure
      * @return {Object}      The item in the structure the server accepts
      */
     ServerHandler.prototype._createServerItem = function createServerItem(item) {
@@ -1966,7 +1972,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
   var ModelItem = function ModelItem(parentModel, data, meta) {
     var _this = this;
     _this.data = data || {};
-    _this.meta = meta || {};
+    _this.meta = this._createItemMeta(meta);
     _this.subData = {};
 
     // Go through all described submodels for this item
@@ -1997,7 +2003,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
      */
     _this.getModel = function() {
       return parentModel;
-    }
+    };
 
     // Add item to the runtime ID hash
     parentModel._rtIdHash[_this.meta.rtId] = _this;
@@ -2025,12 +2031,22 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     // informed of the new item
     var initialSendMeta = _.cloneDeep(_this.meta);
     initialSendMeta.action = 'save';
+    initialSendMeta.transactionId = meta.transactionId;
     parentModel.downStream.onNext({
       meta: initialSendMeta,
-      data: _.cloneDeep(_this.data)
+      data: _.cloneDeep(_this.data),
     });
 
     return _this;
+  };
+
+  ModelItem.prototype._createItemMeta = function(meta) {
+    return {
+      rtId: meta.rtId,
+      serverId: meta.serverId,
+      storeId: meta.storeId,
+      deleted: meta.deleted,
+    };
   };
 
   /**
@@ -2047,7 +2063,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
    * @param  {Object} item  The stream item
    */
   ModelItem.prototype.save = function(item) {
-    this.meta = _.cloneDeep(item.meta);
+    this.meta = this._createItemMeta(item.meta);
     delete this.meta.action;
     this.data = _.cloneDeep(item.data);
     return item;
@@ -2516,8 +2532,13 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
       _this._streams.upStream = viewCollection.upStream;
 
-      _this._streams.saveDownStream = viewCollection.downStream.filter(function(item) {
-        return item.meta.rtId === _this._meta.rtId && item.meta.action === 'save';
+      _this._streams.downStream = Rx.Observable.merge(viewCollection.downStream, viewCollection.functionReturnStream)
+        .filter(function(item) {
+          return item.meta.rtId === _this._meta.rtId;
+        });
+
+      _this._streams.saveDownStream = _this._streams.downStream.filter(function(item) {
+        return item.meta.action === 'save';
       });
 
       // Subscription for the save downstream
@@ -2526,9 +2547,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       });
 
       // Subscription for the delete downstream
-      _this._streams.deleteDownStream = viewCollection.downStream.filter(function(item) {
-        return item.meta.rtId === _this._meta.rtId && (item.meta.action === 'delete' ||
-          item.meta.action === 'deletePermanently');
+      _this._streams.deleteDownStream = _this._streams.downStream.filter(function(item) {
+        return item.meta.action === 'delete' || item.meta.action === 'deletePermanently';
       });
 
       // Subscription for the delete downstream
@@ -2779,7 +2799,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
         fnArgs: args,
       });
 
-      return this._returnActionPromise('functionDownStream', transactionId);
+      return this._returnActionPromise('downStream', transactionId);
     };
 
     /**

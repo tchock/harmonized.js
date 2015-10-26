@@ -87,6 +87,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
      * @param  {ServerHandler} serverHandler  ServerHandler for individual options
      */
     push: function(item, serverHandler) {
+
       var httpOptions = {};
 
       if (_.isObject(serverHandler._options.params)) {
@@ -121,6 +122,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           httpOptions.url = httpOptions.url + idPart + item.data.fnName + '/';
           httpOptions.data = item.data.fnArgs;
           break;
+      }
+
+      if (_.isPlainObject(serverHandler._options.hooks) && _.isFunction(serverHandler._options.hooks.prePush)) {
+        httpOptions = serverHandler._options.hooks.prePush(httpOptions, item);
       }
 
       harmonizedData._httpFunction(httpOptions).then(function(returnItem) {
