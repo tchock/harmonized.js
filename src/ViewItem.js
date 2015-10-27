@@ -74,7 +74,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (addToCollection) {
         _this._meta.addedToCollection = true;
         viewCollection.push(_this);
-        this.getCollection().incrementVersion();
+        viewCollection.incrementVersion();
         viewCollection._items[_this._meta.rtId] = _this;
         harmonizedData._viewUpdateCb();
       }
@@ -109,7 +109,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (this._meta.addedToCollection === false) {
         this._meta.addedToCollection = true;
         viewCollection.push(this);
-        this.getCollection().incrementVersion();
+        viewCollection.incrementVersion();
         harmonizedData._viewUpdateCb();
       }
 

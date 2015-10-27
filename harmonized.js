@@ -2583,7 +2583,8 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (addToCollection) {
         _this._meta.addedToCollection = true;
         viewCollection.push(_this);
-        this.getCollection().incrementVersion();
+        console.log(viewCollection);
+        viewCollection.incrementVersion();
         viewCollection._items[_this._meta.rtId] = _this;
         harmonizedData._viewUpdateCb();
       }
@@ -2618,7 +2619,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (this._meta.addedToCollection === false) {
         this._meta.addedToCollection = true;
         viewCollection.push(this);
-        this.getCollection().incrementVersion();
+        viewCollection.incrementVersion();
         harmonizedData._viewUpdateCb();
       }
 
@@ -2913,6 +2914,10 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       return item.meta.action === 'function';
     });
 
+    collection.incrementVersion = function() {
+      collection._version++;
+    };
+
     // Inject all items of the ViewController prototype to the created instance
     ViewCollection.injectClassMethods(collection);
 
@@ -2920,10 +2925,6 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     model.getItems(function(item) {
       new ViewItem(collection, item.data, item.meta, null, true);
     });
-
-    collection.incrementVersion = function() {
-      collection._version++;
-    };
 
     return collection;
   };

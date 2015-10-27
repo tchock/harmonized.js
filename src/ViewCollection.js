@@ -56,6 +56,10 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       return item.meta.action === 'function';
     });
 
+    collection.incrementVersion = function() {
+      collection._version++;
+    };
+
     // Inject all items of the ViewController prototype to the created instance
     ViewCollection.injectClassMethods(collection);
 
@@ -63,10 +67,6 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     model.getItems(function(item) {
       new ViewItem(collection, item.data, item.meta, null, true);
     });
-
-    collection.incrementVersion = function() {
-      collection._version++;
-    };
 
     return collection;
   };
