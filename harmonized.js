@@ -2583,7 +2583,6 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (addToCollection) {
         _this._meta.addedToCollection = true;
         viewCollection.push(_this);
-        console.log(viewCollection);
         viewCollection.incrementVersion();
         viewCollection._items[_this._meta.rtId] = _this;
         harmonizedData._viewUpdateCb();
