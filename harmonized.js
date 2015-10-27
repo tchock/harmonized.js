@@ -2583,6 +2583,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (addToCollection) {
         _this._meta.addedToCollection = true;
         viewCollection.push(_this);
+        this.getCollection().incrementVersion();
         viewCollection._items[_this._meta.rtId] = _this;
         harmonizedData._viewUpdateCb();
       }
@@ -2617,6 +2618,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (this._meta.addedToCollection === false) {
         this._meta.addedToCollection = true;
         viewCollection.push(this);
+        this.getCollection().incrementVersion();
         harmonizedData._viewUpdateCb();
       }
 
@@ -2730,6 +2732,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
       // Delete the item from the view collection
       this._delete();
+      this.getCollection().incrementVersion();
 
       return this._returnActionPromise('deleteDownStream', transactionId);
     };
@@ -2867,6 +2870,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     var collection = Object.create(Array.prototype);
     collection = Array.apply(collection);
 
+    collection._version = 0;
     collection._model = model;
     collection._items = {};
 
@@ -2917,6 +2921,10 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       new ViewItem(collection, item.data, item.meta, null, true);
     });
 
+    collection.incrementVersion = function() {
+      collection._version++;
+    };
+
     return collection;
   };
 
@@ -2962,7 +2970,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
    */
   ViewCollection.prototype.fetch = function() {
     this._model.getFromServer();
-  }
+  };
 
   /**
    * Creates a new view item with reference to the collection

@@ -74,6 +74,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (addToCollection) {
         _this._meta.addedToCollection = true;
         viewCollection.push(_this);
+        this.getCollection().incrementVersion();
         viewCollection._items[_this._meta.rtId] = _this;
         harmonizedData._viewUpdateCb();
       }
@@ -108,6 +109,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (this._meta.addedToCollection === false) {
         this._meta.addedToCollection = true;
         viewCollection.push(this);
+        this.getCollection().incrementVersion();
         harmonizedData._viewUpdateCb();
       }
 
@@ -221,6 +223,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
       // Delete the item from the view collection
       this._delete();
+      this.getCollection().incrementVersion();
 
       return this._returnActionPromise('deleteDownStream', transactionId);
     };

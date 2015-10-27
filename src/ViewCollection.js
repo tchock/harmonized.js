@@ -13,6 +13,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     var collection = Object.create(Array.prototype);
     collection = Array.apply(collection);
 
+    collection._version = 0;
     collection._model = model;
     collection._items = {};
 
@@ -63,6 +64,10 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       new ViewItem(collection, item.data, item.meta, null, true);
     });
 
+    collection.incrementVersion = function() {
+      collection._version++;
+    };
+
     return collection;
   };
 
@@ -108,7 +113,7 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
    */
   ViewCollection.prototype.fetch = function() {
     this._model.getFromServer();
-  }
+  };
 
   /**
    * Creates a new view item with reference to the collection
