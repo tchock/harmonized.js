@@ -111,7 +111,7 @@ define('ServerHandler', ['ServerHandler/httpHandler',
      */
     ServerHandler.prototype.sendHttpRequest = function(options) {
       return httpHandler.sendRequest(options, this);
-    }
+    };
 
     /**
      * Pushes all unpushed data to the server

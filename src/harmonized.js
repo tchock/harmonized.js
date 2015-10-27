@@ -97,8 +97,7 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
         return new ViewCollection(model, mapUpFn, mapDownFn);
       },
 
-      errorStream: ServerHandler.errorStream
-
+      errorStream: ServerHandler.errorStream,
     };
 
     return harmonized;

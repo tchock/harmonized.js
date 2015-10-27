@@ -87,6 +87,12 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
      * @param  {ServerHandler} serverHandler  ServerHandler for individual options
      */
     push: function(item, serverHandler) {
+      var action = item.meta.action;
+
+      // Don't send delete request with no server ID!
+      if (action === 'delete' && _.isUndefined(item.meta.serverId)) {
+        return;
+      }
 
       var httpOptions = {};
 
@@ -96,7 +102,6 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       httpOptions.url = serverHandler._fullUrl;
 
-      var action = item.meta.action;
       switch (action) {
         case 'save':
           httpOptions.data = serverHandler._createServerItem(item);
@@ -111,6 +116,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
           break;
         case 'delete':
+        case 'deletePermanently':
           httpOptions.method = 'DELETE';
           httpOptions.url = httpOptions.url + item.meta.serverId + '/';
           httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.delete, serverHandler._options.httpHeaders.all);
@@ -143,7 +149,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         if (item.meta.action === 'save' && serverHandler._options.omitItemDataOnSend) {
           item.data = returnItem.data;
           delete item.data[serverHandler._keys.serverKey];
-        } else if (item.meta.action === 'delete') {
+        } else if (item.meta.action === 'delete' || item.meta.action === 'deletePermanently') {
           item.meta.action = 'deletePermanently';
           item.meta.deleted = true;
         } else if (item.meta.action === 'function') {

@@ -324,9 +324,13 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
           errorSub = ServerHandler.errorStream.filter(function(error) {
             return error.target.transactionId === transactionId;
           }).subscribe(function(error) {
-            deferred.reject(error);
-            successSub.dispose();
-            errorSub.dispose();
+            if (error.target.status === -1) {
+              deferred.notify();
+            } else {
+              deferred.reject(error);
+              successSub.dispose();
+              errorSub.dispose();
+            }
           });
         } else {
           deferred.reject(new Error('Item as no runtime id'));
