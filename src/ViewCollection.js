@@ -13,6 +13,11 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
     var collection = Object.create(Array.prototype);
     collection = Array.apply(collection);
 
+    function s4() {
+      return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+    }
+
+    collection._uid = s4() + s4() + s4();
     collection._version = 0;
     collection._model = model;
     collection._items = {};
