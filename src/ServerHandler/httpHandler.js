@@ -42,7 +42,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       harmonizedData._httpFunction(httpOptions).then(function(response) {
         // Return last modified response
-        serverHandler._lastModified = response.header.lastModified;
+        var lastModifiedFn = serverHandler._options.hooks.getLastModified;
+        if (_.isFunction(lastModifiedFn)) {
+          serverHandler._lastModified = lastModifiedFn(response);
+        }
 
         // The returned content
         var returnedItems = response.data;

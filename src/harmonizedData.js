@@ -29,6 +29,7 @@ define('harmonizedData', ['lodash'], function(_) {
         postPush: null,
         functionReturn: null,
         postFetch: null,
+        getLastModified: null,
       },
       omitItemDataOnSend: false,
     },
