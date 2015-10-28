@@ -76,9 +76,6 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       }
 
       for (var store in schema) {
-        console.log(schema);
-        console.log(store);
-        console.log('----');
         currentStore = schema[store];
         var objectStore = db.createObjectStore(store, {
           keyPath: currentStore.storeKey,

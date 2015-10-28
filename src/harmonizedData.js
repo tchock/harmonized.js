@@ -72,7 +72,6 @@ define('harmonizedData', ['lodash'], function(_) {
     var generatedModelSchema = _.cloneDeep(data._modelSchema);
     data._setModelSchema(generatedModelSchema);
     data._generatedModelSchema = generatedModelSchema;
-    console.log(data._generatedModelSchema);
   };
 
   /**
