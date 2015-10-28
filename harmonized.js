@@ -695,10 +695,7 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
 
       httpOptions.headers = _.merge({}, serverHandler._options.httpHeaders.get, serverHandler._options.httpHeaders.all);
 
-      console.log('options:');
-      console.log(serverHandler._options);
       if (serverHandler._options.sendModifiedSince && serverHandler._lastModified > 0) {
-        console.log(serverHandler._lastModified);
         httpOptions.headers['If-Modified-Since'] =  serverHandler._lastModified;
       }
 
@@ -838,7 +835,6 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         serverHandler.downStream.onNext(item);
       }).catch(function(error) {
         serverHandler._unpushedList[item.meta.rtId] = item;
-        console.log(_.clone(serverHandler._unpushedList));
         serverHandler._broadcastError(error, item);
       });
     },
