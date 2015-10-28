@@ -65,6 +65,10 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
       collection._version++;
     };
 
+    collection.checkForDeletedItems = function() {
+      collection._model.checkForDeletedItems();
+    };
+
     // Inject all items of the ViewController prototype to the created instance
     ViewCollection.injectClassMethods(collection);
 
