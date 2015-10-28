@@ -36,7 +36,8 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
        */
       setConfig: function(config) {
         if (_.isObject(config)) {
-          _.extend(harmonizedData._config, config);
+          _.merge(harmonizedData._config, config);
+          console.log(harmonizedData._config);
         }
       },
 

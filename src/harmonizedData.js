@@ -62,8 +62,17 @@ define('harmonizedData', ['lodash'], function(_) {
    * @param {Object} schema The schema to set
    */
   data.setModelSchema = function setModelSchema(schema) {
-    data._setModelSchema(schema);
     data._modelSchema = schema;
+  };
+
+  /**
+   * Creates the model schema
+   */
+  data.generateModelSchema = function setModelSchema() {
+    var generatedModelSchema = _.cloneDeep(data._modelSchema);
+    data._setModelSchema(generatedModelSchema);
+    data._generatedModelSchema = generatedModelSchema;
+    console.log(data._generatedModelSchema);
   };
 
   /**
@@ -71,7 +80,7 @@ define('harmonizedData', ['lodash'], function(_) {
    * @return {Object} The model schema
    */
   data.getModelSchema = function getModelSchema() {
-    return data._modelSchema;
+    return data._generatedModelSchema;
   };
 
   /**
@@ -124,7 +133,7 @@ define('harmonizedData', ['lodash'], function(_) {
       if (_.isUndefined(currentModel.serverOptions)) {
         currentModel.serverOptions = _.cloneDeep(data._config.serverOptions);
       } else {
-        currentModel.serverOptions = _.extend({}, data._config.serverOptions, currentModel.serverOptions);
+        currentModel.serverOptions = _.merge({}, data._config.serverOptions, currentModel.serverOptions);
       }
 
       if (_.isUndefined(currentModel.fetchAtStart)) {
@@ -145,7 +154,7 @@ define('harmonizedData', ['lodash'], function(_) {
   data.getDbSchema = function getDbSchema() {
     var output = {};
 
-    data._getDbSchema(data._modelSchema, output);
+    data._getDbSchema(data._generatedModelSchema, output);
 
     return output;
   };

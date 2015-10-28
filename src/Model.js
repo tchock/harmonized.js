@@ -72,6 +72,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
       var thisOptions = _this._options;
       for (var optKey in modelSchema) {
         if (modelSchema.hasOwnProperty(optKey)) {
+          console.log(optKey, modelSchema[optKey]);
           setOptionIfUndefined(thisOptions, optKey, modelSchema);
         }
       }
@@ -84,7 +85,9 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
       // Build db handler if data should be saved locally or build the db handler
       // stub, to fake a database call. This is simpler to write extra logic for
       // the case, that no data will be saved locally.
+      console.log(thisOptions);
       if (thisOptions.saveLocally) {
+        console.log('save locally!!!');
         _this._buildDbHandler();
       } else {
         _this._buildDbHandlerStub();

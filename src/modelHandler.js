@@ -10,9 +10,11 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
        * model schema specified in the harmonizedData module
        */
       init: function init() {
+        harmonizedData.generateModelSchema();
+
         var currentSchema;
         for (var modelName in harmonizedData._modelSchema) {
-          currentSchema = _.cloneDeep(harmonizedData._modelSchema[modelName]);
+          currentSchema = _.cloneDeep(harmonizedData._generatedModelSchema[modelName]);
           delete currentSchema.subModels;
           modelHandler._modelList[modelName] = new Model(modelName,
             currentSchema);

@@ -76,14 +76,17 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       }
 
       for (var store in schema) {
+        console.log(schema);
+        console.log(store);
+        console.log('----');
         currentStore = schema[store];
         var objectStore = db.createObjectStore(store, {
           keyPath: currentStore.storeKey,
-          autoIncrement: true
+          autoIncrement: true,
         });
         objectStore.createIndex('serverId', currentStore.serverKey, {
           unique: true,
-          multiEntry: false
+          multiEntry: false,
         });
       }
     };

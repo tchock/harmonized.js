@@ -466,7 +466,9 @@ define('harmonizedData', ['lodash'], function(_) {
       },
       hooks: {
         prePush: null,
+        postPush: null,
         functionReturn: null,
+        postFetch: null,
       },
       omitItemDataOnSend: false,
     },
@@ -500,8 +502,17 @@ define('harmonizedData', ['lodash'], function(_) {
    * @param {Object} schema The schema to set
    */
   data.setModelSchema = function setModelSchema(schema) {
-    data._setModelSchema(schema);
     data._modelSchema = schema;
+  };
+
+  /**
+   * Creates the model schema
+   */
+  data.generateModelSchema = function setModelSchema() {
+    var generatedModelSchema = _.cloneDeep(data._modelSchema);
+    data._setModelSchema(generatedModelSchema);
+    data._generatedModelSchema = generatedModelSchema;
+    console.log(data._generatedModelSchema);
   };
 
   /**
@@ -509,7 +520,7 @@ define('harmonizedData', ['lodash'], function(_) {
    * @return {Object} The model schema
    */
   data.getModelSchema = function getModelSchema() {
-    return data._modelSchema;
+    return data._generatedModelSchema;
   };
 
   /**
@@ -562,7 +573,7 @@ define('harmonizedData', ['lodash'], function(_) {
       if (_.isUndefined(currentModel.serverOptions)) {
         currentModel.serverOptions = _.cloneDeep(data._config.serverOptions);
       } else {
-        currentModel.serverOptions = _.extend({}, data._config.serverOptions, currentModel.serverOptions);
+        currentModel.serverOptions = _.merge({}, data._config.serverOptions, currentModel.serverOptions);
       }
 
       if (_.isUndefined(currentModel.fetchAtStart)) {
@@ -583,7 +594,7 @@ define('harmonizedData', ['lodash'], function(_) {
   data.getDbSchema = function getDbSchema() {
     var output = {};
 
-    data._getDbSchema(data._modelSchema, output);
+    data._getDbSchema(data._generatedModelSchema, output);
 
     return output;
   };
@@ -699,6 +710,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         var returnedItems = response.data;
         var responseLenght = returnedItems.length;
 
+        if (_.isFunction(serverHandler._options.hooks.postFetch)) {
+          serverHandler._options.hooks.postFetch(returnedItems);
+        }
+
         // Go through all returned items
         for (var i = 0; i < responseLenght; i++) {
           var item = harmonizedData._createStreamItem(returnedItems[i], {
@@ -808,6 +823,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           if (_.isPlainObject(serverHandler._options.hooks) && _.isFunction(serverHandler._options.hooks.functionReturn)) {
             item = serverHandler._options.hooks.functionReturn(item, returnItem.data);
           }
+        }
+
+        if (_.isFunction(serverHandler._options.hooks.postPush)) {
+          serverHandler._options.hooks.postPush(returnItem, item);
         }
 
         serverHandler.downStream.onNext(item);
@@ -1321,14 +1340,17 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       }
 
       for (var store in schema) {
+        console.log(schema);
+        console.log(store);
+        console.log('----');
         currentStore = schema[store];
         var objectStore = db.createObjectStore(store, {
           keyPath: currentStore.storeKey,
-          autoIncrement: true
+          autoIncrement: true,
         });
         objectStore.createIndex('serverId', currentStore.serverKey, {
           unique: true,
-          multiEntry: false
+          multiEntry: false,
         });
       }
     };
@@ -2183,6 +2205,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
       var thisOptions = _this._options;
       for (var optKey in modelSchema) {
         if (modelSchema.hasOwnProperty(optKey)) {
+          console.log(optKey, modelSchema[optKey]);
           setOptionIfUndefined(thisOptions, optKey, modelSchema);
         }
       }
@@ -2195,7 +2218,9 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
       // Build db handler if data should be saved locally or build the db handler
       // stub, to fake a database call. This is simpler to write extra logic for
       // the case, that no data will be saved locally.
+      console.log(thisOptions);
       if (thisOptions.saveLocally) {
+        console.log('save locally!!!');
         _this._buildDbHandler();
       } else {
         _this._buildDbHandlerStub();
@@ -2453,9 +2478,11 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
        * model schema specified in the harmonizedData module
        */
       init: function init() {
+        harmonizedData.generateModelSchema();
+
         var currentSchema;
         for (var modelName in harmonizedData._modelSchema) {
-          currentSchema = _.cloneDeep(harmonizedData._modelSchema[modelName]);
+          currentSchema = _.cloneDeep(harmonizedData._generatedModelSchema[modelName]);
           delete currentSchema.subModels;
           modelHandler._modelList[modelName] = new Model(modelName,
             currentSchema);
@@ -3057,7 +3084,8 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
        */
       setConfig: function(config) {
         if (_.isObject(config)) {
-          _.extend(harmonizedData._config, config);
+          _.merge(harmonizedData._config, config);
+          console.log(harmonizedData._config);
         }
       },
 
