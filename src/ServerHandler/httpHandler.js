@@ -48,6 +48,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
         var returnedItems = response.data;
         var responseLenght = returnedItems.length;
 
+        if (_.isFunction(serverHandler._options.hooks.postFetch)) {
+          serverHandler._options.hooks.postFetch(returnedItems);
+        }
+
         // Go through all returned items
         for (var i = 0; i < responseLenght; i++) {
           var item = harmonizedData._createStreamItem(returnedItems[i], {
@@ -157,6 +161,10 @@ define('ServerHandler/httpHandler', ['harmonizedData', 'lodash'], function(harmo
           if (_.isPlainObject(serverHandler._options.hooks) && _.isFunction(serverHandler._options.hooks.functionReturn)) {
             item = serverHandler._options.hooks.functionReturn(item, returnItem.data);
           }
+        }
+
+        if (_.isFunction(serverHandler._options.hooks.postPush)) {
+          serverHandler._options.hooks.postPush(returnItem, item);
         }
 
         serverHandler.downStream.onNext(item);
