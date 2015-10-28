@@ -74,9 +74,10 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
       if (addToCollection) {
         _this._meta.addedToCollection = true;
         viewCollection.push(_this);
-        viewCollection.incrementVersion();
         viewCollection._items[_this._meta.rtId] = _this;
-        harmonizedData._viewUpdateCb();
+        harmonizedData._viewUpdateCb(function() {
+          viewCollection.incrementVersion();
+        });
       }
 
       // Add item to the items list, if runtime ID is set
@@ -94,6 +95,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      *                              Is ignored by everything else
      */
     ViewItem.prototype._sendItemToUpStream = function(action, data, serverData) {
+      var _this = this;
       var itemData = {};
       var itemMeta = {};
 
@@ -107,10 +109,12 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
       // Add item to collection if not yet in it
       if (this._meta.addedToCollection === false) {
-        this._meta.addedToCollection = true;
-        viewCollection.push(this);
+        _this._meta.addedToCollection = true;
+        viewCollection.push(_this);
         viewCollection.incrementVersion();
-        harmonizedData._viewUpdateCb();
+        harmonizedData._viewUpdateCb(function() {
+
+        });
       }
 
       // Add item to the items list, if not already in list
@@ -158,11 +162,15 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
     /**
      * Saves the item and updates the data of the model, server and local
      * database. If item is not yet in the collection, it adds itself.
-     * @param {Object} serverData   Data that will additionally send to the server.
-     *                              Is ignored by everything else
-     * @return {Promise}            The action promise to execute further actions
+     * @param {Object} serverData         Data that will additionally send to the
+     *                                    server. Is ignored by everything else.
+     * @param {boolean} incrementVersion  If true the version of the collection
+     *                                    is incremented
+     * @return {Promise}                  The action promise to execute further
+     *                                    actions
      */
-    ViewItem.prototype.save = function(serverData) {
+    ViewItem.prototype.save = function(serverData, incrementVersion) {
+      if (incrementVersion) this.getCollection().incrementVersion();
       var transactionId = this._sendItemToUpStream('save', undefined, serverData);
       return this._returnActionPromise('saveDownStream', transactionId);
     };
@@ -173,41 +181,43 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      * @param  {Object} meta The new metadata of the item
      */
     ViewItem.prototype._save = function(data, meta) {
+      var _this = this;
+
       // Set metadata
       if (!_.isUndefined(meta.storeId)) {
-        this._meta.storeId = meta.storeId;
+        _this._meta.storeId = meta.storeId;
       }
 
       if (!_.isUndefined(meta.serverId)) {
-        this._meta.serverId = meta.serverId;
+        _this._meta.serverId = meta.serverId;
       }
 
       // Remove all old data
-      for (var item in this) {
-        if (this._isPropertyData(item)) {
-          delete this[item];
+      for (var item in _this) {
+        if (_this._isPropertyData(item)) {
+          delete _this[item];
         }
-      }
-
-      // Add new data
-      for (var key in data) {
-        this[key] = data[key];
       }
 
       // Add sub model view collections to the item if not happened before
-      if (!this._wasAlreadySynced) {
-        var model = this.getCollection()._model;
-        var modelItem = model.getItem(this._meta.rtId);
+      if (!_this._wasAlreadySynced) {
+        var model = _this.getCollection()._model;
+        var modelItem = model.getItem(_this._meta.rtId);
         var subData = modelItem.subData;
         if (_.isPlainObject(subData)) {
           // Add sub collections if subdata is set
-          this._addSubCollections(subData);
+          _this._addSubCollections(subData);
         }
 
-        this._wasAlreadySynced = true;
+        _this._wasAlreadySynced = true;
       }
 
-      harmonizedData._viewUpdateCb();
+      harmonizedData._viewUpdateCb(function() {
+        // Add new data
+        for (var key in data) {
+          _this[key] = data[key];
+        }
+      });
     };
 
     /**
@@ -233,22 +243,26 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      * collection and disposes the downstream subscriptions of the item
      */
     ViewItem.prototype._delete = function() {
-      // Set metadata deleted flag
-      this._meta.deleted = true;
+      var _this = this;
 
+      // Set metadata deleted flag
+      _this._meta.deleted = true;
       // Delete from collection
-      if (this._meta.addedToCollection) {
-        var collection = this.getCollection();
+      if (_this._meta.addedToCollection) {
+        var collection = _this.getCollection();
         for (var i = collection.length - 1; i >= 0; i--) {
-          if (collection[i] === this) {
+          if (collection[i] === _this) {
             collection.splice(i, 1);
           }
         }
       }
 
-      this._streams.saveDownStreamSub.dispose();
-      this._streams.deleteDownStreamSub.dispose();
-      harmonizedData._viewUpdateCb();
+      _this._streams.saveDownStreamSub.dispose();
+      _this._streams.deleteDownStreamSub.dispose();
+
+      harmonizedData._viewUpdateCb(function() {
+
+      });
     };
 
     /**
