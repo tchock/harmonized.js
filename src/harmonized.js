@@ -65,9 +65,10 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
 
       /**
        * Gets data from the servers of all models
+       * @param {array} exceptions  A list of exceptions not fetched from the server
        */
-      getFromServer: function() {
-        modelHandler.getFromServer();
+      getFromServer: function(exceptions) {
+        modelHandler.getFromServer(exceptions);
       },
 
       /**

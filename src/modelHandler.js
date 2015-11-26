@@ -51,11 +51,17 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
       /**
        * Fetches data from the servers of all models. This function is ideal to
        * call for at the beginning, when the offline mode is important
+       * @param {array} exceptions  A list of exceptions not fetched from the server
        */
-      getFromServer: function getFromServer() {
+      getFromServer: function getFromServer(exceptions) {
         var modelList = modelHandler._modelList;
         for (var modelName in modelList) {
-          modelList[modelName].getFromServer();
+          console.log('exceptions');
+          console.log(exceptions);
+          console.log(modelName);
+          if (!_.includes(exceptions, modelName)) {
+            modelList[modelName].getFromServer();
+          }
         }
       },
 
