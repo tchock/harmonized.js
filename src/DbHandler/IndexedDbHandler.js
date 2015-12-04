@@ -193,6 +193,12 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       return putStream;
     }
 
+    // Don't do anything if the item shouldn't be saved locally
+    if (item.meta.dontSaveLocally) {
+      putStream.onCompleted();
+      return putStream;
+    }
+
     var _this = this;
     var i = 0;
 
