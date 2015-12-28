@@ -10,7 +10,7 @@ define(['Squire', 'lodash'], function(Squire, _) {
       this._modelName = modelName;
       this._options = options;
       this._serverHandler = {
-        pushAll: jasmine.createSpy()
+        pushAll: jasmine.createSpy(),
       };
       this.getFromServer =  jasmine.createSpy();
       this.setOnline = jasmine.createSpy();
@@ -21,12 +21,12 @@ define(['Squire', 'lodash'], function(Squire, _) {
       _config: {
         fetchAtStart: false,
       },
-      _modelSchema: {
+      _generatedModelSchema: {
         planes: {
           storeName: 'flugzeuge',
           keys: {
             storeKey: 'localId',
-            serverKey: 'uid'
+            serverKey: 'uid',
           },
           route: 'aeroplanes',
           subModels: {
@@ -34,7 +34,7 @@ define(['Squire', 'lodash'], function(Squire, _) {
               storeName: 'flugzeuge_chemtrails',
               keys: {
                 serverKey: 'chemId',
-                storeKey: 'local_id'
+                storeKey: 'local_id',
               },
               sourceModel: 'chemtrails',
               subModels: {
@@ -42,25 +42,28 @@ define(['Squire', 'lodash'], function(Squire, _) {
                   storeName: 'theorists',
                   keys: {
                     serverKey: 'nsaId',
-                    storeKey: '__id'
+                    storeKey: '__id',
                   },
-                  sourceModel: 'tinfoilHats'
-                }
-              }
-            }
-          }
+                  sourceModel: 'tinfoilHats',
+                },
+              },
+            },
+          },
         },
         chemtrails: {
           keys: {
             storeKey: 'storeId',
-            serverKey: 'chemid'
+            serverKey: 'chemid',
           },
-          storeName: 'chemicalTrails'
-        }
+          storeName: 'chemicalTrails',
+        },
       },
+
       getModelSchema: function() {
-        return harmonizedDataMock._modelSchema;
-      }
+        return harmonizedDataMock._generatedModelSchema;
+      },
+
+      generateModelSchema: jasmine.createSpy(),
     };
 
     var dbHandlerFactoryMock = {
@@ -97,6 +100,7 @@ define(['Squire', 'lodash'], function(Squire, _) {
         // Initialize with the models from the definitions
         modelHandler.init();
 
+        expect(harmonizedDataMock.generateModelSchema).toHaveBeenCalled();
         expect(_.size(modelHandler._modelList)).toBe(2);
         expect(modelHandler._modelList.planes instanceof ModelMock).toBeTruthy();
         expect(modelHandler._modelList.planes._modelName).toBe('planes');

@@ -193,12 +193,6 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       return putStream;
     }
 
-    // Don't do anything if the item shouldn't be saved locally
-    if (item.meta.dontSaveLocally) {
-      putStream.onCompleted();
-      return putStream;
-    }
-
     var _this = this;
     var i = 0;
 
@@ -215,11 +209,17 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       }
 
       if (i < item.length) {
-        // Save and do next stuff
-        var dbItem = _this._createDbItem(item[i]);
-        var put = objectStore.put(dbItem);
-        put.onsuccess = putNext;
-        put.onerror = putError;
+        // Don't do anything if the item shouldn't be saved locally
+        if (item[i].meta.dontSaveLocally) {
+          i++;
+          putNext();
+        } else {
+          // Save and do next stuff
+          var dbItem = _this._createDbItem(item[i]);
+          var put = objectStore.put(dbItem);
+          put.onsuccess = putNext;
+          put.onerror = putError;
+        }
       } else {
         putStream.onCompleted();
       }

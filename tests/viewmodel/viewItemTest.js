@@ -63,6 +63,8 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         upStreamItems.push(item);
       });
 
+      collection.incrementVersion = jasmine.createSpy();
+
       collection._model = {
         getNextRuntimeId: function() {
           return 1;
@@ -372,7 +374,7 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         });
 
         viewItem.reset();
-
+        console.log(viewItem);
         expect(testViewCollection._model.getItem).toHaveBeenCalled();
         expect(viewItem.name).toBe('Hans Olo');
         expect(viewItem.evil).toBe(true);

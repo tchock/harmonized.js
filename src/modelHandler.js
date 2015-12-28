@@ -13,7 +13,7 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
         harmonizedData.generateModelSchema();
 
         var currentSchema;
-        for (var modelName in harmonizedData._modelSchema) {
+        for (var modelName in harmonizedData._generatedModelSchema) {
           currentSchema = _.cloneDeep(harmonizedData._generatedModelSchema[modelName]);
           delete currentSchema.subModels;
           modelHandler._modelList[modelName] = new Model(modelName,

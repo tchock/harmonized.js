@@ -212,12 +212,12 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
         _this._wasAlreadySynced = true;
       }
 
-      harmonizedData._viewUpdateCb(function() {
-        // Add new data
-        for (var key in data) {
-          _this[key] = data[key];
-        }
-      });
+      // Add new data
+      for (var key in data) {
+        _this[key] = data[key];
+      }
+
+      harmonizedData._viewUpdateCb();
     };
 
     /**

@@ -31,6 +31,8 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     _this.meta = this._createItemMeta(meta);
     _this.subData = {};
 
+    meta = meta || {};
+
     // Go through all described submodels for this item
     for (var subModel in parentModel._subModelsSchema) {
       if (parentModel._subModelsSchema.hasOwnProperty(subModel)) {
@@ -97,12 +99,16 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
   };
 
   ModelItem.prototype._createItemMeta = function(meta) {
-    return {
-      rtId: meta.rtId,
-      serverId: meta.serverId,
-      storeId: meta.storeId,
-      deleted: meta.deleted,
-    };
+    if (_.isUndefined(meta)) {
+      return {};
+    } else {
+      return {
+        rtId: meta.rtId,
+        serverId: meta.serverId,
+        storeId: meta.storeId,
+        deleted: meta.deleted,
+      };
+    }
   };
 
   /**

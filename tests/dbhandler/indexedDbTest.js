@@ -21,21 +21,23 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         return dbHandler.put([{
           data: {
             firstname: 'Igor',
-            lastname: 'Igorson'
-          }
+            lastname: 'Igorson',
+          },
+          meta: {},
         }, {
           data: {
             firstname: 'Igor',
-            lastname: 'Igorson'
-          }
+            lastname: 'Igorson',
+          },
+          meta: {},
         }, {
           data: {
             firstname: 'Igor',
-            lastname: 'Igorov'
+            lastname: 'Igorov',
           },
           meta: {
-            test: true
-          }
+            test: true,
+          },
         }]);
       }
 
@@ -62,7 +64,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         spyOn(harmonizedData, 'getDbSchema').and.returnValue({
           testStore: {
             storeKey: '_id',
-            serverKey: 'id'
+            serverKey: 'id',
           }
         });
       });
@@ -110,8 +112,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
 
           scheduler.scheduleWithAbsolute(1, function() {
             // Check if storage is not jet build
-            expect(indexedDBmock.mockDbs.harmonizedDb.objectStoreNames)
-              .toEqual([]);
+            expect(indexedDBmock.mockDbs.harmonizedDb.objectStoreNames).toEqual([]);
             expect(connectionStreamOutputs).toEqual([false]);
 
             // Check after the connection has happened (2 fake ticks)
@@ -126,8 +127,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
             // _db is set and version should be 1 (in indexeddb and its handler)
             expect(IndexedDbHandler._db).not.toBe(null);
             expect(IndexedDbHandler._db.version).toBe(1);
-            expect(indexedDBmock.mockDbs.harmonizedDb.version).toBe(
-              1);
+            expect(indexedDBmock.mockDbs.harmonizedDb.version).toBe(1);
 
             // TODO check if storage is build by now
 
@@ -140,9 +140,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
             // Check if the closing of connection works
             IndexedDbHandler.closeConnection();
             expect(IndexedDbHandler._db).toBe(null);
-            expect(connectionStreamOutputs).toEqual([false, true,
-              false
-            ]);
+            expect(connectionStreamOutputs).toEqual([false, true, false]);
           });
 
           scheduler.scheduleWithAbsolute(20, function() {
@@ -151,9 +149,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
 
             // Connect again!
             IndexedDbHandler.connect();
-            expect(connectionStreamOutputs).toEqual([false, true,
-              false
-            ]);
+            expect(connectionStreamOutputs).toEqual([false, true, false]);
             expect(IndexedDbHandler._isConnecting).toBeTruthy();
             jasmine.clock().tick(2);
             expect(IndexedDbHandler._isConnecting).toBeFalsy();
@@ -194,8 +190,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
             jasmine.clock().tick(2);
 
             expect(connectionStreamErrors.length).toBe(1);
-            expect(connectionStreamErrors[0].message).toEqual(
-              'VersionError');
+            expect(connectionStreamErrors[0].message).toEqual('VersionError');
           });
 
           // Start the scheduler to run the current setup
@@ -285,8 +280,9 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
           putStream = dbHandler.put({
             data: {
               firstname: 'Stanislav',
-              lastname: 'Schewadnaze'
-            }
+              lastname: 'Schewadnaze',
+            },
+            meta: {},
           });
           putStream.subscribe(function(item) {
             putItems.push(item);
@@ -334,26 +330,27 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
               putStream = dbHandler.put([{
                 data: {
                   firstname: 'Igor',
-                  lastname: 'Igorson'
+                  lastname: 'Igorson',
                 },
                 meta: {
                   serverId: 123,
-                  deleted: false
-                }
+                  deleted: false,
+                },
               }, {
                 data: {
                   firstname: 'Eduard',
-                  lastname: 'Schewadnaze'
+                  lastname: 'Schewadnaze',
                 },
                 meta: {
                   serverId: 123,
-                  deleted: false
-                }
+                  deleted: false,
+                },
               }, {
                 data: {
                   firstname: 'Igor',
-                  lastname: 'Igorov'
-                }
+                  lastname: 'Igorov',
+                },
+                meta: {},
               }]);
 
               putStream.subscribe(function(item) {
@@ -372,7 +369,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
             meta: {
               storeId: 1,
               serverId: 123,
-              deleted: false
+              deleted: false,
             },
             data: {
               firstname: 'Igor',
