@@ -204,6 +204,7 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(fetchedItems[1].data).toBe(124);
           expect(fetchedItems[2].data).toBe(125);
           expect(calledCb).toBeTruthy();
+          expect(sh._lastModified).toBe(undefined);
         });
 
         it('should fetch data with "modified-since header"', function() {
@@ -213,6 +214,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           sh._options.httpHeaders.get = {
             'Content-Type': 'multipart/form-data',
           };
+
+          sh._options.hooks.getLastModified = jasmine.createSpy().and.callFake(function(response) {
+            return 1234;
+          });
 
           httpHandler.fetch(sh);
 
@@ -226,6 +231,9 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           });
 
           jasmine.clock().tick(11);
+
+          expect(sh._options.hooks.getLastModified).toHaveBeenCalled();
+          expect(sh._lastModified).toBe(1234);
         });
 
         it('should fetch all data with missing last-modified info but activated sendLastModified in config', function() {
@@ -239,6 +247,31 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
             headers: {},
             url: 'http://www.hyphe.me/test/resource/',
           });
+        });
+
+        it('should fetch all data with a post fetch hook', function() {
+          var fetchedItems = [];
+          sh.downStream.subscribe(function(item) {
+            fetchedItems.push(item);
+          });
+
+          sh._options.hooks.postFetch = function(returnedItems) {
+            returnedItems[0] = 9001;
+          };
+
+          httpHandler.fetch(sh);
+
+          expect(receivedOptions).toEqual({
+            method: 'GET',
+            headers: {},
+            url: 'http://www.hyphe.me/test/resource/',
+          });
+
+          jasmine.clock().tick(11);
+
+          scheduler.start();
+          expect(fetchedItems[0].data).toEqual(9001);
+
         });
 
         it('should fail at fetching data', function() {
@@ -293,7 +326,10 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               },
               hooks: {},
             },
-            _keys: {},
+            _keys: {
+              serverKey: 'id',
+              storekey: '_id',
+            },
             _unpushedList: {},
             _createServerItem: jasmine.createSpy().and.callFake(function(item) {
               return item.data;
@@ -421,6 +457,74 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
           expect(returnedItem).toEqual({
             meta: postItem.meta,
             data: postItem.data,
+          });
+        });
+
+        it('should POST an item with omitted item data', function() {
+          sh._options.omitItemDataOnSend = true;
+
+          var tempPostItemData = _.cloneDeep(postItem.data);
+
+          harmonizedData._httpFunction.and.callFake(function(options) {
+            receivedOptions = options;
+            var returnedPromise = {
+
+              then: function(fn) {
+                returnedPromise.thenFn = fn;
+                return returnedPromise;
+              },
+
+              catch: function(fn) {
+                returnedPromise.catchFn = fn;
+                return returnedPromise;
+              },
+            };
+
+            var returnedData = {
+              data: tempPostItemData,
+            };
+            returnedData.id = 1234;
+
+            setTimeout(function() {
+              if (_.isObject(options.params) && options.params
+                .shouldFail === true) {
+                returnedPromise.catchFn({
+                  status: 500,
+                });
+              } else {
+                returnedPromise.thenFn(returnedData);
+              }
+            }, 10);
+
+            return returnedPromise;
+          });
+
+          var returnedItem = null;
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          postItem.data = {};
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push(postItem, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          expect(receivedOptions).toEqual({
+            method: 'POST',
+            url: 'http://www.hyphe.me/test/resource/',
+            data: {},
+            headers: {},
+          });
+
+          expect(returnedItem).toEqual({
+            meta: postItem.meta,
+            data: tempPostItemData,
           });
         });
 
@@ -593,6 +697,121 @@ define(['rx', 'rx.testing', 'ServerHandler/httpHandler', 'harmonizedData'],
               deleted: true,
             },
             data: deleteItem.data,
+          });
+        });
+
+        it('shouldnt DELETE an item with no server id', function() {
+          sh._options.params = {
+            openPodBayDoor: false,
+            iCantDoThatDave: true,
+          };
+
+          deleteItem.meta.serverId = undefined;
+
+          sh._options.httpHeaders.delete = {
+            'Content-Type': 'multipart/form-data',
+          };
+
+          var returnedItem = null;
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push(deleteItem, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          expect(receivedOptions).toBeNull();
+          expect(returnedItem).toBeNull();
+        });
+
+        it('should PUT an item with a pre push hook', function() {
+          sh._options.httpHeaders.put = {
+            'Content-Type': 'multipart/form-data',
+          };
+
+          var returnedItem = null;
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          var receivedItem;
+
+          sh._options.hooks.prePush = function(httpOptions, item) {
+            var returnOptions = _.clone(httpOptions);
+            receivedItem = item;
+
+            returnOptions.blub = 'blib';
+            return returnOptions;
+          };
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push(putItem, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          expect(receivedOptions).toEqual({
+            method: 'PUT',
+            url: 'http://www.hyphe.me/test/resource/4103/',
+            data: {
+              name: 'HAL-9000',
+            },
+            blub: 'blib',
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          expect(returnedItem).toEqual({
+            meta: putItem.meta,
+            data: putItem.data,
+          });
+
+          expect(receivedItem).toBe(putItem);
+        });
+
+        it('should PUT an item with a post push hook', function() {
+          var returnedItem = null;
+
+          sh.downStream.subscribe(function(item) {
+            returnedItem = item;
+          });
+
+          var receivedReturnItem;
+
+          sh._options.hooks.postPush = function(returnItem, item) {
+            item.data.supertest = 'test';
+            receivedReturnItem = returnItem;
+          };
+
+          scheduler.scheduleWithAbsolute(5, function() {
+            httpHandler.push(putItem, sh);
+            expect(returnedItem).toBeNull();
+            jasmine.clock().tick(10);
+          });
+
+          scheduler.start();
+
+          var putItemContent = _.clone(putItem.data)
+          putItemContent.supertest = 'test';
+          expect(returnedItem).toEqual({
+            meta: putItem.meta,
+            data: putItemContent,
+          });
+
+          expect(receivedReturnItem).toEqual({
+            data: {
+              name: 'HAL-9000',
+            },
           });
         });
 
