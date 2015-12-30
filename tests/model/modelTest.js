@@ -246,6 +246,11 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'harmonizedData'],
           expect(testModel._dbHandler.getAllEntries).toHaveBeenCalled();
           expect(testModel._dbReadyCb).toHaveBeenCalled();
 
+          dbHandlerFactoryMock._DbHandler._connectionStream.onNext(false);
+
+          expect(testModel._dbHandler.getAllEntries.calls.count()).toEqual(1);
+          expect(testModel._dbReadyCb.calls.count()).toEqual(1);
+
           done();
         });
       });
