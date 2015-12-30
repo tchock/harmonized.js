@@ -293,6 +293,44 @@ define(['Squire', 'sinon', 'lodash', 'rx', 'rx.testing', 'mockWebStorage'],
             done();
           });
         });
+
+        it('should put a new error to the serverHandler error stream', function(done) {
+          testInContext(function(deps) {
+            var receivedServerHandlerErrors = [];
+            deps.ServerHandler.errorStream.subscribe(function(error) {
+              receivedServerHandlerErrors.push(error);
+            });
+
+            scheduler.scheduleWithAbsolute(5, function() {
+              sh.downStream.onError('test error');
+            });
+
+            scheduler.start();
+
+            expect(receivedServerHandlerErrors.length).toBe(1);
+            expect(receivedServerHandlerErrors[0]).toBe('test error');
+
+            scheduler.stop();
+
+            scheduler.scheduleWithAbsolute(10, function() {
+              var newError = new Error('blub');
+              newError.target = {};
+
+              sh._broadcastError(newError, {
+                meta: {
+                  transactionId: 123,
+                }
+              });
+            });
+
+            scheduler.start();
+
+            expect(receivedServerHandlerErrors.length).toBe(2);
+            expect(receivedServerHandlerErrors[1].target.transactionId).toBe(123);
+
+            done();
+          });
+        });
       });
 
       describe('protocol', function() {
