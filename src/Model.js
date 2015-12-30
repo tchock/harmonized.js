@@ -71,6 +71,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
       var modelSchema = harmonizedData._modelSchema[modelName];
       var thisOptions = _this._options;
       for (var optKey in modelSchema) {
+        /* istanbul ignore else  */
         if (modelSchema.hasOwnProperty(optKey)) {
           setOptionIfUndefined(thisOptions, optKey, modelSchema);
         }
@@ -237,6 +238,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
     Model.prototype.pushChanges = function() {
       // Push the items to the server that have to be saved
       for (var storeId in this._storeIdHash) {
+        /* istanbul ignore else  */
         if (this._storeIdHash.hasOwnProperty(storeId)) {
           var currentItem = this._storeIdHash[storeId];
           var itemMeta = _.cloneDeep(currentItem.meta);
@@ -285,6 +287,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
         // Get to know the locally known server ids
         var localServerIds = [];
         for (var serverId in _this._serverIdHash) {
+          /* istanbul ignore else  */
           if (_this._serverIdHash.hasOwnProperty(serverId)) {
             localServerIds.push(parseInt(serverId));
           }

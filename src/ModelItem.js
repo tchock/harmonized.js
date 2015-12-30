@@ -35,6 +35,7 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
 
     // Go through all described submodels for this item
     for (var subModel in parentModel._subModelsSchema) {
+      /* istanbul ignore else  */
       if (parentModel._subModelsSchema.hasOwnProperty(subModel)) {
         _this.subData[subModel] = new SubModel(subModel, _this);
       }

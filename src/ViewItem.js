@@ -295,6 +295,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
     ViewItem.prototype._addSubCollections = function(subData) {
       this._subDataList = Object.keys(subData);
       for (var subModel in subData) {
+        /* istanbul ignore else  */
         if (subData.hasOwnProperty(subModel)) {
           this[subModel] = new ViewCollection(subData[subModel]);
         }
