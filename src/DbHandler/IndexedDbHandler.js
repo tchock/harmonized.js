@@ -197,12 +197,12 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
     var i = 0;
 
     function putNext(e) {
-      if (!!e) {
-        // Data was received
-        if (_.isUndefined(item[i].meta)) {
-          item[i].meta = {};
-        }
+      // Data was received
+      if (i < item.length && _.isUndefined(item[i].meta)) {
+        item[i].meta = {};
+      }
 
+      if (!!e) {
         item[i].meta.storeId = e.target.result;
         putStream.onNext(item[i]);
         i++;
