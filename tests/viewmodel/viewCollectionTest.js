@@ -59,6 +59,7 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       };
 
       this.getFromServer = jasmine.createSpy();
+      this.checkForDeletedItems = jasmine.createSpy();
     };
 
     beforeEach(function() {
@@ -139,35 +140,64 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       });
     });
 
-    it(
-      'should add an existing item from the model to the view collection',
-      function(done) {
-        testInContext(function(deps) {
-          // Create an item after the the collection was initialized
-          testModel._rtIdHash = {
-            123: {
-              data: {
-                name: 'Darth Vader'
-              },
-              meta: {
-                rtId: 123
-              }
+    it('should add an existing item from the model to the view collection', function(done) {
+      testInContext(function(deps) {
+        // Create an item after the the collection was initialized
+        testModel._rtIdHash = {
+          123: {
+            data: {
+              name: 'Darth Vader'
+            },
+            meta: {
+              rtId: 123
             }
-          };
+          }
+        };
 
-          var newItem = testViewCollection.addItem(123);
+        var newItem = testViewCollection.addItem(123);
 
-          expect(newItem.name).toBe('Darth Vader');
-          expect(newItem._meta.rtId).toBe(123);
+        expect(newItem.name).toBe('Darth Vader');
+        expect(newItem._meta.rtId).toBe(123);
 
-          expect(testViewCollection.length).toBe(1);
-          expect(testViewCollection[0].name).toBe('Darth Vader');
-          expect(testViewCollection._items[123].name).toBe('Darth Vader');
-          expect(testViewCollection[0]._meta.rtId).toBe(123);
+        expect(testViewCollection.length).toBe(1);
+        expect(testViewCollection[0].name).toBe('Darth Vader');
+        expect(testViewCollection._items[123].name).toBe('Darth Vader');
+        expect(testViewCollection[0]._meta.rtId).toBe(123);
 
-          done();
-        });
+        done();
       });
+    });
+
+    it('should add an non existing to the view collection', function(done) {
+      testInContext(function(deps) {
+        // Create an item after the the collection was initialized
+        testModel._rtIdHash = {};
+
+        var newItem = testViewCollection.addItem(123);
+
+        expect(newItem).toBeUndefined();
+
+        done();
+      });
+    });
+
+    it('should increment the collection version', function(done) {
+      testInContext(function() {
+        expect(testViewCollection._version).toBe(0);
+        testViewCollection.incrementVersion();
+        expect(testViewCollection._version).toBe(1);
+        done();
+      });
+    });
+
+    it('should check for deleted items', function(done) {
+      testInContext(function(deps) {
+        expect(testModel.checkForDeletedItems).not.toHaveBeenCalled();
+        testViewCollection.checkForDeletedItems();
+        expect(testModel.checkForDeletedItems).toHaveBeenCalled();
+        done();
+      });
+    });
 
     it('should create a new view item', function(done) {
       testInContext(function() {

@@ -68,6 +68,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       var i;
 
       // Remove all stores items
+      /* istanbul ignore else */
       if (!_.isUndefined(db)) {
         for (i = db.objectStoreNames.length - 1; i >= 0; i--) {
           currentStore = db.objectStoreNames[i];
@@ -146,6 +147,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
         cursor.continue();
       } else {
         // No item left, so call the callback!
+        /* istanbul ignore else */
         if (_.isFunction(cb)) {
           cb();
         }
