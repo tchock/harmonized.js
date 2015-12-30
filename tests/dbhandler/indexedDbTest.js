@@ -99,74 +99,72 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
         dbHandler = new IndexedDbHandler('testStore', keys);
       });
 
-      it(
-        'should connect to database, disconnect afterwards and connect again with increased version number',
-        function() {
-          // _db should not be set!
-          expect(IndexedDbHandler._db).toBe(null);
+      it('should connect to database, disconnect afterwards and connect again with increased version number', function() {
+        // _db should not be set!
+        expect(IndexedDbHandler._db).toBe(null);
 
-          scheduler.scheduleWithAbsolute(0, function() {
-            // Check if only the initial false is in the connection stream output
-            expect(connectionStreamOutputs).toEqual([false]);
-          });
-
-          scheduler.scheduleWithAbsolute(1, function() {
-            // Check if storage is not jet build
-            expect(indexedDBmock.mockDbs.harmonizedDb.objectStoreNames).toEqual([]);
-            expect(connectionStreamOutputs).toEqual([false]);
-
-            // Check after the connection has happened (2 fake ticks)
-            // Also check if _isConnecting is set correctly
-            expect(IndexedDbHandler._isConnecting).toBeTruthy();
-            jasmine.clock().tick(2);
-            expect(IndexedDbHandler._isConnecting).toBeFalsy();
-
-            // Now the database connection is established (2nd entry === true)
-            expect(connectionStreamOutputs).toEqual([false, true]);
-
-            // _db is set and version should be 1 (in indexeddb and its handler)
-            expect(IndexedDbHandler._db).not.toBe(null);
-            expect(IndexedDbHandler._db.version).toBe(1);
-            expect(indexedDBmock.mockDbs.harmonizedDb.version).toBe(1);
-
-            // TODO check if storage is build by now
-
-            // Test if connect() will not connect on already established connection
-            expect(IndexedDbHandler.connect()).toBeUndefined();
-            expect(IndexedDbHandler._isConnecting).toBeFalsy();
-          });
-
-          scheduler.scheduleWithAbsolute(10, function() {
-            // Check if the closing of connection works
-            IndexedDbHandler.closeConnection();
-            expect(IndexedDbHandler._db).toBe(null);
-            expect(connectionStreamOutputs).toEqual([false, true, false]);
-          });
-
-          scheduler.scheduleWithAbsolute(20, function() {
-            // Version update
-            harmonizedData.dbVersion = 2;
-
-            // Connect again!
-            IndexedDbHandler.connect();
-            expect(connectionStreamOutputs).toEqual([false, true, false]);
-            expect(IndexedDbHandler._isConnecting).toBeTruthy();
-            jasmine.clock().tick(2);
-            expect(IndexedDbHandler._isConnecting).toBeFalsy();
-
-            // Should now be connected
-            // and version should be 2 (in indexeddb and its handler)
-            expect(connectionStreamOutputs).toEqual([false, true,
-              false, true
-            ]);
-            expect(IndexedDbHandler._db.version).toBe(2);
-            expect(indexedDBmock.mockDbs.harmonizedDb.version).toBe(
-              2);
-          });
-
-          // Start the scheduler to run the current setup
-          scheduler.start();
+        scheduler.scheduleWithAbsolute(0, function() {
+          // Check if only the initial false is in the connection stream output
+          expect(connectionStreamOutputs).toEqual([false]);
         });
+
+        scheduler.scheduleWithAbsolute(1, function() {
+          // Check if storage is not jet build
+          expect(indexedDBmock.mockDbs.harmonizedDb.objectStoreNames).toEqual([]);
+          expect(connectionStreamOutputs).toEqual([false]);
+
+          // Check after the connection has happened (2 fake ticks)
+          // Also check if _isConnecting is set correctly
+          expect(IndexedDbHandler._isConnecting).toBeTruthy();
+          jasmine.clock().tick(2);
+          expect(IndexedDbHandler._isConnecting).toBeFalsy();
+
+          // Now the database connection is established (2nd entry === true)
+          expect(connectionStreamOutputs).toEqual([false, true]);
+
+          // _db is set and version should be 1 (in indexeddb and its handler)
+          expect(IndexedDbHandler._db).not.toBe(null);
+          expect(IndexedDbHandler._db.version).toBe(1);
+          expect(indexedDBmock.mockDbs.harmonizedDb.version).toBe(1);
+
+          // TODO check if storage is build by now
+
+          // Test if connect() will not connect on already established connection
+          expect(IndexedDbHandler.connect()).toBeUndefined();
+          expect(IndexedDbHandler._isConnecting).toBeFalsy();
+        });
+
+        scheduler.scheduleWithAbsolute(10, function() {
+          // Check if the closing of connection works
+          IndexedDbHandler.closeConnection();
+          expect(IndexedDbHandler._db).toBe(null);
+          expect(connectionStreamOutputs).toEqual([false, true, false]);
+        });
+
+        scheduler.scheduleWithAbsolute(20, function() {
+          // Version update
+          harmonizedData.dbVersion = 2;
+
+          // Connect again!
+          IndexedDbHandler.connect();
+          expect(connectionStreamOutputs).toEqual([false, true, false]);
+          expect(IndexedDbHandler._isConnecting).toBeTruthy();
+          jasmine.clock().tick(2);
+          expect(IndexedDbHandler._isConnecting).toBeFalsy();
+
+          // Should now be connected
+          // and version should be 2 (in indexeddb and its handler)
+          expect(connectionStreamOutputs).toEqual([false, true,
+            false, true
+          ]);
+          expect(IndexedDbHandler._db.version).toBe(2);
+          expect(indexedDBmock.mockDbs.harmonizedDb.version).toBe(
+            2);
+        });
+
+        // Start the scheduler to run the current setup
+        scheduler.start();
+      });
 
       it(
         'should fail at a second connection with lower db version number',
@@ -282,7 +280,6 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
               firstname: 'Stanislav',
               lastname: 'Schewadnaze',
             },
-            meta: {},
           });
           putStream.subscribe(function(item) {
             putItems.push(item);
@@ -314,6 +311,37 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
           _id: 1,
           _deleted: false
         });
+      });
+
+      it('should\'t add an entry to the database because of dontSaveLocally', function() {
+        var putStream;
+        var putItems = [];
+
+        jasmine.clock().tick(2);
+        expect(IndexedDbHandler._db).not.toBe(null);
+
+        // Add some data
+        scheduler.scheduleWithAbsolute(0, function() {
+          putStream = dbHandler.put({
+            data: {
+              firstname: 'Stanislav',
+              lastname: 'Schewadnaze',
+            },
+            meta: {
+              dontSaveLocally: true,
+            },
+          });
+          putStream.subscribe(function(item) {
+            putItems.push(item);
+          });
+
+          jasmine.clock().tick(3);
+        });
+
+        scheduler.start();
+
+        // Check the returned stream data
+        expect(putItems.length).toBe(0);
       });
 
       it('should fail at inserting data because of the same serverId',
@@ -764,7 +792,7 @@ define(['rx', 'rx.testing', 'DbHandler/IndexedDbHandler', 'harmonizedData',
 
         scheduler.scheduleWithAbsolute(1, function() {
           jasmine.clock().tick(2);
-          expect(connectionStreamOutputs).toEqual([false, true,false]);
+          expect(connectionStreamOutputs).toEqual([false, true, false]);
           expect(indexedDBmock.mockDbs.harmonizedDb).toBeUndefined();
         });
 
