@@ -35,6 +35,7 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
        * @param  {Object} config The configuration (or partial configuration)
        */
       setConfig: function(config) {
+        /* istanbul ignore else */
         if (_.isObject(config)) {
           _.merge(harmonizedData._config, config);
         }

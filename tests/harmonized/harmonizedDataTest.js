@@ -31,6 +31,8 @@ define(['harmonizedData', 'lodash'], function(harmonizedData, _) {
                   serverKey: 'chemId',
                   storeKey: 'local_id',
                 },
+                fetchAtStart: false,
+                saveLocally: false,
                 sourceModel: 'chemtrails',
                 subModels: {
                   conspiracyTheorists: {
@@ -40,6 +42,10 @@ define(['harmonizedData', 'lodash'], function(harmonizedData, _) {
                       storeKey: '__id',
                     },
                     sourceModel: 'tinfoilHats',
+                    baseUrl: 'https://www.nsa.gov',
+                    serverOptions: {
+                      abc: 'hi',
+                    }
                   },
                 },
               },
@@ -85,6 +91,8 @@ define(['harmonizedData', 'lodash'], function(harmonizedData, _) {
           .toContainValues({
             storeName: 'flugzeuge_chemtrails',
             sourceModel: 'chemtrails',
+            fetchAtStart: false,
+            saveLocally: false,
           });
 
         expect(harmonizedData._modelSchema.planes.subModels.chemtrails
@@ -101,7 +109,12 @@ define(['harmonizedData', 'lodash'], function(harmonizedData, _) {
           .subModels.conspiracyTheorists).toContainValues({
           storeName: 'theorists',
           sourceModel: 'tinfoilHats',
+          baseUrl: 'https://www.nsa.gov',
         });
+        expect(harmonizedData._modelSchema.planes.subModels.chemtrails
+          .subModels.conspiracyTheorists.serverOptions).toEqual({
+            abc: 'hi',
+          });
 
         expect(harmonizedData._modelSchema.planes.subModels.chemtrails
           .subModels.conspiracyTheorists.keys).toBeObject();

@@ -106,6 +106,15 @@ define(['Squire', 'rx', 'rx.testing',], function(Squire, Rx, RxTest) {
       });
     });
 
+    it('set the promise class', function(done) {
+      testInContext(function(deps) {
+        deps.harmonized.setPromiseClass('test');
+        expect(harmonizedDataMock._promiseClass).toBe('test');
+
+        done();
+      });
+    });
+
     it('should build the model', function(done) {
       testInContext(function(deps) {
         deps.harmonized.build();
