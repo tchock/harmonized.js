@@ -324,6 +324,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      */
     ViewItem.prototype._returnActionPromise = function(stream, transactionId) {
       var Promise = harmonizedData._promiseClass;
+      /* istanbul ignore else */
       if (Promise !== null) {
         var deferred = Promise.defer();
 

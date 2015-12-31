@@ -14,17 +14,23 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       defer: jasmine.createSpy().and.callFake(function() {
         var thenFn = function() {};
         var catchFn = function() {};
+        var notifyFn = function() {};
 
         var promise = {
           then: function(fn) {
             thenFn = fn;
-            return returnedPromise;
+            return promise;
           },
 
           catch: function(fn) {
             catchFn = fn;
-            return returnedPromise;
-          }
+            return promise;
+          },
+
+          onNotify: function(fn) {
+            notifyFn = fn;
+            return promise;
+          },
         };
 
         return {
@@ -33,6 +39,9 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
           }),
           reject: jasmine.createSpy().and.callFake(function(error) {
             catchFn(error);
+          }),
+          notify: jasmine.createSpy().and.callFake(function() {
+            notifyFn();
           }),
           promise: promise
         };
@@ -43,7 +52,11 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       getNextTransactionId: function () {
         return 1;
       },
-      _viewUpdateCb: jasmine.createSpy(),
+      _viewUpdateCb: jasmine.createSpy().and.callFake(function(cb) {
+        if (_.isFunction(cb)) {
+          cb();
+        }
+      }),
       _promiseClass: fakePromise
     };
 
@@ -89,11 +102,16 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
       var injector = new Squire();
       injector.mock('ViewCollection', ViewCollectionMock);
       injector.mock('harmonizedData', harmonizedDataMock);
-      injector.require(['ViewItem', 'harmonizedData', 'ViewCollection'], function(ViewItem, harmonizedData, ViewCollection) {
+      injector.mock('ServerHandler', {
+        errorStream: new Rx.Subject(),
+      });
+
+      injector.require(['ViewItem', 'harmonizedData', 'ViewCollection', 'ServerHandler'], function(ViewItem, harmonizedData, ViewCollection, ServerHandler) {
         cb({
           ViewItem: ViewItem,
           harmonizedData: harmonizedData,
           ViewCollection: ViewCollection,
+          ServerHandler: ServerHandler,
         });
       });
     }
@@ -182,6 +200,9 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
           addedToCollection: true
         });
 
+        expect(testViewCollection.incrementVersion.calls.count()).toEqual(1);
+        expect(testViewCollection.incrementVersion).toHaveBeenCalled();
+
         done();
       });
     });
@@ -217,6 +238,8 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
           },
         });
 
+        expect(testViewCollection.incrementVersion).toHaveBeenCalled();
+
         done();
       });
     });
@@ -238,7 +261,9 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         expect(testViewCollection.length).toBe(1);
         expect(upStreamItems.length).toBe(0);
 
-        viewItem.save();
+        viewItem._streams.saveDownStream = new Rx.Subject();
+
+        var savePromise = viewItem.save();
         scheduler.start();
 
         expect(testViewCollection.length).toBe(1);
@@ -261,6 +286,121 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
           },
         });
 
+        // Test the return sub
+        scheduler.stop();
+
+        scheduler.scheduleWithAbsolute(1, function() {
+          viewItem._streams.saveDownStream.onNext({
+            meta: {
+              transactionId: 2,
+            },
+            data: 'hihi',
+          });
+        });
+
+        scheduler.scheduleWithAbsolute(2, function() {
+          viewItem._streams.saveDownStream.onNext({
+            meta: {
+              transactionId: 1,
+            },
+            data: 'haha',
+          });
+        });
+
+        savePromise.then(function(item) {
+          expect(item.meta.transactionId).toBe(1);
+          expect(item.data).toBe('haha');
+          done();
+        });
+
+        scheduler.start();
+
+      });
+    });
+
+    it('should save an existing and return an error', function(done) {
+      testInContext(function(deps) {
+        var viewItem = new deps.ViewItem(testViewCollection, {
+          name: 'Han Solo',
+          evil: false
+        }, {
+          rtId: 123,
+          serverId: 1000,
+          storeId: 124
+        });
+        viewItem._meta.addedToCollection = true;
+        testViewCollection.push(viewItem);
+        testViewCollection._items[123] = viewItem;
+
+        var savePromise = viewItem.save();
+
+        scheduler.scheduleWithAbsolute(1, function() {
+          deps.ServerHandler.errorStream.onNext({
+            target: {
+              transactionId: 2,
+            },
+            message: 'hihi',
+          });
+        });
+
+        scheduler.scheduleWithAbsolute(2, function() {
+          deps.ServerHandler.errorStream.onNext({
+            target: {
+              transactionId: 1,
+              status: -1,
+            },
+            message: 'haha',
+          });
+        });
+
+        var wasNotified = false;
+
+        savePromise.onNotify(function() {
+          wasNotified = true;
+        });
+
+        scheduler.scheduleWithAbsolute(3, function() {
+          deps.ServerHandler.errorStream.onNext({
+            target: {
+              transactionId: 1,
+              status: 401,
+            },
+            message: 'haha',
+          });
+        });
+
+        savePromise.catch(function(error) {
+          expect(error.target.transactionId).toBe(1);
+          expect(error.target.status).toBe(401);
+          expect(error.message).toBe('haha');
+          expect(wasNotified).toBeTruthy();
+          done();
+        });
+
+        scheduler.start();
+
+      });
+    });
+
+    it('should save an existing entry and increment version', function(done) {
+      testInContext(function(deps) {
+        var viewItem = new deps.ViewItem(testViewCollection, {
+          name: 'Han Solo',
+          evil: false
+        }, {
+          rtId: 123,
+          serverId: 1000,
+          storeId: 124
+        });
+        viewItem._meta.addedToCollection = true;
+        testViewCollection.push(viewItem);
+        testViewCollection._items[123] = viewItem;
+
+        viewItem.save({}, true);
+        scheduler.start();
+
+        expect(testViewCollection.incrementVersion).toHaveBeenCalled();
+
         done();
       });
     });
@@ -274,26 +414,29 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
           rtId: 123
         });
         viewItem._meta.addedToCollection = true;
+        testViewCollection.push(new deps.ViewItem(testViewCollection, {
+          name: 'Darth Vader',
+          evil: true
+        }, {
+          rtId: 122
+        }));
         testViewCollection.push(viewItem);
         testViewCollection._items[123] = viewItem;
 
         spyOn(viewItem._streams.saveDownStreamSub, 'dispose').and.stub();
         spyOn(viewItem._streams.deleteDownStreamSub, 'dispose').and.stub();
 
-        expect(testViewCollection.length).toBe(1);
+        expect(testViewCollection.length).toBe(2);
         expect(upStreamItems.length).toBe(0);
 
         viewItem.delete();
         scheduler.start();
 
-        expect(testViewCollection.length).toBe(0);
+        expect(testViewCollection.length).toBe(1);
 
-        expect(viewItem._streams.saveDownStreamSub.dispose.calls.count())
-          .toBe(
-            1);
-        expect(viewItem._streams.deleteDownStreamSub.dispose.calls.count())
-          .toBe(
-            1);
+        expect(testViewCollection.incrementVersion).toHaveBeenCalled();
+        expect(viewItem._streams.saveDownStreamSub.dispose.calls.count()).toBe(1);
+        expect(viewItem._streams.deleteDownStreamSub.dispose.calls.count()).toBe(1);
         expect(viewItem._meta.deleted).toBeTruthy();
         expect(downStreamItems.length).toBe(0);
         expect(upStreamItems.length).toBe(1);
@@ -313,6 +456,39 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         done();
       });
     });
+
+    it('should delete an entry without a rtId', function(done) {
+      testInContext(function(deps) {
+        var viewItem = new deps.ViewItem(testViewCollection, {
+          name: 'Han Solo',
+          evil: false
+        }, {});
+        viewItem._meta.addedToCollection = true;
+        testViewCollection.push(viewItem);
+        testViewCollection._items[123] = viewItem;
+
+        spyOn(viewItem._streams.saveDownStreamSub, 'dispose').and.stub();
+        spyOn(viewItem._streams.deleteDownStreamSub, 'dispose').and.stub();
+
+        expect(testViewCollection.length).toBe(1);
+        expect(upStreamItems.length).toBe(0);
+
+        viewItem.delete();
+        scheduler.start();
+
+        expect(testViewCollection.length).toBe(0);
+
+        expect(testViewCollection.incrementVersion).toHaveBeenCalled();
+        expect(viewItem._streams.saveDownStreamSub.dispose.calls.count()).toBe(1);
+        expect(viewItem._streams.deleteDownStreamSub.dispose.calls.count()).toBe(1);
+        expect(viewItem._meta.deleted).toBeTruthy();
+        expect(downStreamItems.length).toBe(0);
+        expect(upStreamItems.length).toBe(0);
+
+        done();
+      });
+    });
+
 
     it('should save an entry with additional data for the server', function(done) {
       testInContext(function(deps) {
@@ -676,6 +852,48 @@ define(['Squire', 'rx', 'rx.testing', 'ViewItem'], function(Squire, Rx, RxTest,
         expect(upStreamItems[0].data.fnArgs).toEqual({
           place: 'Bespin'
         });
+
+        done();
+      });
+    });
+
+    it('should filter a function response from the server', function(done) {
+      testInContext(function(deps) {
+        var receivedFnReturnItems = [];
+
+        var viewItem = new deps.ViewItem(testViewCollection, {
+          name: 'Han Solo',
+          evil: false
+        }, {
+          serverId: 1234,
+          rtId: 123
+        });
+
+        viewItem._streams.functionDownStream.subscribe(function(item) {
+          receivedFnReturnItems.push(item);
+        })
+
+        scheduler.scheduleWithAbsolute(1, function() {
+          testViewCollection.functionReturnStream.onNext({
+            meta: {
+              rtId: 123,
+            },
+            data: 'blub',
+          });
+
+          testViewCollection.functionReturnStream.onNext({
+            meta: {
+              rtId: 124,
+            },
+            data: 'blubi',
+          });
+        });
+
+        scheduler.start();
+
+        expect(receivedFnReturnItems.length).toBe(1);
+        expect(receivedFnReturnItems[0].meta.rtId).toBe(123);
+        expect(receivedFnReturnItems[0].data).toBe('blub');
 
         done();
       });
