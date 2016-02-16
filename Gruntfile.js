@@ -1,4 +1,4 @@
-module.exports = function (grunt) {
+module.exports = function(grunt) {
   'use strict';
 
   // Force use of Unix newlines
@@ -10,16 +10,36 @@ module.exports = function (grunt) {
   // Time how long tasks take. Can help when optimizing build times
   require('time-grunt')(grunt);
 
-  var pkg = require('./package.json');
-
   // Project configuration.
   grunt.initConfig({
+    requirejs: {
+      compile: {
+        options: {
+          baseUrl: "src/",
+          out: 'harmonized.js',
+          //name: 'harmonized',
+          name: '../bower_components/almond/almond',
+          optimize: 'none',
+          mainConfigFile:'./main.js',
+          paths: {
+            'lodash': 'empty:',
+            'rx': 'empty:',
+            'rx.async': 'empty:',
+          },
+          wrap: {
+            startFile: '.wrap-start.frag',
+            endFile: '.wrap-end.frag'
+          }
+        }
+      }
+    },
+
     jscs: {
       src: 'src/**/*.js',
       options: {
         config: '.jscsrc',
         preset: 'airbnb',
-        requireCurlyBraces: ["if"]
+        requireCurlyBraces: ['if']
       }
     },
     changelog: {
@@ -33,7 +53,7 @@ module.exports = function (grunt) {
         updateConfigs: [],
         commit: true,
         commitMessage: 'Release %VERSION%',
-        commitFiles: ['package.json', 'bower.json', 'CHANGELOG.md',
+        commitFiles: ['package.json', 'bower.json', /*'CHANGELOG.md',*/
           'harmonized.js', 'harmonized.min.js'
         ],
         createTag: true,
@@ -41,7 +61,7 @@ module.exports = function (grunt) {
         tagMessage: 'Version %VERSION%',
         push: true,
         pushTo: 'origin',
-        prereleaseName: 'alpha',
+        prereleaseName: 'alpha'
       }
     },
     jshint: {
@@ -50,9 +70,9 @@ module.exports = function (grunt) {
       },
       all: {
         src: [
-          'src/js/{,*/}*.js'
+          'src/{,*/}*.js'
         ]
-      },
+      }
     },
 
     clean: {
@@ -60,21 +80,12 @@ module.exports = function (grunt) {
       tmp: '.tmp'
     },
 
-    concat: {
-      build: {
-        src: [
-          'src/js/*.js'
-        ],
-        dest: 'harmonized.js'
-      }
-    },
-
     uglify: {
       options: {
-        preserveComments: 'some'
+        preserveComments: 'none'
       },
       build: {
-        src: '<%= concat.build.dest %>',
+        src: '<%= requirejs.compile.options.out %>',
         dest: 'harmonized.min.js'
       }
     },
@@ -84,6 +95,7 @@ module.exports = function (grunt) {
     connect: {
       options: {
         port: 9000,
+
         // Change this to '0.0.0.0' to access the server from outside.
         hostname: '0.0.0.0',
         livereload: 35729
@@ -91,7 +103,7 @@ module.exports = function (grunt) {
       livereload: {
         options: {
           open: true,
-          middleware: function (connect) {
+          middleware: function(connect) {
             return [
               connect.static('.tmp'),
               connect().use(
@@ -118,11 +130,11 @@ module.exports = function (grunt) {
       options: {
         // Task-specific options go here.
       },
-      your_target: {
+      target: {
         files: {
            'examples/index.html': 'examples/templates/index.html'
          }
-      },
+      }
     },
 
     watch: {
@@ -139,25 +151,25 @@ module.exports = function (grunt) {
           livereload: '<%= connect.options.livereload %>'
         },
         files: [
-          'examples/{,*/}*.html',
+          'examples/{,*/}*.html'
         ]
       }
-    },
+    }
 
   });
 
   // JS distribution task
-  grunt.registerTask('dist-js', ['concat', 'uglify:build']);
+  grunt.registerTask('dist-js', ['requirejs', 'uglify:build']);
 
   // Full distribution task
-  grunt.registerTask('dist', ['jscs', 'clean:dist', 'dist-js']);
+  grunt.registerTask('dist', [/*'jscs', */ 'clean:dist', 'dist-js']);
 
   // Full release task
-  grunt.registerTask('release', 'bump and changelog', function (type) {
+  grunt.registerTask('release', 'bump and changelog', function(type) {
     grunt.task.run([
       'dist',
       'bump:' + (type || 'patch') + ':bump-only',
-      'changelog',
+      //'changelog',
       'bump-commit'
     ]);
   });

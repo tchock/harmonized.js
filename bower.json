@@ -1,9 +1,8 @@
 {
   "name": "harmonized.js",
   "description": "Reactive Javascript Data Model",
-  "license": "MIT",
-  "version": "0.0.1",
-  "main": "./harmonized.js",
+  "version": "0.16.1",
+  "main": "harmonized.js",
   "authors": [
     "Simon Jentsch <sjentsch@hyphe.me>"
   ],
@@ -32,10 +31,12 @@
     "index.html",
     "karma.conf.js",
     "npm-debug.log",
-    "package.json"
+    "package.json",
+    "main.js",
+    "test-main.js"
   ],
   "dependencies": {
-    "rxjs": "~2.5.2",
+    "rxjs": "~4.0.6",
     "lodash": "3.0.0"
   },
   "overrides": {
@@ -44,11 +45,21 @@
         "dist/rx.lite.js",
         "dist/rx.async.js"
       ]
+    },
+    "sinon": {
+      "js": "index.js"
     }
   },
   "devDependencies": {
     "mock-websql": "~0.3.0",
     "jquery": "~2.1.4",
-    "jasmine-ajax": "~3.1.1"
+    "jasmine-ajax": "~3.1.1",
+    "indexedDBmock": "git@bitbucket.org:hyphe/web-indexeddbmock.git",
+    "jasmine-expect": "~1.22.3",
+    "jasmine-object-matchers": "~0.0.3",
+    "requirejs": "~2.1.18",
+    "squire": "~0.2.0",
+    "sinon": "http://sinonjs.org/releases/sinon-1.9.0.js",
+    "almond": "~0.3.1"
   }
 }
