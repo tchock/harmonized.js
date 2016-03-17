@@ -421,6 +421,16 @@ define(['Squire', 'rx', 'rx.testing'], function(Squire, Rx, RxTest) {
       });
     });
 
+    it('should should fetch data from the server with callback', function(done) {
+      testInContext(function() {
+        testViewCollection.fetch('callback');
+
+        expect(testViewCollection._model.getFromServer.calls.count()).toBe(1);
+        expect(testViewCollection._model.getFromServer).toHaveBeenCalledWith('callback');
+        done();
+      });
+    });
+
     it('should send a http function to the server', function(done) {
       testInContext(function() {
         testModel.upStream.subscribe(function(item) {

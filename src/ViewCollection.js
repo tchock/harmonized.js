@@ -120,8 +120,8 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
   /**
    * Gets data from the server
    */
-  ViewCollection.prototype.fetch = function() {
-    this._model.getFromServer();
+  ViewCollection.prototype.fetch = function(cb) {
+    this._model.getFromServer(cb);
   };
 
   /**
