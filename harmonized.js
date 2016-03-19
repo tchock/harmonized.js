@@ -1335,6 +1335,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       var i;
 
       // Remove all stores items
+      /* istanbul ignore else */
       if (!_.isUndefined(db)) {
         for (i = db.objectStoreNames.length - 1; i >= 0; i--) {
           currentStore = db.objectStoreNames[i];
@@ -1413,6 +1414,7 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
         cursor.continue();
       } else {
         // No item left, so call the callback!
+        /* istanbul ignore else */
         if (_.isFunction(cb)) {
           cb();
         }
@@ -1460,33 +1462,33 @@ define('DbHandler/IndexedDbHandler', ['DbHandler/BaseHandler', 'harmonizedData',
       return putStream;
     }
 
-    // Don't do anything if the item shouldn't be saved locally
-    if (item.meta.dontSaveLocally) {
-      putStream.onCompleted();
-      return putStream;
-    }
-
     var _this = this;
     var i = 0;
 
     function putNext(e) {
-      if (!!e) {
-        // Data was received
-        if (_.isUndefined(item[i].meta)) {
-          item[i].meta = {};
-        }
+      // Data was received
+      if (i < item.length && _.isUndefined(item[i].meta)) {
+        item[i].meta = {};
+      }
 
+      if (!!e) {
         item[i].meta.storeId = e.target.result;
         putStream.onNext(item[i]);
         i++;
       }
 
       if (i < item.length) {
-        // Save and do next stuff
-        var dbItem = _this._createDbItem(item[i]);
-        var put = objectStore.put(dbItem);
-        put.onsuccess = putNext;
-        put.onerror = putError;
+        // Don't do anything if the item shouldn't be saved locally
+        if (item[i].meta.dontSaveLocally) {
+          i++;
+          putNext();
+        } else {
+          // Save and do next stuff
+          var dbItem = _this._createDbItem(item[i]);
+          var put = objectStore.put(dbItem);
+          put.onsuccess = putNext;
+          put.onerror = putError;
+        }
       } else {
         putStream.onCompleted();
       }
@@ -2009,8 +2011,11 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
     _this.meta = this._createItemMeta(meta);
     _this.subData = {};
 
+    meta = meta || {};
+
     // Go through all described submodels for this item
     for (var subModel in parentModel._subModelsSchema) {
+      /* istanbul ignore else  */
       if (parentModel._subModelsSchema.hasOwnProperty(subModel)) {
         _this.subData[subModel] = new SubModel(subModel, _this);
       }
@@ -2075,12 +2080,16 @@ define('ModelItem', ['SubModel', 'rx', 'lodash'], function(SubModel, Rx, _) {
   };
 
   ModelItem.prototype._createItemMeta = function(meta) {
-    return {
-      rtId: meta.rtId,
-      serverId: meta.serverId,
-      storeId: meta.storeId,
-      deleted: meta.deleted,
-    };
+    if (_.isUndefined(meta)) {
+      return {};
+    } else {
+      return {
+        rtId: meta.rtId,
+        serverId: meta.serverId,
+        storeId: meta.storeId,
+        deleted: meta.deleted,
+      };
+    }
   };
 
   /**
@@ -2210,6 +2219,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
       var modelSchema = harmonizedData._modelSchema[modelName];
       var thisOptions = _this._options;
       for (var optKey in modelSchema) {
+        /* istanbul ignore else  */
         if (modelSchema.hasOwnProperty(optKey)) {
           setOptionIfUndefined(thisOptions, optKey, modelSchema);
         }
@@ -2376,6 +2386,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
     Model.prototype.pushChanges = function() {
       // Push the items to the server that have to be saved
       for (var storeId in this._storeIdHash) {
+        /* istanbul ignore else  */
         if (this._storeIdHash.hasOwnProperty(storeId)) {
           var currentItem = this._storeIdHash[storeId];
           var itemMeta = _.cloneDeep(currentItem.meta);
@@ -2424,6 +2435,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
         // Get to know the locally known server ids
         var localServerIds = [];
         for (var serverId in _this._serverIdHash) {
+          /* istanbul ignore else  */
           if (_this._serverIdHash.hasOwnProperty(serverId)) {
             localServerIds.push(parseInt(serverId));
           }
@@ -2484,7 +2496,7 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
         harmonizedData.generateModelSchema();
 
         var currentSchema;
-        for (var modelName in harmonizedData._modelSchema) {
+        for (var modelName in harmonizedData._generatedModelSchema) {
           currentSchema = _.cloneDeep(harmonizedData._generatedModelSchema[modelName]);
           delete currentSchema.subModels;
           modelHandler._modelList[modelName] = new Model(modelName,
@@ -2757,12 +2769,12 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
         _this._wasAlreadySynced = true;
       }
 
-      harmonizedData._viewUpdateCb(function() {
-        // Add new data
-        for (var key in data) {
-          _this[key] = data[key];
-        }
-      });
+      // Add new data
+      for (var key in data) {
+        _this[key] = data[key];
+      }
+
+      harmonizedData._viewUpdateCb();
     };
 
     /**
@@ -2840,6 +2852,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
     ViewItem.prototype._addSubCollections = function(subData) {
       this._subDataList = Object.keys(subData);
       for (var subModel in subData) {
+        /* istanbul ignore else  */
         if (subData.hasOwnProperty(subModel)) {
           this[subModel] = new ViewCollection(subData[subModel]);
         }
@@ -2868,6 +2881,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
      */
     ViewItem.prototype._returnActionPromise = function(stream, transactionId) {
       var Promise = harmonizedData._promiseClass;
+      /* istanbul ignore else */
       if (Promise !== null) {
         var deferred = Promise.defer();
 
@@ -3027,8 +3041,8 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
   /**
    * Gets data from the server
    */
-  ViewCollection.prototype.fetch = function() {
-    this._model.getFromServer();
+  ViewCollection.prototype.fetch = function(cb) {
+    this._model.getFromServer(cb);
   };
 
   /**
@@ -3092,6 +3106,7 @@ define('harmonized', ['harmonizedData', 'modelHandler', 'ServerHandler',
        * @param  {Object} config The configuration (or partial configuration)
        */
       setConfig: function(config) {
+        /* istanbul ignore else */
         if (_.isObject(config)) {
           _.merge(harmonizedData._config, config);
         }
