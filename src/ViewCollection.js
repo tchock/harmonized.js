@@ -1,6 +1,6 @@
 'use strict';
 
-define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _) {
+define('ViewCollection', ['harmonizedData', 'ServerHandler', 'ViewItem', 'rx', 'lodash'], function(harmonizedData, ServerHandler, ViewItem, Rx, _) {
 
   /**
    * The ViewCollection constructor
@@ -134,15 +134,50 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
   };
 
   ViewCollection.prototype.callFn = function(name, args) {
+    var transactionId = harmonizedData.getNextTransactionId();
+    var deferred;
+    var Promise = harmonizedData._promiseClass;
+    /* istanbul ignore else */
+    if (Promise !== null) {
+      deferred = Promise.defer();
+
+      var successSub;
+      var errorSub;
+      successSub = this.functionReturnStream.filter(function(item) {
+        return item.meta.transactionId === transactionId;
+      }).subscribe(function(item) {
+        deferred.resolve(item);
+        successSub.dispose();
+        errorSub.dispose();
+      });
+
+      errorSub = ServerHandler.errorStream.filter(function(error) {
+        return error.target.transactionId === transactionId;
+      }).subscribe(function(error) {
+        if (error.target.status === -1) {
+          deferred.notify();
+        } else {
+          deferred.reject(error);
+          successSub.dispose();
+          errorSub.dispose();
+        }
+      });
+    }
+
     this.upStream.onNext({
       meta: {
-        action: 'function'
+        action: 'function',
+        transactionId: transactionId,
       },
       data: {
         fnName: name,
         fnArgs: args
       }
     });
+
+    if (deferred) {
+      return deferred.promise;
+    }
   };
 
   return ViewCollection;

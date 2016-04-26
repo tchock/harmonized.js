@@ -56,9 +56,6 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
       getFromServer: function getFromServer(exceptions) {
         var modelList = modelHandler._modelList;
         for (var modelName in modelList) {
-          console.log('exceptions');
-          console.log(exceptions);
-          console.log(modelName);
           if (!_.includes(exceptions, modelName)) {
             modelList[modelName].getFromServer();
           }
