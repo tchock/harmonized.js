@@ -2172,6 +2172,10 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
      */
     function downStreamMap(model, source) {
       return function(item) {
+        if (item.meta.action === 'function') {
+          return item;
+        }
+
         var knownItem = model._rtIdHash[item.meta.rtId] || model._serverIdHash[
           item.meta.serverId] || model._storeIdHash[item.meta.storeId];
         if (!_.isUndefined(knownItem)) {
@@ -2251,7 +2255,7 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
 
       // Create a stream for data received from the upstream not yet in the model
       _this.upStream.filter(function(item) {
-        return _.isUndefined(_this._rtIdHash[item.meta.rtId]);
+        return _.isUndefined(_this._rtIdHash[item.meta.rtId]) && item.meta.action !== 'function';
       }).subscribe(function(item) {
         new ModelItem(_this, item.data, item.meta);
       });
@@ -2269,14 +2273,14 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
 
       // Only add already existing model items to the public downstream
       _this._existingItemDownStream = _this._downStream.filter(function(item) {
-        return !_.isUndefined(item.meta.rtId);
+        return item.meta.action === 'function' || !_.isUndefined(item.meta.rtId);
       });
 
       _this._existingItemDownStream.subscribe(_this.downStream);
 
       // Create a stream for data received from the downstream not yet in the model
       _this._downStream.filter(function(item) {
-        return _.isUndefined(item.meta.rtId);
+        return item.meta.action !== 'function' && _.isUndefined(item.meta.rtId);
       }).subscribe(function(item) {
         _this._createNewItem(item);
       });
@@ -2338,7 +2342,9 @@ define('Model', ['harmonizedData', 'ModelItem', 'ServerHandler', 'dbHandlerFacto
       };
 
       // Subscribe the downstream directly to the upstream
-      this._dbHandler.upStream.map(function(item) {
+      this._dbHandler.upStream.filter(function(item) {
+        return item.meta.action !== 'function';
+      }).map(function(item) {
         // Set action to "deletePermanently" if action was delete
         // to permanently delete item in Model
         item.meta.action = (item.meta.action === 'delete') ? 'deletePermanently' : item.meta.action;
@@ -2539,9 +2545,6 @@ define('modelHandler', ['Model', 'harmonizedData', 'dbHandlerFactory', 'lodash']
       getFromServer: function getFromServer(exceptions) {
         var modelList = modelHandler._modelList;
         for (var modelName in modelList) {
-          console.log('exceptions');
-          console.log(exceptions);
-          console.log(modelName);
           if (!_.includes(exceptions, modelName)) {
             modelList[modelName].getFromServer();
           }
@@ -2921,7 +2924,7 @@ define('ViewItem', ['lodash', 'rx', 'ViewCollection', 'harmonizedData', 'ServerH
 
 
 
-define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _) {
+define('ViewCollection', ['harmonizedData', 'ServerHandler', 'ViewItem', 'rx', 'lodash'], function(harmonizedData, ServerHandler, ViewItem, Rx, _) {
 
   /**
    * The ViewCollection constructor
@@ -3055,15 +3058,50 @@ define('ViewCollection', ['ViewItem', 'rx', 'lodash'], function(ViewItem, Rx, _)
   };
 
   ViewCollection.prototype.callFn = function(name, args) {
+    var transactionId = harmonizedData.getNextTransactionId();
+    var deferred;
+    var Promise = harmonizedData._promiseClass;
+    /* istanbul ignore else */
+    if (Promise !== null) {
+      deferred = Promise.defer();
+
+      var successSub;
+      var errorSub;
+      successSub = this.functionReturnStream.filter(function(item) {
+        return item.meta.transactionId === transactionId;
+      }).subscribe(function(item) {
+        deferred.resolve(item);
+        successSub.dispose();
+        errorSub.dispose();
+      });
+
+      errorSub = ServerHandler.errorStream.filter(function(error) {
+        return error.target.transactionId === transactionId;
+      }).subscribe(function(error) {
+        if (error.target.status === -1) {
+          deferred.notify();
+        } else {
+          deferred.reject(error);
+          successSub.dispose();
+          errorSub.dispose();
+        }
+      });
+    }
+
     this.upStream.onNext({
       meta: {
-        action: 'function'
+        action: 'function',
+        transactionId: transactionId,
       },
       data: {
         fnName: name,
         fnArgs: args
       }
     });
+
+    if (deferred) {
+      return deferred.promise;
+    }
   };
 
   return ViewCollection;
